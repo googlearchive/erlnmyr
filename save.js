@@ -54,7 +54,7 @@ Recorder.prototype.save = function() {
   var blobURL = window.webkitURL.createObjectURL(blob);
   var link = document.createElement('a');
   link.href = blobURL;
-  link.download = 'document.ds.json';
+  link.download = encodeURIComponent(s).replace(/\./g, '-').replace(/\%[0-9A-F]{2}/g, '-') + '.ds.json';
   link.click();
 }
 

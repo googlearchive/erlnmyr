@@ -70,7 +70,9 @@
         var data = JSON.parse(evt.target.result);
 
         var viewer = new ViewBuilder(document.documentElement);
+        console.time('Build DOM');
         viewer.build(data);
+        console.timeEnd('Build DOM');
       });
       reader.readAsText(evt.target.files[0]);
     });
