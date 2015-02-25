@@ -1,0 +1,19 @@
+{
+  "name": "tree-builder-builder",
+  "version": "0.0.0",
+  "description": "Tree Builder Builder",
+  "main": "as-html.js",
+  "homepage": "https://github.com/dglazkov/tree-builder-builder",
+  "author": "",
+  "license": "",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dglazkov/tree-builder-builder.git"
+  },
+  "dependencies": {
+    "gulp": "^3.8.11"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.11"
+  },
+}
