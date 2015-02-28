@@ -26,10 +26,15 @@ gulp.task('html', function(cb) {
     builder.build(data);
     builder.write(writer);
 
-    console.log(writer.getHTML());
-    cb();
-  });
+    var output = 'result.html';
 
+    fs.writeFile(output, writer.getHTML(), function(err) {
+      if (err)
+        throw err;
+      console.log('written results into \"' + output + '\".');
+      cb();
+    });
+  });
 });
 
 gulp.task('js', function(cb) {
@@ -53,7 +58,7 @@ gulp.task('js', function(cb) {
         throw err;
       console.log('written results into \"' + output + '\".');
       cb();
-    })
+    });
   });
 
 });
