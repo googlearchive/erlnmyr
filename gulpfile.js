@@ -27,50 +27,60 @@ function readFile(filename, cb) {
   });
 }
 
+/*
+ * Pipeline Stages
+ *
+ * Each stage accepts a data object and a callback, and is responsible for
+ * calling the callback with the result of processing the data.
+ */
+
+function fileReader(filename) {
+  return function(_, cb) { readFile(filename, cb); };
+}
+
+function nullFilter() {
+  return function(data, cb) { cb(data); }
+}
+
+function treeBuilderWriter(WriterType) {
+  return function(data, cb) {
+    var writer = new WriterType();
+    var builder = new TreeBuilder(writer);
+    builder.build(data);
+    builder.write(writer);
+    cb(writer.getHTML());
+  }
+};
+
+function fileOutput(filename) {
+  return function(data, cb) { writeFile(filename, data, cb); };
+}
+
+function consoleOutput() {
+  return function(data, cb) { console.log(data); cb(); };
+}
+
 gulp.task('default', function() {
   console.log('Hello world!');
 });
 
-gulp.task('html', function(cb) {
-  var name = options.file;
-
-  readFile(name, function(data) {
-    var writer = new HTMLWriter();
-    var builder = new TreeBuilder(writer);
-    builder.build(data);
-    builder.write(writer);
-
-    var output = 'result.html.html';
-    writeFile(output, writer.getHTML(), cb);
+/*
+ * Constructing a pipeline
+ *
+ * Sorry for potato quality.
+ */
+function buildTask(name, stages) {
+  gulp.task(name, function(cb) {
+    for (var i = stages.length - 1; i >= 0; i--) {
+      cb = (function(i, cb) { return function(data) { stages[i](data, cb); } })(i, cb);
+    }
+    cb(null);
   });
-});
+};
 
-gulp.task('js', function(cb) {
-  var name = options.file;
-
-  readFile(name, function( data) {
-    var writer = new JSWriter();
-    var builder = new TreeBuilder(writer);
-    builder.build(data);
-    builder.write(writer);
-
-    var output = 'result.js.html';
-    writeFile(output, writer.getHTML(), cb);
-  });
-
-});
-
-gulp.task('stats', function(cb) {
-  var name = options.file;
-
-  readFile(name, function(data) {
-    var writer = new StatsWriter();
-    var builder = new TreeBuilder(writer);
-    builder.build(data);
-    builder.write(writer);
-
-    console.log(writer.getHTML());
-    cb();
-  });
-
-});
+/*
+ * Some example pipelines.
+ */
+buildTask('html', [fileReader(options.file), treeBuilderWriter(HTMLWriter), fileOutput('result.html.html')]);
+buildTask('js', [fileReader(options.file), treeBuilderWriter(JSWriter), fileOutput('result.js.html')]);
+buildTask('stats', [fileReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
