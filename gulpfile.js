@@ -5,6 +5,7 @@ var fs = require('fs');
 var TreeBuilder = require('./lib/tree-builder');
 var HTMLWriter = require('./lib/html-writer');
 var JSWriter = require('./lib/js-writer');
+var StatsWriter = require('./lib/stats-writer');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -55,6 +56,21 @@ gulp.task('js', function(cb) {
 
     var output = 'result.js.html';
     writeFile(output, writer.getHTML(), cb);
+  });
+
+});
+
+gulp.task('stats', function(cb) {
+  var name = options.file;
+
+  readFile(name, function(data) {
+    var writer = new StatsWriter();
+    var builder = new TreeBuilder(writer);
+    builder.build(data);
+    builder.write(writer);
+
+    console.log(writer.getHTML());
+    cb();
   });
 
 });
