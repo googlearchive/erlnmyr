@@ -30,6 +30,24 @@ function descend(node, out) {
   }
 }
 
+function capturePseudoElementStyles(out) {
+  var pseudoStyles = '';
+  for (var i = 0; i < document.styleSheets.length; i++) {
+    var styleSheet = document.styleSheets[i];
+    for (var j = 0; j < styleSheet.rules.length; j++) {
+      var rule = styleSheet.rules[j];
+      if (rule.selectorText && rule.selectorText.indexOf('::') !== -1) {
+        pseudoStyles += rule.cssText;
+      }
+    }
+  }
+  if (pseudoStyles.length > 0) {
+    out.push({nodeName: 'STYLE'});
+    out.text(pseudoStyles);
+    out.pop();
+  }
+}
+
 function Recorder() {
   this.log = [];
 }
@@ -70,6 +88,7 @@ Recorder.prototype.save = function() {
 var recorder = new Recorder();
 
 recorder.base(String(window.location));
+capturePseudoElementStyles(recorder);
 descend(document.documentElement, recorder);
 
 recorder.save();
