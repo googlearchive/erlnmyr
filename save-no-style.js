@@ -91,7 +91,6 @@ recorder.base(String(window.location));
 capturePseudoElementStyles(recorder);
 descend(document.documentElement, recorder);
 
-
 recorder.save();
 
 }();
