@@ -2,6 +2,8 @@
 
 function descend(node, out) {
   if (node.nodeType == Node.ELEMENT_NODE) {
+    if (node.nodeName == 'SCRIPT')
+      return;
     out.push(node);
 
     for (var i = 0; i < node.attributes.length; ++i)
