@@ -7,6 +7,7 @@ var HTMLWriter = require('./lib/html-writer');
 var JSWriter = require('./lib/js-writer');
 var StatsWriter = require('./lib/stats-writer');
 var StyleFilter = require('./lib/style-filter');
+var StyleMinimizationFilter = require('./lib/style-minimization-filter');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -89,4 +90,5 @@ function buildTask(name, stages) {
 buildTask('html', [fileReader(options.file), treeBuilderWriter(HTMLWriter), fileOutput('result.html.html')]);
 buildTask('js', [fileReader(options.file), treeBuilderWriter(JSWriter), fileOutput('result.js.html')]);
 buildTask('stats', [fileReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
-buildTask('filter', [fileReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
+buildTask('compactComputedStyle', [fileReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
+buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
