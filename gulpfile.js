@@ -8,6 +8,7 @@ var JSWriter = require('./lib/js-writer');
 var StatsWriter = require('./lib/stats-writer');
 var StyleFilter = require('./lib/style-filter');
 var StyleMinimizationFilter = require('./lib/style-minimization-filter');
+var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -46,6 +47,13 @@ function nullFilter() {
 
 function filter(FilterType) {
   return treeBuilderWriter(FilterType);
+}
+
+function fabricator(FabType) {
+  return function(data, cb) {
+    var fab = new FabType(data);
+    cb(fab.fabricate());
+  }
 }
 
 function treeBuilderWriter(WriterType) {
@@ -92,3 +100,4 @@ buildTask('js', [fileReader(options.file), treeBuilderWriter(JSWriter), fileOutp
 buildTask('stats', [fileReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
 buildTask('compactComputedStyle', [fileReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
 buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
+buildTask('generate', [fileReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
