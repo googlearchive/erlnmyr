@@ -1,0 +1,6 @@
+{"elements": {"BASE": {"elementsPermitted": ["DIV"], "textPermitted": false},
+              "DIV": {"elementsPermitted": ["DIV", "SPAN"], "textPermitted": true},
+              "SPAN": {"elementsPermitted": ["SPAN"], "textPermitted": true}},
+ "branchiness": [[0,0,0,0,0,0,0,0,0,0,1],[0,0.5,0.3,0.2],[0,1],[0,1]],
+ "textiness": [[[1],0,0],[[0,0,0,0,0,1],100,200],[[0,1], 10,20],[[1],10,20],[[0,0.2,0.3,0.5],200,400],[[0,1],500,1000]]
+}
