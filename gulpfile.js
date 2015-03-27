@@ -1,6 +1,7 @@
 var gulp = require('gulp');
 var parseArgs = require('minimist');
 var fs = require('fs');
+var mocha = require('gulp-mocha');
 
 var TreeBuilder = require('./lib/tree-builder');
 var HTMLWriter = require('./lib/html-writer');
@@ -8,6 +9,7 @@ var JSWriter = require('./lib/js-writer');
 var StatsWriter = require('./lib/stats-writer');
 var StyleFilter = require('./lib/style-filter');
 var StyleMinimizationFilter = require('./lib/style-minimization-filter');
+var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
 
 var options = parseArgs(process.argv.slice(2));
@@ -74,8 +76,13 @@ function consoleOutput() {
   return function(data, cb) { console.log(data); cb(); };
 }
 
-gulp.task('default', function() {
-  console.log('Hello world!');
+gulp.task('test', function() {
+  return gulp.src('tests/*.js', {read: false})
+      .pipe(mocha({
+        ui: 'bdd',
+        ignoreLeaks: true,
+        reporter: 'nyan'
+    }));
 });
 
 /*
@@ -101,3 +108,4 @@ buildTask('stats', [fileReader(options.file), treeBuilderWriter(StatsWriter), co
 buildTask('compactComputedStyle', [fileReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
 buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
 buildTask('generate', [fileReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
+buildTask('tokenStyles', [fileReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
