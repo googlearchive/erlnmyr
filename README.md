@@ -10,7 +10,8 @@ Every item in this array is an object: `[{}, {}, ...]`.
 Every object needs to have a property `t`, which represents the type of the object:
 `[{'t': ...}, {'t': ...}, ...]`.
 
-Other properties of the object depend on the value of `t`. 
+Other properties of the object depend on the value of `t`.
+
 `[{'t':'n', 'v':'img'}, {'t':'a', 'n':'src', 'v':'foo.jpg'}, ...]`.
 
 Here are all known values of `t`:
