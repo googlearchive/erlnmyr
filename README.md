@@ -21,8 +21,8 @@ Here are all known values of `t`:
 * `a` -- element attribute. Expected other properties:
   * `n` -- name of the attribute
   * `v` -- value of the attribute
-* `n` -- opening tag
-  * `n` -- name of the element
+* `n` -- opening tag. Expected other properties: 
+  * `n` -- name of the tag
 * `/` -- closing tag
 * `t` -- text node. Expected other properties:
   * `v` -- text node value
