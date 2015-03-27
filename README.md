@@ -18,13 +18,13 @@ Here are all known values of `t`:
 
 * `b` -- URL base for the stream of tokens. Expected other properties: 
   * `v` -- the base url
-* `a` -- element attribute. Expected other properties:
+* `a` -- tag attribute. Expected other properties:
   * `n` -- name of the attribute
   * `v` -- value of the attribute
 * `n` -- opening tag. Expected other properties: 
   * `n` -- name of the tag
 * `/` -- closing tag
-* `t` -- text node. Expected other properties:
-  * `v` -- text node value
-* `c` -- comment node. Expected other properties:
-  * `v` -- comment node value
+* `t` -- text. Expected other properties:
+  * `v` -- text value
+* `c` -- comment. Expected other properties:
+  * `v` -- comment value
