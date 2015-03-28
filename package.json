@@ -14,7 +14,10 @@
     "gulp": "^3.8.11"
   },
   "devDependencies": {
+    "chai": "^2.2.0",
     "gulp": "^3.8.11",
-    "minimist": "^1.1.0"
+    "gulp-mocha": "^2.0.0",
+    "minimist": "^1.1.0",
+    "mocha": "^2.2.1"
   }
 }
