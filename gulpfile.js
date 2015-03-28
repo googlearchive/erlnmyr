@@ -91,12 +91,16 @@ gulp.task('test', function() {
  *
  * Sorry for potato quality.
  */
+function processStages(stages, cb) {
+  for (var i = stages.length - 1; i >= 0; i--) {
+    cb = (function(i, cb) { return function(data) { stages[i](data, cb); } })(i, cb);
+  }
+  cb(null);
+};
+
 function buildTask(name, stages) {
   gulp.task(name, function(cb) {
-    for (var i = stages.length - 1; i >= 0; i--) {
-      cb = (function(i, cb) { return function(data) { stages[i](data, cb); } })(i, cb);
-    }
-    cb(null);
+    processStages(stages, cb);
   });
 };
 
@@ -111,3 +115,61 @@ buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFil
 buildTask('generate', [fileReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
 buildTask('tokenStyles', [fileReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
 buildTask('nukeIFrame', [fileReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
+
+/*
+ * experiments
+ */
+
+function collectInputs(inputSpec) {
+  var files = fs.readdirSync('.');
+  return files.filter(inputSpec.exec.bind(inputSpec));
+}
+
+function outputForInput(inputSpec, input, output) {
+  var re = new RegExp(inputSpec);
+  return input.replace(re, output);
+}
+
+function appendEdges(experiment, stages, edges) {
+  var newList = [];
+  for (var j = 0; j < edges.length; j++) {
+    var newStages = stages.concat(edges[j].stages);
+    if (edges[j].output in experiment.tree)
+      newList = newList.concat(appendEdges(experiment, newStages, experiment.tree[edges[j].output]));
+    else
+      newList.push({stages: newStages, output: edges[j].output});
+  }
+  return newList;
+}
+
+function runExperiment(name, experiment) {
+  gulp.task(name, function(cb) {
+    var pipelines = [];
+    for (var i = 0; i < experiment.inputs.length; i++) {
+      var inputs = collectInputs(new RegExp(experiment.inputs[i]));
+      var edges = experiment.tree[experiment.inputs[i]];
+      var stagesList = [];
+      stagesList = appendEdges(experiment, stagesList, edges);
+      for (var j = 0; j < inputs.length; j++) {
+        for (var k = 0; k < stagesList.length; k++) {
+          var pl = [fileReader(inputs[j])].concat(stagesList[k].stages);
+          pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
+          pipelines.push(pl);
+        }
+      }
+    }
+    console.log(pipelines);
+  });
+}
+
+runExperiment('experiment', 
+  { inputs: ["inbox-(.*).json", "inbox.nostyle-(.*).json"],
+    tree: {
+      "inbox-(.*).json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked].html" } ],
+      "inbox.nostyle-(.*).json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked, nostyle].html" },
+                                   { stages: [filter(StyleFilter)], output: "reduced" } ],
+      "reduced": [ { stages: [filter(StyleMinimizationFilter), treeBuilderWriter(HTMLWriter)], 
+                     output: "inbox-$1-[nuked, extracted].html" },
+                   { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked, compressed, nostyle].html" } ]
+    }
+  });
