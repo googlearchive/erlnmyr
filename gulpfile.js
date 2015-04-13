@@ -11,7 +11,11 @@ var StyleFilter = require('./lib/style-filter');
 var StyleMinimizationFilter = require('./lib/style-minimization-filter');
 var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
+<<<<<<< HEAD
 var NukeIFrameFilter = require('./lib/nuke-iframe-filter');
+=======
+var ParseExperiment = require('./lib/parse-experiment');
+>>>>>>> experiment parsing
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -24,11 +28,19 @@ function writeFile(output, data, cb) {
   });
 }
 
-function readFile(filename, cb) {
+function readJSONFile(filename, cb) {
   fs.readFile(filename, 'utf8', function(err, data) {
     if (err)
       throw err;
     var data = JSON.parse(data);
+    cb(data);
+  });
+}
+
+function readFile(filename, cb) {
+  fs.readFile(filename, 'utf8', function(err, data) {
+    if (err)
+      throw err;
     cb(data);
   });
 }
@@ -39,6 +51,10 @@ function readFile(filename, cb) {
  * Each stage accepts a data object and a callback, and is responsible for
  * calling the callback with the result of processing the data.
  */
+
+function JSONReader(filename) {
+  return function(_, cb) { readJSONFile(filename, cb); };
+}
 
 function fileReader(filename) {
   return function(_, cb) { readFile(filename, cb); };
@@ -86,6 +102,10 @@ gulp.task('test', function() {
     }));
 });
 
+function parseExperiment() {
+  return function(data, cb) { cb(new ParseExperiment().parse(data)); };
+}
+
 /*
  * Constructing a pipeline
  *
@@ -107,14 +127,15 @@ function buildTask(name, stages) {
 /*
  * Some example pipelines.
  */
-buildTask('html', [fileReader(options.file), treeBuilderWriter(HTMLWriter), fileOutput('result.html.html')]);
-buildTask('js', [fileReader(options.file), treeBuilderWriter(JSWriter), fileOutput('result.js.html')]);
-buildTask('stats', [fileReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
-buildTask('compactComputedStyle', [fileReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
-buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
-buildTask('generate', [fileReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
-buildTask('tokenStyles', [fileReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
-buildTask('nukeIFrame', [fileReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
+buildTask('html', [JSONReader(options.file), treeBuilderWriter(HTMLWriter), fileOutput('result.html.html')]);
+buildTask('js', [JSONReader(options.file), treeBuilderWriter(JSWriter), fileOutput('result.js.html')]);
+buildTask('stats', [JSONReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
+buildTask('compactComputedStyle', [JSONReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
+buildTask('extractStyle', [JSONReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
+buildTask('generate', [JSONReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
+buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
+buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
+buildTask('parseExperiment', [fileReader(options.file), parseExperiment(), consoleOutput()]);
 
 /*
  * experiments
@@ -127,6 +148,7 @@ function collectInputs(inputSpec) {
 
 function outputForInput(inputSpec, input, output) {
   var re = new RegExp(inputSpec);
+  console.log(inputSpec, input, input.replace(re, output));
   return input.replace(re, output);
 }
 
@@ -146,30 +168,33 @@ function runExperiment(name, experiment) {
   gulp.task(name, function(cb) {
     var pipelines = [];
     for (var i = 0; i < experiment.inputs.length; i++) {
-      var inputs = collectInputs(new RegExp(experiment.inputs[i]));
+      var inputs = collectInputs(new RegExp('^' + experiment.inputs[i] + '$'));
       var edges = experiment.tree[experiment.inputs[i]];
       var stagesList = [];
       stagesList = appendEdges(experiment, stagesList, edges);
       for (var j = 0; j < inputs.length; j++) {
         for (var k = 0; k < stagesList.length; k++) {
-          var pl = [fileReader(inputs[j])].concat(stagesList[k].stages);
+          var pl = [JSONReader(inputs[j])].concat(stagesList[k].stages);
           pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
           pipelines.push(pl);
         }
       }
     }
-    console.log(pipelines);
+    for (var i = 0; i < pipelines.length; i++) {
+      var cb = (function(i, cb) { return function() { processStages(pipelines[i], cb); } })(i, cb);
+    }
+    return cb(null);
   });
 }
 
 runExperiment('experiment', 
-  { inputs: ["inbox-(.*).json", "inbox.nostyle-(.*).json"],
+  { inputs: ["mobile-mail.json", "mobile-mail-nostyle.json"],
     tree: {
-      "inbox-(.*).json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked].html" } ],
-      "inbox.nostyle-(.*).json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked, nostyle].html" },
+      "mobile-mail.json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail.html" } ],
+      "mobile-mail-nostyle.json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail[nostyle].html" },
                                    { stages: [filter(StyleFilter)], output: "reduced" } ],
       "reduced": [ { stages: [filter(StyleMinimizationFilter), treeBuilderWriter(HTMLWriter)], 
-                     output: "inbox-$1-[nuked, extracted].html" },
-                   { stages: [treeBuilderWriter(HTMLWriter)], output: "inbox-$1-[nuked, compressed, nostyle].html" } ]
+                     output: "mobile-mail[extracted].html" },
+                   { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail[compressed, nostyle].html" } ]
     }
   });

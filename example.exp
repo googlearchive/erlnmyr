@@ -1,0 +1,11 @@
+input -nuke-iframe-> -HTMLWriter-> case-1
+input-nostyle -nuke-iframe-> -HTMLWriter-> case-2
+input-nostyle -StyleFilter-> reduced* -nuke-iframe-> -HTMLWriter-> case-3
+reduced* -StyleMinimizationFilter-> -nuke-iframe-> -HTMLWriter-> case-4
+
+input: inbox-(*).json
+input-nostyle: inbox-nostyle-(*).json
+case-1: inbox-\1-\[nuked\].HTMLWriter
+case-2: inbox-\1-\[nuked, nostyle\].HTMLWriter
+case-3: inbox-\1-\[nuked, compressed, nostyle\].HTMLWriter
+case-4: inbox-\1-\[nuked, extracted\].HTMLWriter
