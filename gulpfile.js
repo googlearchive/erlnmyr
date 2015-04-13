@@ -11,6 +11,7 @@ var StyleFilter = require('./lib/style-filter');
 var StyleMinimizationFilter = require('./lib/style-minimization-filter');
 var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
+var NukeIFrameFilter = require('./lib/nuke-iframe-filter');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -109,3 +110,4 @@ buildTask('compactComputedStyle', [fileReader(options.file), filter(StyleFilter)
 buildTask('extractStyle', [fileReader(options.file), filter(StyleMinimizationFilter), fileOutput(options.file + '.filter')]);
 buildTask('generate', [fileReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
 buildTask('tokenStyles', [fileReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
+buildTask('nukeIFrame', [fileReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
