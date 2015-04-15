@@ -1,11 +1,11 @@
-input -nuke-iframe-> -HTMLWriter-> case-1
-input-nostyle -nuke-iframe-> -HTMLWriter-> case-2
-input-nostyle -StyleFilter-> reduced* -nuke-iframe-> -HTMLWriter-> case-3
-reduced* -StyleMinimizationFilter-> -nuke-iframe-> -HTMLWriter-> case-4
+input -NukeIFrameFilter-> -HTMLWriter-> case-1
+input-nostyle -NukeIFrameFilter-> -HTMLWriter-> case-2
+input-nostyle -StyleFilter-> reduced* -NukeIFrameFilter-> -HTMLWriter-> case-3
+reduced* -StyleMinimizationFilter-> -NukeIFrameFilter-> -HTMLWriter-> case-4
 
-input: inbox-(*).json
-input-nostyle: inbox-nostyle-(*).json
-case-1: inbox-\1-\[nuked\].HTMLWriter
-case-2: inbox-\1-\[nuked, nostyle\].HTMLWriter
-case-3: inbox-\1-\[nuked, compressed, nostyle\].HTMLWriter
-case-4: inbox-\1-\[nuked, extracted\].HTMLWriter
+input: mobile-([^-]*).json
+input-nostyle: mobile-([^-]*)-nostyle.json
+case-1: mobile-$1-[nuked].html
+case-2: mobile-$1-[nuked, nostyle].html
+case-3: mobile-$1-[nuked, compressed, nostyle].html
+case-4: mobile-$1-[nuked, extracted].html

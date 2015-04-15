@@ -11,11 +11,8 @@ var StyleFilter = require('./lib/style-filter');
 var StyleMinimizationFilter = require('./lib/style-minimization-filter');
 var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
-<<<<<<< HEAD
 var NukeIFrameFilter = require('./lib/nuke-iframe-filter');
-=======
 var ParseExperiment = require('./lib/parse-experiment');
->>>>>>> experiment parsing
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -135,7 +132,7 @@ buildTask('extractStyle', [JSONReader(options.file), filter(StyleMinimizationFil
 buildTask('generate', [JSONReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
 buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
 buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
-buildTask('parseExperiment', [fileReader(options.file), parseExperiment(), consoleOutput()]);
+buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
 
 /*
  * experiments
@@ -148,7 +145,6 @@ function collectInputs(inputSpec) {
 
 function outputForInput(inputSpec, input, output) {
   var re = new RegExp(inputSpec);
-  console.log(inputSpec, input, input.replace(re, output));
   return input.replace(re, output);
 }
 
@@ -164,37 +160,43 @@ function appendEdges(experiment, stages, edges) {
   return newList;
 }
 
-function runExperiment(name, experiment) {
-  gulp.task(name, function(cb) {
-    var pipelines = [];
-    for (var i = 0; i < experiment.inputs.length; i++) {
-      var inputs = collectInputs(new RegExp('^' + experiment.inputs[i] + '$'));
-      var edges = experiment.tree[experiment.inputs[i]];
-      var stagesList = [];
-      stagesList = appendEdges(experiment, stagesList, edges);
-      for (var j = 0; j < inputs.length; j++) {
-        for (var k = 0; k < stagesList.length; k++) {
-          var pl = [JSONReader(inputs[j])].concat(stagesList[k].stages);
-          pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
-          pipelines.push(pl);
-        }
-      }
-    }
-    for (var i = 0; i < pipelines.length; i++) {
-      var cb = (function(i, cb) { return function() { processStages(pipelines[i], cb); } })(i, cb);
-    }
-    return cb(null);
-  });
+function experimentTask(name, experiment) {
+  gulp.task(name, function(cb) { runExperiment(experiment, cb); });
 }
 
-runExperiment('experiment', 
+function runExperiment(experiment, cb) {
+  var pipelines = [];
+  for (var i = 0; i < experiment.inputs.length; i++) {
+    var inputs = collectInputs(new RegExp('^' + experiment.inputs[i] + '$'));
+    var edges = experiment.tree[experiment.inputs[i]];
+    var stagesList = [];
+    stagesList = appendEdges(experiment, stagesList, edges);
+    for (var j = 0; j < inputs.length; j++) {
+      for (var k = 0; k < stagesList.length; k++) {
+	// FIXME: This relies on the fact that filters and writers are both the same thing
+	// right now (i.e. filter and treeBuilderWriter are the same function).
+        // This could well become a problem in the future.
+        // Also, eval: ew. If there was a local var dict I could look up the constructor name directly.
+        var pl = [JSONReader(inputs[j])].concat(stagesList[k].stages.map(function(a) { return filter(eval(a)); }));
+        pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
+        pipelines.push(pl);
+      }
+    }
+  }
+  for (var i = 0; i < pipelines.length; i++) {
+    var cb = (function(i, cb) { return function() { processStages(pipelines[i], cb); } })(i, cb);
+  }
+  return cb(null);
+}
+
+experimentTask('experiment', 
   { inputs: ["mobile-mail.json", "mobile-mail-nostyle.json"],
     tree: {
-      "mobile-mail.json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail.html" } ],
-      "mobile-mail-nostyle.json": [ { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail[nostyle].html" },
-                                   { stages: [filter(StyleFilter)], output: "reduced" } ],
-      "reduced": [ { stages: [filter(StyleMinimizationFilter), treeBuilderWriter(HTMLWriter)], 
+      "mobile-mail.json": [ { stages: ['HTMLWriter'], output: "mobile-mail.html" } ],
+      "mobile-mail-nostyle.json": [ { stages: ['HTMLWriter'], output: "mobile-mail[nostyle].html" },
+                                   { stages: ['StyleFilter'], output: "reduced" } ],
+      "reduced": [ { stages: ['StyleMinimizationFilter', 'HTMLWriter'], 
                      output: "mobile-mail[extracted].html" },
-                   { stages: [treeBuilderWriter(HTMLWriter)], output: "mobile-mail[compressed, nostyle].html" } ]
+                   { stages: ['HTMLWriter'], output: "mobile-mail[compressed, nostyle].html" } ]
     }
   });
