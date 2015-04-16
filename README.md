@@ -83,14 +83,17 @@ and:
   HTMLWriter
 
 So for example, if I started with the following two files:
-mobile-mail.json
-mobile-mail-nostyle.json
+* `mobile-mail.json`
+* `mobile-mail-nostyle.json`
+
+and ran
+`gulp --file example.exp runExperiment`
 
 then I would end up with
-mobile-mail-[nuked].html
-mobile-mail-[nuked, nostyle].html
-mobile-mail-[nuked, compressed, nostyle].html
-mobile-mail-[nuked, extracted].html
+* `mobile-mail-[nuked].html`
+* `mobile-mail-[nuked, nostyle].html`
+* `mobile-mail-[nuked, compressed, nostyle].html`
+* `mobile-mail-[nuked, extracted].html`
 
 ### Experiment data structure
 
