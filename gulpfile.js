@@ -189,14 +189,3 @@ function runExperiment(experiment, cb) {
   return cb(null);
 }
 
-experimentTask('experiment', 
-  { inputs: ["mobile-mail.json", "mobile-mail-nostyle.json"],
-    tree: {
-      "mobile-mail.json": [ { stages: ['HTMLWriter'], output: "mobile-mail.html" } ],
-      "mobile-mail-nostyle.json": [ { stages: ['HTMLWriter'], output: "mobile-mail[nostyle].html" },
-                                   { stages: ['StyleFilter'], output: "reduced" } ],
-      "reduced": [ { stages: ['StyleMinimizationFilter', 'HTMLWriter'], 
-                     output: "mobile-mail[extracted].html" },
-                   { stages: ['HTMLWriter'], output: "mobile-mail[compressed, nostyle].html" } ]
-    }
-  });
