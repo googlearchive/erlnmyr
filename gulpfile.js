@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
+var spawn = require('child_process').spawn;
 
 var TreeBuilder = require('./lib/tree-builder');
 var HTMLWriter = require('./lib/html-writer');
@@ -90,6 +91,24 @@ function consoleOutput() {
   return function(data, cb) { console.log(data); cb(); };
 }
 
+// update PYTHONPATH for all telemetry invocations
+if (options.chromium !== undefined)
+  process.env.PYTHONPATH += ':' + options.chromium + '/tools/telemetry';
+
+function telemetryTask(pyScript, pyArgs) {
+  return function(data, cb) {
+    var result = "";
+    var task = spawn('python', ['telemetry/' + pyScript].concat(pyArgs));
+    task.stdout.on('data', function(data) { result += data; });
+    task.stderr.on('data', function(data) { console.log('stderr: ' + data); });
+    task.on('close', function(code) { cb(result); });
+  };
+}
+
+function telemetrySave(browser, url) {
+  return telemetryTask('save.py', ['--browser='+browser, '--', url]);
+}
+
 gulp.task('test', function() {
   return gulp.src('tests/*.js', {read: false})
       .pipe(mocha({
@@ -133,6 +152,7 @@ buildTask('generate', [JSONReader(options.file), fabricator(SchemaBasedFabricato
 buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
 buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
 buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
+buildTask('get', [telemetrySave(options.saveBrowser, options.url), fileOutput('result.json')]);
 
 /*
  * experiments
