@@ -3,6 +3,8 @@ var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
 var spawn = require('child_process').spawn;
+var exec = require('child_process').exec;
+var http = require('http');
 
 var TreeBuilder = require('./lib/tree-builder');
 var HTMLWriter = require('./lib/html-writer');
@@ -96,7 +98,7 @@ if (options.chromium !== undefined)
   process.env.PYTHONPATH += ':' + options.chromium + '/tools/telemetry';
 
 function telemetryTask(pyScript, pyArgs) {
-  return function(data, cb) {
+  return function(unused, cb) {
     var result = "";
     var task = spawn('python', ['telemetry/' + pyScript].concat(pyArgs));
     task.stdout.on('data', function(data) { result += data; });
@@ -106,7 +108,49 @@ function telemetryTask(pyScript, pyArgs) {
 }
 
 function telemetrySave(browser, url) {
-  return telemetryTask('save.py', ['--browser='+browser, '--', url]);
+  return function(unused, cb) {
+    telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+  };
+}
+
+function startADBForwarding(then) {
+  exec(options.adb + ' reverse tcp:8000 tcp:8000', then);
+}
+
+function stopADBForwarding(then) {
+  exec(options.adb + ' reverse --remove tcp:8000', then);
+}
+
+function startServing(data) {
+  return http.createServer(function(req, res) {
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end(data);
+  }).listen(8000, '127.0.0.1');
+}
+
+function stopServing(server) {
+  server.close();
+}
+
+// perform perf testing of the provided url
+function telemetryPerf(browser, url) {
+  return telemetryTask('perf.py', ['--browser='+browser, '--', url]);
+}
+
+// start a local server and perf test pipeline-provided data
+function simplePerfer(browser) {
+  var telemetryStep = telemetryPerf(browser, 'http://localhost:8000');
+  return function(data, cb) {
+    startADBForwarding(function() {
+      var server = startServing(data);
+      telemetryStep(undefined, function(result) {
+        stopServing(server);
+        stopADBForwarding(function() {
+          cb(result);
+        });
+      });
+    });
+  };
 }
 
 gulp.task('test', function() {
@@ -153,6 +197,8 @@ buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter)
 buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
 buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
 buildTask('get', [telemetrySave(options.saveBrowser, options.url), fileOutput('result.json')]);
+buildTask('perf', [telemetryPerf(options.perfBrowser, options.url), fileOutput('trace.json')]);
+buildTask('endToEnd', [telemetrySave(options.saveBrowser, options.url), treeBuilderWriter(HTMLWriter), simplePerfer(options.perfBrowser), fileOutput('trace.json')]);
 
 /*
  * experiments
