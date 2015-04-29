@@ -17,6 +17,8 @@ var ParseExperiment = require('./lib/parse-experiment');
 var options = parseArgs(process.argv.slice(2));
 
 function writeFile(output, data, cb) {
+  if (typeof data !== 'string')
+    data = JSON.stringify(data);
   fs.writeFile(output, data, function(err) {
     if (err)
       throw err;
