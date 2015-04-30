@@ -140,8 +140,8 @@ function telemetryPerf(browser, url) {
 }
 
 // start a local server and perf test pipeline-provided data
-function simplePerfer(browser) {
-  var telemetryStep = telemetryPerf(browser, 'http://localhost:8000');
+function simplePerfer() {
+  var telemetryStep = telemetryPerf(options.perfBrowser, 'http://localhost:8000');
   return function(data, cb) {
     startADBForwarding(function() {
       var server = startServing(data);
@@ -200,15 +200,24 @@ buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fil
 buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
 buildTask('get', [telemetrySave(options.saveBrowser, options.url), fileOutput('result.json')]);
 buildTask('perf', [telemetryPerf(options.perfBrowser, options.url), fileOutput('trace.json')]);
-buildTask('endToEnd', [telemetrySave(options.saveBrowser, options.url), treeBuilderWriter(HTMLWriter), simplePerfer(options.perfBrowser), fileOutput('trace.json')]);
+buildTask('endToEnd', [telemetrySave(options.saveBrowser, options.url), treeBuilderWriter(HTMLWriter), simplePerfer(), fileOutput('trace.json')]);
 
 /*
  * experiments
  */
 
 function collectInputs(inputSpec) {
+  if (inputSpec.substring(0, 7) == 'http://')
+    return [inputSpec];
+  var re = new RegExp('^' + inputSpec + '$');
   var files = fs.readdirSync('.');
-  return files.filter(inputSpec.exec.bind(inputSpec));
+  return files.filter(re.exec.bind(re));
+}
+
+function readerForInput(name) {
+  if (name.substring(0, 7) == 'http://')
+    return telemetrySave(options.saveBrowser, name)
+  return JSONReader(name);
 }
 
 function outputForInput(inputSpec, input, output) {
@@ -232,20 +241,26 @@ function experimentTask(name, experiment) {
   gulp.task(name, function(cb) { runExperiment(experiment, cb); });
 }
 
+function stageFor(stageName) {
+  if (stageName[0].toLowerCase() == stageName[0])
+    return eval(stageName)();
+  // FIXME: This relies on the fact that filters and writers are both the same thing
+  // right now (i.e. filter and treeBuilderWriter are the same function).
+  // This could well become a problem in the future.
+  // Also, eval: ew. If there was a local var dict I could look up the constructor name directly.
+  return filter(eval(stageName));
+}
+
 function runExperiment(experiment, cb) {
   var pipelines = [];
   for (var i = 0; i < experiment.inputs.length; i++) {
-    var inputs = collectInputs(new RegExp('^' + experiment.inputs[i] + '$'));
+    var inputs = collectInputs(experiment.inputs[i]);
     var edges = experiment.tree[experiment.inputs[i]];
     var stagesList = [];
     stagesList = appendEdges(experiment, stagesList, edges);
     for (var j = 0; j < inputs.length; j++) {
       for (var k = 0; k < stagesList.length; k++) {
-	// FIXME: This relies on the fact that filters and writers are both the same thing
-	// right now (i.e. filter and treeBuilderWriter are the same function).
-        // This could well become a problem in the future.
-        // Also, eval: ew. If there was a local var dict I could look up the constructor name directly.
-        var pl = [JSONReader(inputs[j])].concat(stagesList[k].stages.map(function(a) { return filter(eval(a)); }));
+        var pl = [readerForInput(inputs[j])].concat(stagesList[k].stages.map(function(a) { return stageFor(a); }));
         pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
         pipelines.push(pl);
       }
