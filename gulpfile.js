@@ -292,6 +292,6 @@ function runExperiment(experiment, cb) {
       }
     })(i, cb);
   }
-  return cb(null);
+  cb(null);
 }
 
