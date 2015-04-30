@@ -21,12 +21,15 @@ var options = parseArgs(process.argv.slice(2));
 
 function writeFile(output, data, cb) {
   if (typeof data !== 'string')
-    data = JSON.stringify(data);
-  fs.writeFile(output, data, function(err) {
+    stringData = JSON.stringify(data);
+  else
+    stringData = data;
+  fs.writeFile(output, stringData, function(err) {
     if (err)
       throw err;
     console.log('written results into \"' + output + '\".');
-    cb();
+    // passthrough data
+    cb(data);
   });
 }
 
@@ -173,16 +176,22 @@ function parseExperiment() {
  *
  * Sorry for potato quality.
  */
-function processStages(stages, cb) {
+function processStages(stages, cb, fail) {
   for (var i = stages.length - 1; i >= 0; i--) {
-    cb = (function(i, cb) { return function(data) { stages[i](data, cb); } })(i, cb);
+    cb = (function(i, cb) { return function(data) {
+      try {
+        stages[i](data, cb);
+      } catch (e) {
+        fail(e);
+      }
+    } })(i, cb);
   }
   cb(null);
 };
 
 function buildTask(name, stages) {
   gulp.task(name, function(cb) {
-    processStages(stages, cb);
+    processStages(stages, cb, function(e) { throw e; });
   });
 };
 
@@ -225,14 +234,19 @@ function outputForInput(inputSpec, input, output) {
   return input.replace(re, output);
 }
 
+// Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
   var newList = [];
   for (var j = 0; j < edges.length; j++) {
     var newStages = stages.concat(edges[j].stages);
-    if (edges[j].output in experiment.tree)
+    if (edges[j].output in experiment.tree) {
+      if (edges[j].output.substring(edges[j].output.length - 1) !== '*'){
+        newStages.push('output:' + edges[j].output);
+      }
       newList = newList.concat(appendEdges(experiment, newStages, experiment.tree[edges[j].output]));
-    else
+    } else {
       newList.push({stages: newStages, output: edges[j].output});
+    }
   }
   return newList;
 }
@@ -241,7 +255,10 @@ function experimentTask(name, experiment) {
   gulp.task(name, function(cb) { runExperiment(experiment, cb); });
 }
 
-function stageFor(stageName) {
+function stageFor(stageName, inputSpec, input) {
+  if (stageName.substring(0, 7) == 'output:') {
+    return fileOutput(outputForInput(inputSpec, input, stageName.substring(7)));
+  }
   if (stageName[0].toLowerCase() == stageName[0])
     return eval(stageName)();
   // FIXME: This relies on the fact that filters and writers are both the same thing
@@ -260,15 +277,21 @@ function runExperiment(experiment, cb) {
     stagesList = appendEdges(experiment, stagesList, edges);
     for (var j = 0; j < inputs.length; j++) {
       for (var k = 0; k < stagesList.length; k++) {
-        var pl = [readerForInput(inputs[j])].concat(stagesList[k].stages.map(function(a) { return stageFor(a); }));
+        var pl = [readerForInput(inputs[j])].concat(stagesList[k].stages.map(function(a) { return stageFor(a, experiment.inputs[i], inputs[j]); }));
         pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
         pipelines.push(pl);
       }
     }
   }
   for (var i = 0; i < pipelines.length; i++) {
-    var cb = (function(i, cb) { return function() { processStages(pipelines[i], cb); } })(i, cb);
+    var cb = (function(i, cb) {
+      return function() {
+        processStages(pipelines[i], cb, function(e) {
+          console.log('failed pipeline', e); cb(null);
+        });
+      }
+    })(i, cb);
   }
-  return cb(null);
+  cb(null);
 }
 
