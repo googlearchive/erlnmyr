@@ -84,7 +84,7 @@ function fabricator(FabType) {
 function treeBuilderWriter(WriterType) {
   return function(data, cb) {
     var writer = new WriterType();
-    var builder = new TreeBuilder(writer);
+    var builder = new TreeBuilder();
     builder.build(data);
     builder.write(writer);
     cb(writer.getHTML());
@@ -305,7 +305,7 @@ function runExperiment(experiment, incb) {
     var cb = (function(i, cb) {
       return function() {
         processStages(pipelines[i], cb, function(e) {
-          console.log('failed pipeline', e); cb(null);
+          console.log('failed pipeline', e, '\n', e.stack); cb(null);
         });
       }
     })(i, cb);
