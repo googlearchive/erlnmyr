@@ -99,8 +99,12 @@ function consoleOutput() {
 }
 
 // update PYTHONPATH for all telemetry invocations
-if (options.chromium !== undefined)
-  process.env.PYTHONPATH += ':' + options.chromium + '/tools/telemetry';
+function updatePYTHONPATH() {
+  if (options.chromium !== undefined)
+    process.env.PYTHONPATH += ':' + options.chromium + '/tools/telemetry';
+}
+
+updatePYTHONPATH();
 
 function telemetryTask(pyScript, pyArgs) {
   return function(unused, cb) {
@@ -268,7 +272,19 @@ function stageFor(stageName, inputSpec, input) {
   return filter(eval(stageName));
 }
 
+function updateOptions(optionsDict) {
+  for (key in optionsDict) {
+    if (key in options) {
+      console.warn('Overriding option ' + key + ' from commandline value ' + options[key] + ' to ' + optionsDict[key]);
+    }
+    options[key] = optionsDict[key];
+  }
+  if (optionsDict.chromium)
+    updatePYTHONPATH();
+}
+
 function runExperiment(experiment, cb) {
+  updateOptions(experiment.flags);
   var pipelines = [];
   for (var i = 0; i < experiment.inputs.length; i++) {
     var inputs = collectInputs(experiment.inputs[i]);
