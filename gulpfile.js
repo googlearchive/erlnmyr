@@ -16,6 +16,7 @@ var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
 var NukeIFrameFilter = require('./lib/nuke-iframe-filter');
 var ParseExperiment = require('./lib/parse-experiment');
+var StyleDetokenizerFilter = require('./lib/style-detokenizer-filter');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -283,7 +284,7 @@ function updateOptions(optionsDict) {
     updatePYTHONPATH();
 }
 
-function runExperiment(experiment, cb) {
+function runExperiment(experiment, incb) {
   updateOptions(experiment.flags);
   var pipelines = [];
   for (var i = 0; i < experiment.inputs.length; i++) {
@@ -299,6 +300,7 @@ function runExperiment(experiment, cb) {
       }
     }
   }
+  var cb = function() { incb(); }
   for (var i = 0; i < pipelines.length; i++) {
     var cb = (function(i, cb) {
       return function() {
