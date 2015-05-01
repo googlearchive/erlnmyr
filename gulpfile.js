@@ -16,6 +16,7 @@ var StyleTokenizerFilter = require('./lib/style-tokenizer-filter');
 var SchemaBasedFabricator = require('./lib/schema-based-fabricator');
 var NukeIFrameFilter = require('./lib/nuke-iframe-filter');
 var ParseExperiment = require('./lib/parse-experiment');
+var StyleDetokenizerFilter = require('./lib/style-detokenizer-filter');
 
 var options = parseArgs(process.argv.slice(2));
 
@@ -83,7 +84,7 @@ function fabricator(FabType) {
 function treeBuilderWriter(WriterType) {
   return function(data, cb) {
     var writer = new WriterType();
-    var builder = new TreeBuilder(writer);
+    var builder = new TreeBuilder();
     builder.build(data);
     builder.write(writer);
     cb(writer.getHTML());
@@ -283,7 +284,7 @@ function updateOptions(optionsDict) {
     updatePYTHONPATH();
 }
 
-function runExperiment(experiment, cb) {
+function runExperiment(experiment, incb) {
   updateOptions(experiment.flags);
   var pipelines = [];
   for (var i = 0; i < experiment.inputs.length; i++) {
@@ -299,11 +300,12 @@ function runExperiment(experiment, cb) {
       }
     }
   }
+  var cb = function() { incb(); }
   for (var i = 0; i < pipelines.length; i++) {
     var cb = (function(i, cb) {
       return function() {
         processStages(pipelines[i], cb, function(e) {
-          console.log('failed pipeline', e); cb(null);
+          console.log('failed pipeline', e, '\n', e.stack); cb(null);
         });
       }
     })(i, cb);
