@@ -10,7 +10,5 @@ case-2: mobile-$1-[nuked, nostyle].html
 case-3: mobile-$1-[nuked, compressed, nostyle].html
 case-4: mobile-$1-[nuked, extracted].html
 
-chromium: /usr/local/google/home/shanestephens/src/chromium/src
 saveBrowser: system
 perfBrowser: android-jb-system-chrome
-adb: ~/android-sdk-linux/platform-tools/adb
