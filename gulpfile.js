@@ -266,6 +266,8 @@ function stageFor(stageName, inputSpec, input) {
   }
   if (stageName[0].toLowerCase() == stageName[0])
     return eval(stageName)();
+  if (stageName.indexOf('Fabricator') !== -1)
+    return fabricator(eval(stageName));
   // FIXME: This relies on the fact that filters and writers are both the same thing
   // right now (i.e. filter and treeBuilderWriter are the same function).
   // This could well become a problem in the future.
