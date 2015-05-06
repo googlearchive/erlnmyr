@@ -215,10 +215,14 @@ gulp.task('test', function() {
 });
 
 function parseExperiment() {
-  return function(data, cb) { cb(new ParseExperiment().parse(data)); };
+  return {
+    impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
+    input: 'string',
+    output: 'experiment'
+  };
 }
 
-var primitives = {'string': true, 'JSON': true, "'a": true};
+var primitives = {'string': true, 'JSON': true, "'a": true, 'experiment': true};
 function isPrimitive(type) {
   return primitives[type] == true;
 }
@@ -303,7 +307,7 @@ buildTask('extractStyle', [JSONReader(options.file), filter(StyleMinimizationFil
 buildTask('generate', [JSONReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
 buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
 buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
-buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
+buildTask('runExperiment', [fileReader(options.file), parseExperiment(), experimentPhase()]);
 buildTask('get', [telemetrySave(options.saveBrowser, options.url), fileOutput('result.json')]);
 buildTask('perf', [telemetryPerf(options.perfBrowser, options.url), fileOutput('trace.json')]);
 buildTask('endToEnd', [telemetrySave(options.saveBrowser, options.url), treeBuilderWriter(HTMLWriter), simplePerfer(), fileOutput('trace.json')]);
@@ -407,3 +411,10 @@ function runExperiment(experiment, incb) {
   cb(null);
 }
 
+function experimentPhase() {
+  return {
+    impl: runExperiment,
+    input: 'experiment',
+    output: 'unit'
+  };
+}
