@@ -1,6 +1,7 @@
 var gulp = require('gulp');
 var parseArgs = require('minimist');
 var fs = require('fs');
+var assert = require('chai').assert;
 var mocha = require('gulp-mocha');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
@@ -59,44 +60,73 @@ function readFile(filename, cb) {
  */
 
 function JSONReader(filename) {
-  return function(_, cb) { readJSONFile(filename, cb); };
+  return { 
+    impl: function(_, cb) { readJSONFile(filename, cb); },
+    input: 'unit',
+    output: 'JSON'
+  };
 }
 
 function fileReader(filename) {
-  return function(_, cb) { readFile(filename, cb); };
-}
-
-function nullFilter() {
-  return function(data, cb) { cb(data); }
+  return {
+    impl: function(_, cb) { readFile(filename, cb); },
+    input: 'unit',
+    output: 'string'
+  };
 }
 
 function filter(FilterType) {
-  return treeBuilderWriter(FilterType);
+  return {
+    impl: treeBuilder(FilterType),
+    input: 'JSON',
+    output: 'JSON',
+  };
 }
 
-function fabricator(FabType) {
-  return function(data, cb) {
-    var fab = new FabType(data);
-    cb(fab.fabricate());
-  }
+function fabricator(FabType, input) {
+  input = input || 'JSON';
+  return {
+    impl: function(data, cb) {
+      var fab = new FabType(data);
+      cb(fab.fabricate());
+    },
+    input: input,
+    output: 'JSON'
+  };
 }
 
-function treeBuilderWriter(WriterType) {
+function treeBuilder(WriterType) {
   return function(data, cb) {
     var writer = new WriterType();
     var builder = new TreeBuilder();
     builder.build(data);
     builder.write(writer);
     cb(writer.getHTML());
-  }
+  };
 };
 
+function treeBuilderWriter(WriterType) {
+  return {
+    impl: treeBuilder(WriterType),
+    input: 'JSON',
+    output: 'string'
+  };
+}
+
 function fileOutput(filename) {
-  return function(data, cb) { writeFile(filename, data, cb); };
+  return {
+    impl: function(data, cb) { writeFile(filename, data, cb); },
+    input: "'a",
+    output: "'a"
+  };
 }
 
 function consoleOutput() {
-  return function(data, cb) { console.log(data); cb(); };
+  return {
+    impl: function(data, cb) { console.log(data); cb(data); },
+    input: "'a",
+    output: "'a"
+  };
 }
 
 // update PYTHONPATH for all telemetry invocations
@@ -118,8 +148,12 @@ function telemetryTask(pyScript, pyArgs) {
 }
 
 function telemetrySave(browser, url) {
-  return function(unused, cb) {
-    telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+  return {
+    impl: function(unused, cb) {
+      telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    },
+    input: 'unit',
+    output: 'JSON'  
   };
 }
 
@@ -144,22 +178,30 @@ function stopServing(server) {
 
 // perform perf testing of the provided url
 function telemetryPerf(browser, url) {
-  return telemetryTask('perf.py', ['--browser='+browser, '--', url]);
+  return {
+    impl: telemetryTask('perf.py', ['--browser='+browser, '--', url]),
+    input: 'unit',
+    output: 'JSON'
+  };
 }
 
 // start a local server and perf test pipeline-provided data
 function simplePerfer() {
   var telemetryStep = telemetryPerf(options.perfBrowser, 'http://localhost:8000');
-  return function(data, cb) {
-    startADBForwarding(function() {
-      var server = startServing(data);
-      telemetryStep(undefined, function(result) {
-        stopServing(server);
-        stopADBForwarding(function() {
-          cb(result);
+  return {
+    impl: function(data, cb) {
+      startADBForwarding(function() {
+        var server = startServing(data);
+        telemetryStep.impl(undefined, function(result) {
+          stopServing(server);
+          stopADBForwarding(function() {
+            cb(result);
+          });
         });
       });
-    });
+    },
+    input: 'string',
+    output: 'JSON'
   };
 }
 
@@ -173,7 +215,54 @@ gulp.task('test', function() {
 });
 
 function parseExperiment() {
-  return function(data, cb) { cb(new ParseExperiment().parse(data)); };
+  return {
+    impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
+    input: 'string',
+    output: 'experiment'
+  };
+}
+
+var primitives = {'string': true, 'JSON': true, "'a": true, 'experiment': true};
+function isPrimitive(type) {
+  return primitives[type] == true;
+}
+
+function isTypeVar(type) {
+  return type == "'a";
+}
+
+function substitute(type, coersion) {
+  assert.isTrue(isPrimitive(type) && isTypeVar(type), type + ' is a primitive type var');
+  var subs = {};
+  subs.value = coersion[type];
+  assert.equal(Object.keys(coersion).length, 1);
+  subs.coersion = {};
+  return subs;
+}
+
+// TODO complete this, deal with multiple type vars if they ever arise.
+function coerce(left, right, coersion) {
+  assert.isTrue(isPrimitive(left), left + ' is a primitive type');
+  assert.isTrue(isPrimitive(right), right + ' is a primitive type');
+
+  // 'a -> 'a, string -> string, JSON -> JSON, etc.
+  if (left == right)
+    return coersion;
+
+  // 'a -> string
+  if (isTypeVar(left)) {
+    var subs = substitute(left, coersion);
+    if (subs.value == right)
+      return subs.coersion;
+  }
+
+  // string -> 'a
+  if (isTypeVar(right)) {
+    coersion[right] = left;
+    return coersion;
+  }
+
+  return undefined;
 }
 
 /*
@@ -182,10 +271,16 @@ function parseExperiment() {
  * Sorry for potato quality.
  */
 function processStages(stages, cb, fail) {
+  assert.equal(stages[0].input, 'unit');
+  var coersion = {};
+  for (var i = 0; i < stages.length - 1; i++) {
+    coersion = coerce(stages[i].output, stages[i + 1].input, coersion);
+    assert.isDefined(coersion, "Type checking failed for " + stages[i].output + " -> " + stages[i + 1].input);
+  }
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
       try {
-        stages[i](data, cb);
+        stages[i].impl(data, cb);
       } catch (e) {
         fail(e);
       }
@@ -195,7 +290,8 @@ function processStages(stages, cb, fail) {
 };
 
 function buildTask(name, stages) {
-  gulp.task(name, function(cb) {
+  gulp.task(name, function(incb) {
+    var cb = function(data) { incb(); };
     processStages(stages, cb, function(e) { throw e; });
   });
 };
@@ -211,7 +307,7 @@ buildTask('extractStyle', [JSONReader(options.file), filter(StyleMinimizationFil
 buildTask('generate', [JSONReader(options.file), fabricator(SchemaBasedFabricator), fileOutput(options.file + '.gen')]);
 buildTask('tokenStyles', [JSONReader(options.file), filter(StyleTokenizerFilter), fileOutput(options.file + '.filter')]);
 buildTask('nukeIFrame', [JSONReader(options.file), filter(NukeIFrameFilter), fileOutput(options.file + '.filter')]);
-buildTask('runExperiment', [fileReader(options.file), parseExperiment(), runExperiment, consoleOutput()]);
+buildTask('runExperiment', [fileReader(options.file), parseExperiment(), experimentPhase()]);
 buildTask('get', [telemetrySave(options.saveBrowser, options.url), fileOutput('result.json')]);
 buildTask('perf', [telemetryPerf(options.perfBrowser, options.url), fileOutput('trace.json')]);
 buildTask('endToEnd', [telemetrySave(options.saveBrowser, options.url), treeBuilderWriter(HTMLWriter), simplePerfer(), fileOutput('trace.json')]);
@@ -315,3 +411,10 @@ function runExperiment(experiment, incb) {
   cb(null);
 }
 
+function experimentPhase() {
+  return {
+    impl: runExperiment,
+    input: 'experiment',
+    output: 'unit'
+  };
+}
