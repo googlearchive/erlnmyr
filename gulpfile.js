@@ -59,44 +59,73 @@ function readFile(filename, cb) {
  */
 
 function JSONReader(filename) {
-  return function(_, cb) { readJSONFile(filename, cb); };
+  return { 
+    impl: function(_, cb) { readJSONFile(filename, cb); },
+    input: 'unit',
+    output: 'JSON'
+  };
 }
 
 function fileReader(filename) {
-  return function(_, cb) { readFile(filename, cb); };
-}
-
-function nullFilter() {
-  return function(data, cb) { cb(data); }
+  return {
+    impl: function(_, cb) { readFile(filename, cb); },
+    input: 'unit',
+    output: 'string'
+  };
 }
 
 function filter(FilterType) {
-  return treeBuilderWriter(FilterType);
+  return {
+    impl: treeBuilder(FilterType),
+    input: 'JSON',
+    output: 'JSON',
+  };
 }
 
-function fabricator(FabType) {
-  return function(data, cb) {
-    var fab = new FabType(data);
-    cb(fab.fabricate());
-  }
+function fabricator(FabType, input) {
+  input = input || 'JSON';
+  return {
+    impl: function(data, cb) {
+      var fab = new FabType(data);
+      cb(fab.fabricate());
+    },
+    input: input,
+    output: 'JSON'
+  };
 }
 
-function treeBuilderWriter(WriterType) {
+function treeBuilder(WriterType) {
   return function(data, cb) {
     var writer = new WriterType();
     var builder = new TreeBuilder();
     builder.build(data);
     builder.write(writer);
     cb(writer.getHTML());
-  }
+  };
 };
 
+function treeBuilderWriter(WriterType) {
+  return {
+    impl: treeBuilder(WriterType),
+    input: 'JSON',
+    output: 'string'
+  };
+}
+
 function fileOutput(filename) {
-  return function(data, cb) { writeFile(filename, data, cb); };
+  return {
+    impl: function(data, cb) { writeFile(filename, data, cb); },
+    input: "'a",
+    output: "'a"
+  };
 }
 
 function consoleOutput() {
-  return function(data, cb) { console.log(data); cb(); };
+  return {
+    impl: function(data, cb) { console.log(data); cb(data); },
+    input: "'a",
+    output: "'a"
+  };
 }
 
 // update PYTHONPATH for all telemetry invocations
@@ -118,8 +147,12 @@ function telemetryTask(pyScript, pyArgs) {
 }
 
 function telemetrySave(browser, url) {
-  return function(unused, cb) {
-    telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+  return {
+    impl: function(unused, cb) {
+      telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    },
+    input: 'unit',
+    output: 'JSON'  
   };
 }
 
@@ -144,22 +177,30 @@ function stopServing(server) {
 
 // perform perf testing of the provided url
 function telemetryPerf(browser, url) {
-  return telemetryTask('perf.py', ['--browser='+browser, '--', url]);
+  return {
+    impl: telemetryTask('perf.py', ['--browser='+browser, '--', url]),
+    input: 'unit',
+    output: 'JSON'
+  };
 }
 
 // start a local server and perf test pipeline-provided data
 function simplePerfer() {
   var telemetryStep = telemetryPerf(options.perfBrowser, 'http://localhost:8000');
-  return function(data, cb) {
-    startADBForwarding(function() {
-      var server = startServing(data);
-      telemetryStep(undefined, function(result) {
-        stopServing(server);
-        stopADBForwarding(function() {
-          cb(result);
+  return {
+    impl: function(data, cb) {
+      startADBForwarding(function() {
+        var server = startServing(data);
+        telemetryStep.impl(undefined, function(result) {
+          stopServing(server);
+          stopADBForwarding(function() {
+            cb(result);
+          });
         });
       });
-    });
+    },
+    input: 'string',
+    output: 'JSON'
   };
 }
 
@@ -185,7 +226,7 @@ function processStages(stages, cb, fail) {
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
       try {
-        stages[i](data, cb);
+        stages[i].impl(data, cb);
       } catch (e) {
         fail(e);
       }
