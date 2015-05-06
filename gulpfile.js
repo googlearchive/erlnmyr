@@ -1,6 +1,7 @@
 var gulp = require('gulp');
 var parseArgs = require('minimist');
 var fs = require('fs');
+var assert = require('chai').assert;
 var mocha = require('gulp-mocha');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
@@ -217,12 +218,61 @@ function parseExperiment() {
   return function(data, cb) { cb(new ParseExperiment().parse(data)); };
 }
 
+var primitives = {'string': true, 'JSON': true, "'a": true};
+function isPrimitive(type) {
+  return primitives[type] == true;
+}
+
+function isTypeVar(type) {
+  return type == "'a";
+}
+
+function substitute(type, coersion) {
+  assert.isTrue(isPrimitive(type) && isTypeVar(type), type + ' is a primitive type var');
+  var subs = {};
+  subs.value = coersion[type];
+  assert.equal(Object.keys(coersion).length, 1);
+  subs.coersion = {};
+  return subs;
+}
+
+// TODO complete this, deal with multiple type vars if they ever arise.
+function coerce(left, right, coersion) {
+  assert.isTrue(isPrimitive(left), left + ' is a primitive type');
+  assert.isTrue(isPrimitive(right), right + ' is a primitive type');
+
+  // 'a -> 'a, string -> string, JSON -> JSON, etc.
+  if (left == right)
+    return coersion;
+
+  // 'a -> string
+  if (isTypeVar(left)) {
+    var subs = substitute(left, coersion);
+    if (subs.value == right)
+      return subs.coersion;
+  }
+
+  // string -> 'a
+  if (isTypeVar(right)) {
+    coersion[right] = left;
+    return coersion;
+  }
+
+  return undefined;
+}
+
 /*
  * Constructing a pipeline
  *
  * Sorry for potato quality.
  */
 function processStages(stages, cb, fail) {
+  assert.equal(stages[0].input, 'unit');
+  var coersion = {};
+  for (var i = 0; i < stages.length - 1; i++) {
+    coersion = coerce(stages[i].output, stages[i + 1].input, coersion);
+    assert.isDefined(coersion, "Type checking failed for " + stages[i].output + " -> " + stages[i + 1].input);
+  }
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
       try {
@@ -236,7 +286,8 @@ function processStages(stages, cb, fail) {
 };
 
 function buildTask(name, stages) {
-  gulp.task(name, function(cb) {
+  gulp.task(name, function(incb) {
+    var cb = function(data) { incb(); };
     processStages(stages, cb, function(e) { throw e; });
   });
 };
