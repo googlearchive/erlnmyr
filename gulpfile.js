@@ -67,6 +67,14 @@ function JSONReader(filename) {
   };
 }
 
+function fileToJSON() {
+  return {
+    impl: readJSONFile,
+    input: 'string',
+    output: 'JSON'
+  };
+}
+
 function fileReader(filename) {
   return {
     impl: function(_, cb) { readFile(filename, cb); },
@@ -114,18 +122,29 @@ function treeBuilderWriter(WriterType) {
 }
 
 function fileOutput(filename) {
+  var typeVar = newTypeVar();
   return {
     impl: function(data, cb) { writeFile(filename, data, cb); },
-    input: "'a",
-    output: "'a"
+    input: typeVar,
+    output: typeVar 
+  };
+}
+
+function toFile() {
+  var typeVar = newTypeVar();
+  return {
+    impl: function(data, cb) { writeFile(data.right, data.left, cb); },
+    input: "(" + typeVar + ",string)",
+    output: typeVar
   };
 }
 
 function consoleOutput() {
+  var typeVar = newTypeVar();
   return {
     impl: function(data, cb) { console.log(data); cb(data); },
-    input: "'a",
-    output: "'a"
+    input: typeVar,
+    output: typeVar 
   };
 }
 
@@ -222,32 +241,89 @@ function parseExperiment() {
   };
 }
 
-var primitives = {'string': true, 'JSON': true, "'a": true, 'experiment': true};
+var primitives = {'string': true, 'JSON': true, 'experiment': true};
 function isPrimitive(type) {
-  return primitives[type] == true;
+  return primitives[type] == true || isTypeVar(type);
+}
+
+var typeVarID = 0;
+
+function newTypeVar() {
+  return "'" + (typeVarID++);
 }
 
 function isTypeVar(type) {
-  return type == "'a";
+  return type[0] == "'";
+}
+
+function isList(type) {
+  return type[0] == '[' && type[type.length - 1] == ']';
+}
+
+function delist(type) {
+  assert.isTrue(isList(type));
+  return type.slice(1, type.length - 1);
+}
+
+function isTuple(type) {
+  return /\(([^,].*),([^,].*)\)/.exec(type) !== null;
+}
+
+function leftType(type) {
+  assert.isTrue(isTuple(type));
+  return /\(([^,].*),([^,].*)\)/.exec(type)[1];
+}
+
+function rightType(type) {
+  assert.isTrue(isTuple(type));
+  return /\(([^,].*),([^,].*)\)/.exec(type)[2];
 }
 
 function substitute(type, coersion) {
   assert.isTrue(isPrimitive(type) && isTypeVar(type), type + ' is a primitive type var');
   var subs = {};
   subs.value = coersion[type];
-  assert.equal(Object.keys(coersion).length, 1);
   subs.coersion = {};
+  for (key in coersion) {
+    if (key == type)
+      continue;
+    subs.coersion[key] = coersion[key];
+  }
   return subs;
 }
 
 // TODO complete this, deal with multiple type vars if they ever arise.
 function coerce(left, right, coersion) {
-  assert.isTrue(isPrimitive(left), left + ' is a primitive type');
-  assert.isTrue(isPrimitive(right), right + ' is a primitive type');
 
   // 'a -> 'a, string -> string, JSON -> JSON, etc.
   if (left == right)
     return coersion;
+
+  if (isList(left) && isList(right)) {
+    return coerce(delist(left), delist(right), coersion);
+  }
+
+  if (isTuple(left) && isTuple(right)) {
+    var leftCoerce = coerce(leftType(left), leftType(right), coersion);
+    var rightCoerce = coerce(rightType(left), rightType(right), coersion);
+    if (leftCoerce == undefined || rightCoerce == undefined) 
+      return undefined;
+    for (key in rightCoerce)
+      leftCoerce[key] = rightCoerce[key];
+    return leftCoerce;
+  }
+
+  assert.isTrue(isPrimitive(left), left + ' is a primitive type');
+  assert.isTrue(isPrimitive(right), right + ' is a primitive type');
+
+  // 'a -> 'b
+
+  if (isTypeVar(left) && isTypeVar(right)) {
+    var result = left;
+    while (isTypeVar(result) && coersion[result] !== undefined)
+      result = coersion[result];
+    left = result;
+  }
 
   // 'a -> string
   if (isTypeVar(left)) {
@@ -300,6 +376,8 @@ function buildTask(name, stages) {
  * Some example pipelines.
  */
 buildTask('html', [JSONReader(options.file), treeBuilderWriter(HTMLWriter), fileOutput('result.html.html')]);
+buildTask('mhtml', [fileInputs(options.inputSpec), map(tee()), map(left(fileToJSON())), map(left(treeBuilderWriter(HTMLWriter))), 
+                    map(right(outputName(options.inputSpec, options.outputSpec))), map(toFile())]);
 buildTask('js', [JSONReader(options.file), treeBuilderWriter(JSWriter), fileOutput('result.js.html')]);
 buildTask('stats', [JSONReader(options.file), treeBuilderWriter(StatsWriter), consoleOutput()]);
 buildTask('compactComputedStyle', [JSONReader(options.file), filter(StyleFilter), fileOutput(options.file + '.filter')]);
@@ -330,9 +408,87 @@ function readerForInput(name) {
   return JSONReader(name);
 }
 
+function fileInputs(inputSpec) {
+  return {
+    impl: function(unused, cb) {
+      var re = new RegExp('^' + inputSpec + '$');
+      var files = fs.readdirSync('.');
+      cb(files.filter(re.exec.bind(re)));
+    },
+    input: 'unit',
+    output: '[string]'
+  }
+}
+
+function map(stage) {
+  var input = '[' + stage.input + ']';
+  var output = '[' + stage.output + ']';
+
+  return {
+    impl: function(input, incb) {
+      var results = [];
+      var cb = function() { incb(results); };
+      for (var i = input.length - 1; i >= 0; i--) {
+        cb = (function(cb, i) {
+          return function() {
+            stage.impl(input[i], function(data) { results.push(data); cb(); });
+          }})(cb, i);
+      }
+      cb();
+    },
+    input: input,
+    output: output
+  };
+}
+
+function tee() {
+  var typeVar = newTypeVar();
+  return {
+    impl: function(input, cb) { cb({left: input, right: input}); },
+    input: typeVar,
+    output: "(" + typeVar + "," + typeVar + ")",
+  }
+}
+
+function left(stage) {
+  var typeVar = newTypeVar();
+  return {
+    impl: function(input, cb) {
+      stage.impl(input.left, function(data) {
+        cb({left: data, right: input.right});
+      });
+    },
+    input: "(" + stage.input + "," + typeVar + ")",
+    output: "(" + stage.output + "," + typeVar + ")"
+  }
+}
+
+function right(stage) {
+  var typeVar = newTypeVar();
+  return {
+    impl: function(input, cb) {
+      stage.impl(input.right, function(data) {
+        cb({right: data, left: input.left});
+      });
+    },
+    input: "(" + typeVar + "," + stage.input + ")",
+    output: "(" + typeVar + "," + stage.output + ")"
+  }
+}
+
 function outputForInput(inputSpec, input, output) {
   var re = new RegExp(inputSpec);
   return input.replace(re, output);
+}
+
+function outputName(inputSpec, output) {
+  return {
+    impl: function(input, cb) {
+      cb(outputForInput(inputSpec, input, output));
+    },
+    input: 'string',
+    output: 'string'
+  };
 }
 
 // Returns a list of {stages: [pipeline-element], output: result}
@@ -390,6 +546,7 @@ function runExperiment(experiment, incb) {
     var edges = experiment.tree[experiment.inputs[i]];
     var stagesList = [];
     stagesList = appendEdges(experiment, stagesList, edges);
+
     for (var j = 0; j < inputs.length; j++) {
       for (var k = 0; k < stagesList.length; k++) {
         var pl = [readerForInput(inputs[j])].concat(stagesList[k].stages.map(function(a) { return stageFor(a, experiment.inputs[i], inputs[j]); }));
