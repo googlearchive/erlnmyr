@@ -62,6 +62,7 @@ function readFile(filename, cb) {
 function JSONReader(filename) {
   return { 
     impl: function(_, cb) { readJSONFile(filename, cb); },
+    name: 'JSONReader: ' + filename,
     input: 'unit',
     output: 'JSON'
   };
@@ -70,6 +71,7 @@ function JSONReader(filename) {
 function fileToJSON() {
   return {
     impl: readJSONFile,
+    name: 'fileToJSON',
     input: 'string',
     output: 'JSON'
   };
@@ -78,6 +80,7 @@ function fileToJSON() {
 function fileReader(filename) {
   return {
     impl: function(_, cb) { readFile(filename, cb); },
+    name: 'fileReader: ' + filename,
     input: 'unit',
     output: 'string'
   };
@@ -86,6 +89,7 @@ function fileReader(filename) {
 function filter(FilterType) {
   return {
     impl: treeBuilder(FilterType),
+    name: 'filter: ' + FilterType.name,
     input: 'JSON',
     output: 'JSON',
   };
@@ -98,6 +102,7 @@ function fabricator(FabType, input) {
       var fab = new FabType(data);
       cb(fab.fabricate());
     },
+    name: 'fabricator: ' + FabType,
     input: input,
     output: 'JSON'
   };
@@ -116,6 +121,7 @@ function treeBuilder(WriterType) {
 function treeBuilderWriter(WriterType) {
   return {
     impl: treeBuilder(WriterType),
+    name: 'treeBuilderWriter: ' + WriterType,
     input: 'JSON',
     output: 'string'
   };
@@ -125,6 +131,7 @@ function fileOutput(filename) {
   var typeVar = newTypeVar();
   return {
     impl: function(data, cb) { writeFile(filename, data, cb); },
+    name: 'fileOutput: ' + filename,
     input: typeVar,
     output: typeVar 
   };
@@ -134,6 +141,7 @@ function toFile() {
   var typeVar = newTypeVar();
   return {
     impl: function(data, cb) { writeFile(data.right, data.left, cb); },
+    name: 'toFile',
     input: "(" + typeVar + ",string)",
     output: typeVar
   };
@@ -143,6 +151,7 @@ function consoleOutput() {
   var typeVar = newTypeVar();
   return {
     impl: function(data, cb) { console.log(data); cb(data); },
+    name: 'consoleOutput',
     input: typeVar,
     output: typeVar 
   };
@@ -171,6 +180,7 @@ function telemetrySave(browser, url) {
     impl: function(unused, cb) {
       telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
     },
+    name:'telemetrySave: ' + browser + ', ' + url,
     input: 'unit',
     output: 'JSON'  
   };
@@ -199,6 +209,7 @@ function stopServing(server) {
 function telemetryPerf(browser, url) {
   return {
     impl: telemetryTask('perf.py', ['--browser='+browser, '--', url]),
+    name: 'telemetryPerf: ' + browser + ', ' + url,
     input: 'unit',
     output: 'JSON'
   };
@@ -219,6 +230,7 @@ function simplePerfer() {
         });
       });
     },
+    name: 'simplePerfer',
     input: 'string',
     output: 'JSON'
   };
@@ -236,6 +248,7 @@ gulp.task('test', function() {
 function parseExperiment() {
   return {
     impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
+    name: 'parseExperiment',
     input: 'string',
     output: 'experiment'
   };
@@ -294,7 +307,6 @@ function substitute(type, coersion) {
 
 // TODO complete this, deal with multiple type vars if they ever arise.
 function coerce(left, right, coersion) {
-
   // 'a -> 'a, string -> string, JSON -> JSON, etc.
   if (left == right)
     return coersion;
@@ -313,8 +325,8 @@ function coerce(left, right, coersion) {
     return leftCoerce;
   }
 
-  assert.isTrue(isPrimitive(left), left + ' is a primitive type');
-  assert.isTrue(isPrimitive(right), right + ' is a primitive type');
+  assert.equal(isPrimitive(left), true, left + ' is a primitive type');
+  assert.equal(isPrimitive(right), true, right + ' is a primitive type');
 
   // 'a -> 'b
 
@@ -341,12 +353,16 @@ function coerce(left, right, coersion) {
   return undefined;
 }
 
+function processStages(stages, cb, fail) {
+  _wrappedStages(null, stages, cb, fail);
+}
+
 /*
  * Constructing a pipeline
  *
  * Sorry for potato quality.
  */
-function processStages(stages, cb, fail) {
+function _wrappedStages(input, stages, cb, fail) {
   assert.equal(stages[0].input, 'unit');
   var coersion = {};
   for (var i = 0; i < stages.length - 1; i++) {
@@ -362,8 +378,9 @@ function processStages(stages, cb, fail) {
       }
     } })(i, cb);
   }
-  cb(null);
+  cb(input);
 };
+
 
 function buildTask(name, stages) {
   gulp.task(name, function(incb) {
@@ -415,12 +432,15 @@ function fileInputs(inputSpec) {
       var files = fs.readdirSync('.');
       cb(files.filter(re.exec.bind(re)));
     },
+    name: 'fileInputs: ' + inputSpec,
     input: 'unit',
     output: '[string]'
   }
 }
 
 function map(stage) {
+  assert.isDefined(stage.input, stage + ' has no input type');
+  assert.isDefined(stage.output + ' has no output type');
   var input = '[' + stage.input + ']';
   var output = '[' + stage.output + ']';
 
@@ -436,6 +456,7 @@ function map(stage) {
       }
       cb();
     },
+    name: 'map(' + stage.name + ')',
     input: input,
     output: output
   };
@@ -445,6 +466,7 @@ function tee() {
   var typeVar = newTypeVar();
   return {
     impl: function(input, cb) { cb({left: input, right: input}); },
+    name: 'tee',
     input: typeVar,
     output: "(" + typeVar + "," + typeVar + ")",
   }
@@ -458,9 +480,21 @@ function left(stage) {
         cb({left: data, right: input.right});
       });
     },
+    name: 'left(' + stage.name + ')',
     input: "(" + stage.input + "," + typeVar + ")",
     output: "(" + stage.output + "," + typeVar + ")"
   }
+}
+
+function justLeft() {
+  var typeVar1 = newTypeVar();
+  var typeVar2 = newTypeVar();
+  return {
+    name: 'justLeft',
+    impl: function(input, cb) { cb(input.left); },
+    input: "(" + typeVar1 + "," + typeVr2 + ")",
+    output: typeVar1
+  };
 }
 
 function right(stage) {
@@ -471,9 +505,20 @@ function right(stage) {
         cb({right: data, left: input.left});
       });
     },
+    name: 'right(' + stage.name + ')',
     input: "(" + typeVar + "," + stage.input + ")",
     output: "(" + typeVar + "," + stage.output + ")"
   }
+}
+
+function stage(list) {
+  return {
+    impl: function(input, cb) {
+      _wrappedStages(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
+    },
+    input: list[0].input,
+    output: list[list.length - 1].output
+  };
 }
 
 function outputForInput(inputSpec, input, output) {
@@ -486,6 +531,7 @@ function outputName(inputSpec, output) {
     impl: function(input, cb) {
       cb(outputForInput(inputSpec, input, output));
     },
+    name: 'outputName',
     input: 'string',
     output: 'string'
   };
@@ -514,17 +560,22 @@ function experimentTask(name, experiment) {
 
 function stageFor(stageName, inputSpec, input) {
   if (stageName.substring(0, 7) == 'output:') {
-    return fileOutput(outputForInput(inputSpec, input, stageName.substring(7)));
+    return stage([
+      tee(),
+      right(map(right(outputName(inputSpec, stageName.substring(7))))),
+      right(map(toFile())),
+      justLeft()
+    ]);
   }
   if (stageName[0].toLowerCase() == stageName[0])
-    return eval(stageName)();
+    return map(left(eval(stageName)()));
   if (stageName.indexOf('Fabricator') !== -1)
-    return fabricator(eval(stageName));
+    return map(left(fabricator(eval(stageName))));
   // FIXME: This relies on the fact that filters and writers are both the same thing
   // right now (i.e. filter and treeBuilderWriter are the same function).
   // This could well become a problem in the future.
   // Also, eval: ew. If there was a local var dict I could look up the constructor name directly.
-  return filter(eval(stageName));
+  return map(left(filter(eval(stageName))));
 }
 
 function updateOptions(optionsDict) {
@@ -542,17 +593,16 @@ function runExperiment(experiment, incb) {
   updateOptions(experiment.flags);
   var pipelines = [];
   for (var i = 0; i < experiment.inputs.length; i++) {
-    var inputs = collectInputs(experiment.inputs[i]);
     var edges = experiment.tree[experiment.inputs[i]];
     var stagesList = [];
     stagesList = appendEdges(experiment, stagesList, edges);
 
-    for (var j = 0; j < inputs.length; j++) {
-      for (var k = 0; k < stagesList.length; k++) {
-        var pl = [readerForInput(inputs[j])].concat(stagesList[k].stages.map(function(a) { return stageFor(a, experiment.inputs[i], inputs[j]); }));
-        pl.push(fileOutput(outputForInput(experiment.inputs[i], inputs[j], stagesList[k].output)));
-        pipelines.push(pl);
-      }
+    for (var j = 0; j < stagesList.length; j++) {
+      var pl = [fileInputs(experiment.inputs[i]), map(tee()), map(left(fileToJSON()))].concat(
+          stagesList[j].stages.map(function(a) { return stageFor(a, experiment.inputs[i]); }));
+      pl.push(map(right(outputName(experiment.inputs[i], stagesList[j].output))));
+      pl.push(map(toFile()));
+      pipelines.push(pl);
     }
   }
   var cb = function() { incb(); }
@@ -571,6 +621,7 @@ function runExperiment(experiment, incb) {
 function experimentPhase() {
   return {
     impl: runExperiment,
+    name: 'experimentPhase',
     input: 'experiment',
     output: 'unit'
   };
