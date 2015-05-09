@@ -23,12 +23,12 @@ function telemetryTask(pyScript, pyArgs) {
   };
 }
 
-function telemetrySave(browser, url) {
+function telemetrySave(url) {
   return {
     impl: function(unused, cb) {
-      telemetryTask('save.py', ['--browser='+browser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+      telemetryTask('save.py', ['--browser='+options.saveBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
     },
-    name:'telemetrySave: ' + browser + ', ' + url,
+    name:'telemetrySave: ' + url,
     input: 'unit',
     output: 'JSON'  
   };
@@ -54,10 +54,10 @@ function stopServing(server) {
 }
 
 // perform perf testing of the provided url
-function telemetryPerf(browser, url) {
+function telemetryPerf(url) {
   return {
-    impl: telemetryTask('perf.py', ['--browser='+browser, '--', url]),
-    name: 'telemetryPerf: ' + browser + ', ' + url,
+    impl: telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url]),
+    name: 'telemetryPerf: ' + url,
     input: 'unit',
     output: 'JSON'
   };

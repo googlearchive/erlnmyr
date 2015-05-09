@@ -1,7 +1,5 @@
 var fs = require('fs');
 
-var assert = require('chai').assert;
-
 var TreeBuilder = require('./lib/tree-builder');
 var types = require('./gulp-types.js');
 
@@ -145,33 +143,4 @@ module.exports.consoleOutput = function() {
   };
 }
 
-function processStages(stages, cb, fail) {
-  processStagesWithInput(null, stages, cb, fail);
-}
 
-/*
- * Constructing a pipeline
- *
- * Sorry for potato quality.
- */
-function processStagesWithInput(input, stages, cb, fail) {
-  assert.equal(stages[0].input, 'unit');
-  var coersion = {};
-  for (var i = 0; i < stages.length - 1; i++) {
-    coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
-    assert.isDefined(coersion, "Type checking failed for " + stages[i].output + " -> " + stages[i + 1].input);
-  }
-  for (var i = stages.length - 1; i >= 0; i--) {
-    cb = (function(i, cb) { return function(data) {
-      try {
-        stages[i].impl(data, cb);
-      } catch (e) {
-        fail(e);
-      }
-    } })(i, cb);
-  }
-  cb(input);
-};
-
-module.exports.processStages = processStages;
-module.exports.processStagesWithInput = processStagesWithInput;

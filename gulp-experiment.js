@@ -1,29 +1,8 @@
 var ParseExperiment = require('./lib/parse-experiment');
 
-// TODO: Avoid having to do all this twice - load all the basic
-// stages in gulp-stages maybe?
-var writers = {
-  HTMLWriter: require('./lib/html-writer'),
-  JSWriter: require('./lib/js-writer'),
-  StatsWriter: require('./lib/stats-writer')
-};
-
-var filters = {
-  StyleFilter: require('./lib/style-filter'),
-  StyleMinimizationFilter: require('./lib/style-minimization-filter'),
-  StyleTokenizerFilter: require('./lib/style-tokenizer-filter'),
-  NukeIFrameFilter: require('./lib/nuke-iframe-filter'),
-  StyleDetokenizerFilter: require('./lib/style-detokenizer-filter')
-};
-
-var fabricators = {
-  SchemaBasedFabricator: require('./lib/schema-based-fabricator'),
-};
-
-
-
-var stages = require('./gulp-stages');
+var stageLoader = require('./gulp-stage-loader');
 var fancyStages = require('./gulp-fancy-stages');
+var stages = require('./gulp-stages');
 
 // Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
@@ -47,6 +26,7 @@ function experimentTask(name, experiment) {
 }
 
 function stageFor(stageName, inputSpec, input) {
+  // override output definition to deal with output name generation
   if (stageName.substring(0, 7) == 'output:') {
     return fancyStages.stage([
       fancyStages.tee(),
@@ -55,6 +35,9 @@ function stageFor(stageName, inputSpec, input) {
       fancyStages.justLeft()
     ]);
   }
+
+  return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
+/*
   if (stageName[0].toLowerCase() == stageName[0])
     return fancyStages.map(fancyStages.left(stages[stageName]()));
   if (stageName.indexOf('Fabricator') !== -1)
@@ -68,6 +51,7 @@ function stageFor(stageName, inputSpec, input) {
     return fancyStages.map(fancyStages.left(stages.filter(filters[stageName])));
   if (stageName in writers)
     return fancyStages.map(fancyStages.left(stages.treeBuilderWriter(writers[stageName])));
+*/
 }
 
 function updateOptions(optionsDict) {
@@ -95,7 +79,8 @@ function runExperiment(experiment, incb) {
     stagesList = appendEdges(experiment, stagesList, edges);
 
     for (var j = 0; j < stagesList.length; j++) {
-      var pl = [fancyStages.fileInputs(experiment.inputs[i]), fancyStages.map(fancyStages.tee()), fancyStages.map(fancyStages.left(stages.fileToJSON()))].concat(
+      var fileToJSON = stageFor("fileToJSON");
+      var pl = [fancyStages.fileInputs(experiment.inputs[i]), fancyStages.map(fancyStages.tee()), fileToJSON].concat(
           stagesList[j].stages.map(function(a) { return stageFor(a, experiment.inputs[i]); }));
       pl.push(fancyStages.map(fancyStages.right(fancyStages.outputName(experiment.inputs[i], stagesList[j].output))));
       pl.push(fancyStages.map(stages.toFile()));
@@ -106,7 +91,7 @@ function runExperiment(experiment, incb) {
   for (var i = 0; i < pipelines.length; i++) {
     var cb = (function(i, cb) {
       return function() {
-        stages.processStages(pipelines[i], cb, function(e) {
+        stageLoader.processStages(pipelines[i], cb, function(e) {
           console.log('failed pipeline', e, '\n', e.stack); cb(null);
         });
       }
