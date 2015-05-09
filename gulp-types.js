@@ -64,7 +64,7 @@ function coerce(left, right, coersion) {
   if (isTuple(left) && isTuple(right)) {
     var leftCoerce = coerce(leftType(left), leftType(right), coersion);
     var rightCoerce = coerce(rightType(left), rightType(right), coersion);
-    if (leftCoerce == undefined || rightCoerce == undefined) 
+    if (leftCoerce == undefined || rightCoerce == undefined)
       return undefined;
     for (key in rightCoerce)
       leftCoerce[key] = rightCoerce[key];

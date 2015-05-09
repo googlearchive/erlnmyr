@@ -46,7 +46,7 @@ function readFile(filename, cb) {
  */
 
 module.exports.JSONReader = function(filename) {
-  return { 
+  return {
     impl: function(_, cb) { readJSONFile(filename, cb); },
     name: 'JSONReader: ' + filename,
     input: 'unit',
@@ -119,7 +119,7 @@ module.exports.fileOutput = function(filename) {
     impl: function(data, cb) { writeFile(filename, data, cb); },
     name: 'fileOutput: ' + filename,
     input: typeVar,
-    output: typeVar 
+    output: typeVar
   };
 }
 
@@ -139,7 +139,7 @@ module.exports.consoleOutput = function() {
     impl: function(data, cb) { console.log(data); cb(data); },
     name: 'consoleOutput',
     input: typeVar,
-    output: typeVar 
+    output: typeVar
   };
 }
 

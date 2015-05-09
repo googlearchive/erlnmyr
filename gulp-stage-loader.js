@@ -33,7 +33,7 @@ var argInputs = {
 }
 
 var byConstruction = [
-  {list: writers, constructor: stages.treeBuilderWriter}, 
+  {list: writers, constructor: stages.treeBuilderWriter},
   {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];

@@ -70,12 +70,12 @@ buildTask('runExperiment', ['file:' + options.file, 'parseExperiment', 'experime
  */
 gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
-  stageLoader.processStages( 
+  stageLoader.processStages(
     [
       fancyStages.fileInputs(options.inputSpec),
       fancyStages.map(fancyStages.tee()),
       fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('fileToJSON'))),
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('HTMLWriter'))), 
+      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('HTMLWriter'))),
       fancyStages.map(fancyStages.right(fancyStages.outputName(options.inputSpec, options.outputSpec))),
       fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
     ], cb, function(e) { throw e; });

@@ -30,7 +30,7 @@ function telemetrySave(url) {
     },
     name:'telemetrySave: ' + url,
     input: 'unit',
-    output: 'JSON'  
+    output: 'JSON'
   };
 }
 
