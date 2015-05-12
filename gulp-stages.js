@@ -143,4 +143,12 @@ module.exports.consoleOutput = function() {
   };
 }
 
-
+module.exports.taggedConsoleOutput = function() {
+  var typeVar = types.newTypeVar();
+  return {
+    impl: function(data, cb) { console.log(data.right); console.log('----------------'), console.log(data.left); cb(data); },
+    name: 'taggedConsoleOutput',
+    input: '('+typeVar+',string)',
+    output: '('+typeVar+',string)'
+  };
+}
