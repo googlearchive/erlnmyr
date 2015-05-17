@@ -60,7 +60,7 @@ module.exports.tee = function() {
     impl: function(input, cb) { cb({left: input, right: input}); },
     name: 'tee',
     input: typeVar,
-    output: "(" + typeVar + "," + typeVar + ")",
+    output: types.Tuple(typeVar, typeVar),
   }
 }
 
@@ -73,8 +73,8 @@ module.exports.left = function(stage) {
       });
     },
     name: 'left(' + stage.name + ')',
-    input: "(" + stage.input + "," + typeVar + ")",
-    output: "(" + stage.output + "," + typeVar + ")"
+    input: types.Tuple(stage.input, typeVar),
+    output: types.Tuple(stage.output, typeVar),
   }
 }
 

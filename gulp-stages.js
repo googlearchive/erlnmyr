@@ -56,8 +56,8 @@ module.exports.JSONReader = function(filename) {
   return {
     impl: function(_, cb) { readJSONFile(filename, cb); },
     name: 'JSONReader: ' + filename,
-    input: 'unit',
-    output: 'JSON'
+    input: types.unit,
+    output: types.JSON
   };
 }
 

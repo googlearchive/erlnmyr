@@ -72,7 +72,7 @@ function processStagesWithInput(input, stages, cb, fail) {
     coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
     // assert.isDefined(coersion, "Type checking failed for " + stages[i].name + ':' + stages[i].output + " -> " + stages[i + 1].name + ':' + stages[i + 1].input);
     if (coersion == undefined) {
-      console.warn("couldn't type check " + stages[i].name + ':' + stages[i].output + " -> " + stages[i + 1].name + ':' + stages[i + 1].input);
+      console.warn("couldn't type check " + stages[i].name + ':' + JSON.stringify(stages[i].output) + " -> " + stages[i + 1].name + ':' + JSON.stringify(stages[i + 1].input));
       break;
     }
   }
