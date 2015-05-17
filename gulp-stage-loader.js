@@ -29,7 +29,8 @@ var argInputs = {
   'file': stages.fileReader,
   'output': stages.fileOutput,
   'save': device.telemetrySave,
-  'perf': device.telemetryPerf
+  'perf': device.telemetryPerf,
+  'ejs': stages.ejsFabricator
 }
 
 var byConstruction = [
