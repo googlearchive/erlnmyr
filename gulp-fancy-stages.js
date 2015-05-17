@@ -103,16 +103,6 @@ module.exports.right = function(stage) {
   }
 }
 
-module.exports.stage = function(list) {
-  return {
-    impl: function(input, cb) {
-      stages.processStagesWithInput(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
-    },
-    input: list[0].input,
-    output: list[list.length - 1].output
-  };
-}
-
 function outputForInput(inputSpec, input, output) {
   var re = new RegExp(inputSpec);
   return input.replace(re, output);
