@@ -56,6 +56,7 @@ function stageSpecificationToStage(stage) {
 }
 
 function processStages(stages, cb, fail) {
+  assert.equal(stages[0].input, 'unit');
   processStagesWithInput(null, stages, cb, fail);
 }
 
@@ -65,11 +66,14 @@ function processStages(stages, cb, fail) {
  * Sorry for potato quality.
  */
 function processStagesWithInput(input, stages, cb, fail) {
-  assert.equal(stages[0].input, 'unit');
   var coersion = {};
   for (var i = 0; i < stages.length - 1; i++) {
     coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
-    assert.isDefined(coersion, "Type checking failed for " + stages[i].output + " -> " + stages[i + 1].input);
+    // assert.isDefined(coersion, "Type checking failed for " + stages[i].name + ':' + stages[i].output + " -> " + stages[i + 1].name + ':' + stages[i + 1].input);
+    if (coersion == undefined) {
+      console.warn("couldn't type check " + stages[i].name + ':' + stages[i].output + " -> " + stages[i + 1].name + ':' + stages[i + 1].input);
+      break;
+    }
   }
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
