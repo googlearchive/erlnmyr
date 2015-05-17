@@ -93,7 +93,7 @@ describe('coerce', function() {
   it('should resolve more complex expressions correctly', function() {
     var typeVar1 = types.newTypeVar();
     var typeVar2 = types.newTypeVar();
-    assert.deepEqual(types.coerce(typeVar1, 'unit', types.coerce(typeVar2, 'unit')), types.coerce(types.Tuple(typeVar1, typeVar1), types.Tuple(types.unit, typeVar2), {}));
+    assert.deepEqual(coersion(typeVar1, types.unit, coersion(typeVar2, types.unit)), types.coerce(types.Tuple(typeVar1, typeVar1), types.Tuple(types.unit, typeVar2), {}));
   });
 });
 

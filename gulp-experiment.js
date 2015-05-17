@@ -4,6 +4,7 @@ var stageLoader = require('./gulp-stage-loader');
 var fancyStages = require('./gulp-fancy-stages');
 var stages = require('./gulp-stages');
 var device = require('./gulp-device');
+var types = require('./gulp-types');
 
 // Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
@@ -44,6 +45,7 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
+  console.log(stageName);
   return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
 /*
   if (stageName[0].toLowerCase() == stageName[0])
@@ -131,8 +133,8 @@ function experimentPhase() {
   return {
     impl: runExperiment,
     name: 'experimentPhase',
-    input: 'experiment',
-    output: 'unit'
+    input: types.experiment,
+    output: types.unit
   };
 }
 
@@ -140,8 +142,8 @@ function parseExperiment() {
   return {
     impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
     name: 'parseExperiment',
-    input: 'string',
-    output: 'experiment'
+    input: types.string,
+    output: types.experiment
   };
 }
 

@@ -16,7 +16,7 @@ function testOutput(expectedResult) {
     },
     name: 'testOutput',
     input: types.newTypeVar(),
-    output: 'unit'
+    output: types.unit
   }
 }
 
@@ -28,14 +28,14 @@ function testMatch() {
       cb();
     },
     name: 'testMatch',
-    input: '(' + typeVar + ',' + typeVar + ')',
-    output: 'unit'
+    input: types.Tuple(typeVar, typeVar),
+    output: types.unit
   }
 }
 
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
-    fancyStages.immediate(''),
+    fancyStages.immediate(undefined, types.unit),
     fancyStages.tee(),
     fancyStages.left(stageLoader.stageSpecificationToStage("JSON:" + jsonFile)),
     fancyStages.right(stageLoader.stageSpecificationToStage("file:" + htmlFile)),

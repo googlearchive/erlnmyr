@@ -25,8 +25,8 @@ module.exports.fileInputs = function(inputSpec) {
       cb(files.filter(re.exec.bind(re)));
     },
     name: 'fileInputs: ' + inputSpec,
-    input: 'unit',
-    output: '[string]'
+    input: types.unit,
+    output: types.List(types.string)
   }
 }
 
@@ -84,7 +84,7 @@ module.exports.justLeft = function() {
   return {
     name: 'justLeft',
     impl: function(input, cb) { cb(input.left); },
-    input: "(" + typeVar1 + "," + typeVar2 + ")",
+    input: types.Tuple(typeVar1, typeVar2),
     output: typeVar1
   };
 }
@@ -98,8 +98,8 @@ module.exports.right = function(stage) {
       });
     },
     name: 'right(' + stage.name + ')',
-    input: "(" + typeVar + "," + stage.input + ")",
-    output: "(" + typeVar + "," + stage.output + ")"
+    input: types.Tuple(typeVar, stage.input),
+    output: types.Tuple(typeVar, stage.output)
   }
 }
 
@@ -114,8 +114,8 @@ module.exports.outputName = function(inputSpec, output) {
       cb(outputForInput(inputSpec, input, output));
     },
     name: 'outputName',
-    input: 'string',
-    output: 'string'
+    input: types.string,
+    output: types.string
   };
 }
 
@@ -126,8 +126,8 @@ module.exports.concat = function() {
       return input.reduce(function(a, b) { return a.concat(b); }, []);
     },
     name: 'concat',
-    input: '[[' + typeVar + ']]',
-    output: '[' + typeVar + ']'
+    input: types.List(types.List(typeVar)),
+    output: types.List(typeVar)
   }
 }
 
@@ -143,8 +143,8 @@ module.exports.unejs = function() {
       cb(output);
     },
     name: 'unejs',
-    input: '[([(string,string)],string)]',
-    output: '[(string,string)]'
+    input: types.List(types.Tuple(types.List(types.Tuple(types.string, types.string)), types.string)),
+    output: types.List(types.Tuple(types.string, types.string))
   }
 }
 
@@ -154,15 +154,16 @@ module.exports.listify = function() {
     impl: function(input, cb) { cb([input]); },
     name: 'listify',
     input: typeVar,
-    output: '[' + typeVar + ']'
+    output: types.List(typeVar)
   };
 }
 
-module.exports.immediate = function(x) {
+module.exports.immediate = function(x, type) {
+  type = type || types.string;
   return {
     impl: function(unused, cb) { cb(x); },
     name: 'immediate',
-    input: 'unit',
-    output: 'string'
+    input: types.unit,
+    output: type
   };
 }
