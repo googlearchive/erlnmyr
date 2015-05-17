@@ -83,6 +83,16 @@ function processStagesWithInput(input, stages, cb, fail) {
   cb(input);
 };
 
+module.exports.stage = function(list) {
+  return {
+    impl: function(input, cb) {
+      processStagesWithInput(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
+    },
+    input: list[0].input,
+    output: list[list.length - 1].output
+  };
+}
+
 module.exports.processStages = processStages;
 module.exports.processStagesWithInput = processStagesWithInput;
 module.exports.stageSpecificationToStage = stageSpecificationToStage;
