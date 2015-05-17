@@ -11,7 +11,8 @@
     "url": "git://github.com/dglazkov/tree-builder-builder.git"
   },
   "dependencies": {
-    "gulp": "^3.8.11"
+    "gulp": "^3.8.11",
+    "ejs": "^2.3.1"
   },
   "devDependencies": {
     "chai": "^2.2.0",
