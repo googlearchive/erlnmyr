@@ -33,6 +33,27 @@ function testMatch() {
   }
 }
 
+function fileComparisonPipeline(jsonFile, htmlFile) {
+  return [
+    fancyStages.immediate(''),
+    fancyStages.tee(),
+    fancyStages.left(stageLoader.stageSpecificationToStage("JSON:" + jsonFile)),
+    fancyStages.right(stageLoader.stageSpecificationToStage("file:" + htmlFile)),
+    fancyStages.left(stageLoader.stageSpecificationToStage("HTMLWriter")),
+    testMatch(),
+  ];
+}
+
+function tokenizeDetokenizePipeline(jsonFile) {
+  return [
+    stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
+    fancyStages.tee(),
+    fancyStages.left(stageLoader.stageSpecificationToStage("StyleTokenizerFilter")),
+    fancyStages.left(stageLoader.stageSpecificationToStage("StyleDetokenizerFilter")),
+    testMatch()
+  ]
+}
+
 // TODO: glob these so we can automatically test lots of inputs/outputs.
 
 describe('Simple Pipeline', function() {
@@ -44,15 +65,21 @@ describe('Simple Pipeline', function() {
     testPipeline(pipeline, done);
   });
 
-  it('should match prerendered html', function(done) {
-    testPipeline([
-      fancyStages.immediate(''),
-      fancyStages.tee(),
-      fancyStages.left(stageLoader.stageSpecificationToStage("JSON:tests/pipeline/simple.json")),
-      fancyStages.right(stageLoader.stageSpecificationToStage("file:tests/pipeline/simple.html")),
-      fancyStages.left(stageLoader.stageSpecificationToStage("HTMLWriter")),
-      testMatch(),
-    ], done);
+  it('simple json dumps should match prerendered html', function(done) {
+    testPipeline(fileComparisonPipeline("tests/pipeline/simple.json", "tests/pipeline/simple.html"), done);
+  });
+
+  it('slightly more complicated json dumps should match prerendered html', function(done) {
+    testPipeline(fileComparisonPipeline("tests/pipeline/inline-style.json", "tests/pipeline/inline-style.html"), done);
   });
 });
 
+describe('Style Tokenizer / Detokenizer', function() {
+  it('should be idempotent in the absence of inline style', function(done) {
+    testPipeline(tokenizeDetokenizePipeline("tests/pipeline/simple.json"), done);
+  });
+
+  it('should be idempotent in the presence of inline style', function(done) {
+    testPipeline(tokenizeDetokenizePipeline("tests/pipeline/inline-style.json"), done);
+  });
+});
