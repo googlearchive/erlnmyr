@@ -3,6 +3,7 @@ var ParseExperiment = require('./lib/parse-experiment');
 var stageLoader = require('./gulp-stage-loader');
 var fancyStages = require('./gulp-fancy-stages');
 var stages = require('./gulp-stages');
+var device = require('./gulp-device');
 
 // Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
@@ -28,10 +29,10 @@ function experimentTask(name, experiment) {
 function stageFor(stageName, inputSpec, input) {
   // override output definition to deal with output name generation
   if (stageName.substring(0, 7) == 'output:') {
-    return fancyStages.stage([
+    return stageLoader.stage([
       fancyStages.tee(),
       fancyStages.right(fancyStages.map(fancyStages.right(fancyStages.outputName(inputSpec, stageName.substring(7))))),
-      fancyStages.right(fancyStages.map(toFile())),
+      fancyStages.right(fancyStages.map(stages.toFile())),
       fancyStages.justLeft()
     ]);
   }
@@ -79,11 +80,30 @@ function runExperiment(experiment, incb) {
     stagesList = appendEdges(experiment, stagesList, edges);
 
     for (var j = 0; j < stagesList.length; j++) {
-      var fileToJSON = stageFor("fileToJSON");
-      var pl = [fancyStages.fileInputs(experiment.inputs[i]), fancyStages.map(fancyStages.tee()), fileToJSON].concat(
-          stagesList[j].stages.map(function(a) { return stageFor(a, experiment.inputs[i]); }));
-      pl.push(fancyStages.map(fancyStages.right(fancyStages.outputName(experiment.inputs[i], stagesList[j].output))));
-      pl.push(fancyStages.map(stages.toFile()));
+      if (experiment.inputs[i].substring(0, 7) == 'http://') {
+	var input = experiment.inputs[i];
+	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySave(input)), fancyStages.listify()];
+      } else if (experiment.inputs[i].substring(0, 8) == '!http://') {
+	var input = experiment.inputs[i].slice(1);
+	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySaveNoStyle(input)), fancyStages.listify()];
+      }else {
+	if (experiment.inputs[i][0] == '!') {
+	  var fileToJSON = stageFor("fileToString");
+	  var input = experiment.inputs[i].slice(1);
+	} else {
+	  var fileToJSON = stageFor("fileToJSON");
+	  var input = experiment.inputs[i];
+	}
+	var inputStages = [fancyStages.fileInputs(input), fancyStages.map(fancyStages.tee()), fileToJSON];
+      }
+      var pl = inputStages.concat(
+          stagesList[j].stages.map(function(a) { return stageFor(a, input); }));
+      if (stagesList[j].output == 'console') {
+	pl.push(fancyStages.map(stages.taggedConsoleOutput()));
+      } else {
+	pl.push(fancyStages.map(fancyStages.right(fancyStages.outputName(input, stagesList[j].output))));
+	pl.push(fancyStages.map(stages.toFile()));
+      }
       pipelines.push(pl);
     }
   }
