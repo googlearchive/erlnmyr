@@ -2,7 +2,6 @@ var gulp = require('gulp');
 var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
-var http = require('http');
 
 var device = require('./gulp-device');
 var experiment = require('./gulp-experiment');
@@ -62,6 +61,19 @@ buildTask('endToEnd', ['save:' + options.url, 'HTMLWriter', 'simplePerfer', 'out
  * running an experiment
  */
 buildTask('runExperiment', ['file:' + options.file, 'parseExperiment', 'experimentPhase']);
+
+/*
+ * ejs fabrication
+ */
+gulp.task('ejs', function(incb) {
+  var cb = function(data) { incb(); };
+  stageLoader.processStages(
+    [
+      stageLoader.stageSpecificationToStage('file:' + options.file),
+      stageLoader.stageSpecificationToStage('ejs:' + options.outputPrefix),
+      fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
+    ], cb, function(e) { throw e; });
+});
 
 /*
  * TODO: Refactor stage-loader so it can load fancy stages too.

@@ -37,6 +37,13 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
+  if (stageName == 'ejs') {
+    return stageLoader.stage([
+      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('ejs:'))), // [ {left: [{left: file, right: ejsPrefix}], right: input} ]
+      fancyStages.unejs()
+    ]);
+  }
+
   return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
 /*
   if (stageName[0].toLowerCase() == stageName[0])

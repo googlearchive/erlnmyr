@@ -3,6 +3,8 @@ var fs = require('fs');
 var TreeBuilder = require('./lib/tree-builder');
 var types = require('./gulp-types.js');
 
+var EjsFabricator = require('./lib/ejs-fabricator');
+
 function writeFile(output, data, cb) {
   if (typeof data !== 'string')
     stringData = JSON.stringify(data);
@@ -18,6 +20,7 @@ function writeFile(output, data, cb) {
 }
 
 function readJSONFile(filename, cb) {
+  console.log('reading', filename, 'as JSON');
   fs.readFile(filename, 'utf8', function(err, data) {
     if (err)
       throw err;
@@ -27,6 +30,7 @@ function readJSONFile(filename, cb) {
 }
 
 function readFile(filename, cb) {
+  console.log('reading', filename, 'as string');
   fs.readFile(filename, 'utf8', function(err, data) {
     if (err)
       throw err;
@@ -72,6 +76,15 @@ module.exports.fileReader = function(filename) {
   };
 }
 
+module.exports.fileToString = function() {
+  return {
+    impl: readFile,
+    name: 'fileToString',
+    input: 'string',
+    output: 'string'
+  };
+}
+
 module.exports.filter = function(FilterType) {
   return {
     impl: treeBuilder(FilterType),
@@ -92,6 +105,17 @@ module.exports.fabricator = function(FabType, input) {
     input: input,
     output: 'JSON'
   };
+}
+
+module.exports.ejsFabricator = function(prefix) {
+  return {
+    impl: function(data, cb) {
+      cb(new EjsFabricator(data, prefix).fabricate());
+    },
+    name: 'ejsFabrictor',
+    input: 'string',
+    output: '[(string,string)]'
+  }
 }
 
 var treeBuilder = function(WriterType) {
