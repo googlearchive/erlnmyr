@@ -71,6 +71,9 @@ function coerce(left, right, coersion) {
     return leftCoerce;
   }
 
+  if (!isPrimitive(left) || !isPrimitive(right))
+    return undefined;
+
   assert.equal(isPrimitive(left), true, left + ' is a primitive type');
   assert.equal(isPrimitive(right), true, right + ' is a primitive type');
 
@@ -88,6 +91,10 @@ function coerce(left, right, coersion) {
     var subs = substitute(left, coersion);
     if (subs.value == right)
       return subs.coersion;
+    if (subs.value == undefined) {
+      coersion[left] = right;
+      return coersion;
+    }
   }
 
   // string -> 'a
