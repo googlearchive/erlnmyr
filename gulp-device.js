@@ -1,5 +1,6 @@
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
+var http = require('http');
 
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {
@@ -34,6 +35,17 @@ function telemetrySave(url) {
   };
 }
 
+function telemetrySaveNoStyle(url) {
+  return {
+    impl: function(unused, cb) {
+      telemetryTask('save-no-style.py', ['--browser='+options.saveBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    },
+    name:'telemetrySaveNoStyle: ' + url,
+    input: 'unit',
+    output: 'JSON'
+  };
+}
+
 function startADBForwarding(then) {
   exec(options.adb + ' reverse tcp:8000 tcp:8000', then);
 }
@@ -56,7 +68,9 @@ function stopServing(server) {
 // perform perf testing of the provided url
 function telemetryPerf(url) {
   return {
-    impl: telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url]),
+    impl: function(unused, cb) {
+      telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    },
     name: 'telemetryPerf: ' + url,
     input: 'unit',
     output: 'JSON'
@@ -65,7 +79,7 @@ function telemetryPerf(url) {
 
 // start a local server and perf test pipeline-provided data
 function simplePerfer() {
-  var telemetryStep = telemetryPerf(options.perfBrowser, 'http://localhost:8000');
+  var telemetryStep = telemetryPerf('http://localhost:8000');
   return {
     impl: function(data, cb) {
       startADBForwarding(function() {
@@ -86,5 +100,6 @@ function simplePerfer() {
 
 module.exports.init = init;
 module.exports.telemetrySave = telemetrySave;
+module.exports.telemetrySaveNoStyle = telemetrySaveNoStyle;
 module.exports.telemetryPerf = telemetryPerf;
 module.exports.simplePerfer = simplePerfer;
