@@ -4,6 +4,7 @@ var stageLoader = require('./gulp-stage-loader');
 var fancyStages = require('./gulp-fancy-stages');
 var stages = require('./gulp-stages');
 var device = require('./gulp-device');
+var types = require('./gulp-types');
 
 // Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
@@ -89,10 +90,16 @@ function runExperiment(experiment, incb) {
     for (var j = 0; j < stagesList.length; j++) {
       if (experiment.inputs[i].substring(0, 7) == 'http://') {
 	var input = experiment.inputs[i];
-	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySave(input)), fancyStages.listify()];
+	var inputStages = [
+          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
+          fancyStages.left(device.telemetrySave(input)),
+          fancyStages.listify()];
       } else if (experiment.inputs[i].substring(0, 8) == '!http://') {
 	var input = experiment.inputs[i].slice(1);
-	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySaveNoStyle(input)), fancyStages.listify()];
+	var inputStages = [
+          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
+          fancyStages.left(device.telemetrySaveNoStyle(input)),
+          fancyStages.listify()];
       }else {
 	if (experiment.inputs[i][0] == '!') {
 	  var fileToJSON = stageFor("fileToString");
@@ -131,8 +138,8 @@ function experimentPhase() {
   return {
     impl: runExperiment,
     name: 'experimentPhase',
-    input: 'experiment',
-    output: 'unit'
+    input: types.experiment,
+    output: types.unit
   };
 }
 
@@ -140,8 +147,8 @@ function parseExperiment() {
   return {
     impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
     name: 'parseExperiment',
-    input: 'string',
-    output: 'experiment'
+    input: types.string,
+    output: types.experiment
   };
 }
 

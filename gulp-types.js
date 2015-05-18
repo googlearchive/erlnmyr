@@ -1,6 +1,12 @@
 var assert = require('chai').assert;
 
-var primitives = {'string': true, 'JSON': true, 'experiment': true};
+var unit = 'unit';
+var string = 'string';
+var JSON = 'JSON';
+var experiment = 'experiment';
+
+var primitives = {unit: true, string: true, JSON: true, experiment: true};
+
 function isPrimitive(type) {
   return primitives[type] == true || isTypeVar(type);
 }
@@ -8,43 +14,51 @@ function isPrimitive(type) {
 var typeVarID = 0;
 
 function newTypeVar() {
-  return "'" + (typeVarID++);
+  return {tVar: typeVarID++};
 }
 
 function isTypeVar(type) {
-  return type[0] == "'";
+  return typeof type == 'object' && type.tVar !== undefined;
+}
+
+function List(type) {
+  return {base: type};
 }
 
 function isList(type) {
-  return type[0] == '[' && type[type.length - 1] == ']';
+  return typeof type == 'object' && type.base !== undefined;
 }
 
 function delist(type) {
   assert.isTrue(isList(type));
-  return type.slice(1, type.length - 1);
+  return type.base;
+}
+
+function Tuple(left, right) {
+  return {left: left, right: right};
 }
 
 function isTuple(type) {
-  return /\(([^,].*),([^,].*)\)/.exec(type) !== null;
+  return typeof type == 'object' && type.left !== undefined && type.right !== undefined;
 }
 
 function leftType(type) {
   assert.isTrue(isTuple(type));
-  return /\(([^,].*),([^,].*)\)/.exec(type)[1];
+  return type.left;
 }
 
 function rightType(type) {
   assert.isTrue(isTuple(type));
-  return /\(([^,].*),([^,].*)\)/.exec(type)[2];
+  return type.right;
 }
 
 function substitute(type, coersion) {
   assert.isTrue(isPrimitive(type) && isTypeVar(type), type + ' is a primitive type var');
   var subs = {};
-  subs.value = coersion[type];
+  subs.value = coersion[type.tVar];
   subs.coersion = {};
   for (key in coersion) {
-    if (key == type)
+    if (key == type.tVar)
       continue;
     subs.coersion[key] = coersion[key];
   }
@@ -52,7 +66,8 @@ function substitute(type, coersion) {
 }
 
 // TODO complete this, deal with multiple type vars if they ever arise.
-function coerce(left, right, coersion) {
+function coerce(left, right, coersion, visited) {
+  visited = visited || [];
   // 'a -> 'a, string -> string, JSON -> JSON, etc.
   if (left == right)
     return coersion;
@@ -71,40 +86,43 @@ function coerce(left, right, coersion) {
     return leftCoerce;
   }
 
-  if (!isPrimitive(left) || !isPrimitive(right))
-    return undefined;
-
-  assert.equal(isPrimitive(left), true, left + ' is a primitive type');
-  assert.equal(isPrimitive(right), true, right + ' is a primitive type');
-
   // 'a -> 'b
-
   if (isTypeVar(left) && isTypeVar(right)) {
     var result = left;
-    while (isTypeVar(result) && coersion[result] !== undefined)
-      result = coersion[result];
+    while (isTypeVar(result) && coersion[result.tVar] !== undefined)
+      result = coersion[result.tVar];
     left = result;
   }
 
   // 'a -> string
+  // In this instance, 'a has already been introduced,
+  // so we must actually check that it type-matches the RHS.
   if (isTypeVar(left)) {
     var subs = substitute(left, coersion);
-    if (subs.value == right)
-      return subs.coersion;
     if (subs.value == undefined) {
-      coersion[left] = right;
+      coersion[left.tVar] = right;
       return coersion;
     }
+    if (isTypeVar(subs.value) && visited.indexOf(subs.value.tVar) !== -1)
+      return undefined;
+    visited.push(subs.value.tVar);
+    var coersion = coerce(subs.value, right, coersion, visited);
+    return coersion;
   }
 
   // string -> 'a
   if (isTypeVar(right)) {
-    coersion[right] = left;
+    coersion[right.tVar] = left;
     return coersion;
   }
 
   return undefined;
 }
 
+for (primitive in primitives)
+  module.exports[primitive] = primitive;
 module.exports.newTypeVar = newTypeVar;
+module.exports.List = List;
+module.exports.Tuple = Tuple;
 module.exports.coerce = coerce;
+ 

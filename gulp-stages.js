@@ -9,7 +9,7 @@ var TraceTree = require('./lib/trace-tree');
 var TracePrettyPrint = require('./lib/trace-pretty-print');
 
 function writeFile(output, data, cb) {
-  if (typeof data !== 'string')
+  if (typeof data !== types.string)
     stringData = JSON.stringify(data);
   else
     stringData = data;
@@ -56,8 +56,8 @@ module.exports.JSONReader = function(filename) {
   return {
     impl: function(_, cb) { readJSONFile(filename, cb); },
     name: 'JSONReader: ' + filename,
-    input: 'unit',
-    output: 'JSON'
+    input: types.unit,
+    output: types.JSON
   };
 }
 
@@ -65,8 +65,8 @@ module.exports.fileToJSON = function() {
   return {
     impl: readJSONFile,
     name: 'fileToJSON',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 
@@ -74,8 +74,8 @@ module.exports.fileReader = function(filename) {
   return {
     impl: function(_, cb) { readFile(filename, cb); },
     name: 'fileReader: ' + filename,
-    input: 'unit',
-    output: 'string'
+    input: types.unit,
+    output: types.string
   };
 }
 
@@ -83,8 +83,8 @@ module.exports.fileToString = function() {
   return {
     impl: readFile,
     name: 'fileToString',
-    input: 'string',
-    output: 'string'
+    input: types.string,
+    output: types.string
   };
 }
 
@@ -92,13 +92,13 @@ module.exports.filter = function(FilterType) {
   return {
     impl: treeBuilder(FilterType),
     name: 'filter: ' + FilterType.name,
-    input: 'JSON',
-    output: 'JSON',
+    input: types.JSON,
+    output: types.JSON,
   };
 }
 
 module.exports.fabricator = function(FabType, input) {
-  input = input || 'JSON';
+  input = input || types.JSON;
   return {
     impl: function(data, cb) {
       var fab = new FabType(data);
@@ -106,7 +106,7 @@ module.exports.fabricator = function(FabType, input) {
     },
     name: 'fabricator: ' + FabType,
     input: input,
-    output: 'JSON'
+    output: types.JSON
   };
 }
 
@@ -116,8 +116,8 @@ module.exports.ejsFabricator = function(prefix) {
       cb(new EjsFabricator(data, prefix).fabricate());
     },
     name: 'ejsFabrictor',
-    input: 'string',
-    output: '[(string,string)]'
+    input: types.string,
+    output: types.List(types.Tuple(types.string, types.string))
   }
 }
 
@@ -127,8 +127,8 @@ module.exports.traceFilter = function() {
       cb(new TraceFilter(data).filter());
     },
     name: 'traceFilter',
-    input: 'JSON',
-    output: 'JSON'
+    input: types.JSON,
+    output: types.JSON
   }
 }
 
@@ -138,8 +138,8 @@ module.exports.traceTree = function() {
       cb(new TraceTree(data).filter());
     },
     name: 'traceTree',
-    input: 'JSON',
-    output: 'JSON'
+    input: types.JSON,
+    output: types.JSON
   }
 }
 
@@ -149,8 +149,8 @@ module.exports.tracePrettyPrint = function() {
       cb(new TracePrettyPrint(data).filter());
     },
     name: 'tracePrettyPrint',
-    input: 'JSON',
-    output: 'String'
+    input: types.JSON,
+    output: types.string
   }
 }
 
@@ -167,9 +167,9 @@ var treeBuilder = function(WriterType) {
 module.exports.treeBuilderWriter = function(WriterType) {
   return {
     impl: treeBuilder(WriterType),
-    name: 'treeBuilderWriter: ' + WriterType,
-    input: 'JSON',
-    output: 'string'
+    name: 'treeBuilderWriter: ' + WriterType.name,
+    input: types.JSON,
+    output: types.string
   };
 }
 
@@ -188,7 +188,7 @@ module.exports.toFile = function() {
   return {
     impl: function(data, cb) { writeFile(data.right, data.left, cb); },
     name: 'toFile',
-    input: "(" + typeVar + ",string)",
+    input: types.Tuple(typeVar, types.string),
     output: typeVar
   };
 }
@@ -208,7 +208,7 @@ module.exports.taggedConsoleOutput = function() {
   return {
     impl: function(data, cb) { console.log(data.right); console.log('----------------'), console.log(data.left); cb(data); },
     name: 'taggedConsoleOutput',
-    input: '('+typeVar+',string)',
-    output: '('+typeVar+',string)'
+    input: types.Tuple(typeVar, types.string),
+    output: types.Tuple(typeVar, types.string)
   };
 }
