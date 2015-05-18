@@ -14,7 +14,7 @@ device.init(options);
 experiment.init(options);
 
 gulp.task('test', function() {
-  return gulp.src('tests/*.js', {read: false})
+  return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
       .pipe(mocha({
         ui: 'bdd',
         ignoreLeaks: true,
