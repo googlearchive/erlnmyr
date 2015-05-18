@@ -7,6 +7,7 @@ var EjsFabricator = require('./lib/ejs-fabricator');
 var TraceFilter = require('./lib/trace-filter');
 var TraceTree = require('./lib/trace-tree');
 var TracePrettyPrint = require('./lib/trace-pretty-print');
+var TracePIDSplitter = require('./lib/trace-pid-splitter');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -152,6 +153,17 @@ module.exports.tracePrettyPrint = function() {
     input: types.JSON,
     output: types.string
   }
+}
+
+module.exports.tracePIDSplitter = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new TracePIDSplitter(data).split());
+    },
+    name: 'tracePIDSplitter',
+    input: types.JSON,
+    output: types.Map(types.JSON)
+  };
 }
 
 var treeBuilder = function(WriterType) {
