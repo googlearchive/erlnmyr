@@ -45,14 +45,11 @@ describe('coerce', function() {
     assert.deepEqual(coersion(typeVar, types.JSON), types.coerce(types.JSON, typeVar, {}));
   });
 
-  /**
-   * currently failing - pls fix!
   it('should coerce typeVars to complex types', function() {
     var typeVar = types.newTypeVar();
     assert.deepEqual(coersion(typeVar, '[string]'), types.coerce(typeVar, '[string]', {}));
     assert.deepEqual(coersion(typeVar, '(JSON,string)'), types.coerce('(JSON,string)', typeVar, {}));
   });
-   */
 
   it('should coerce typeVars to typeVars', function() {
     var typeVar1 = types.newTypeVar();
@@ -60,19 +57,12 @@ describe('coerce', function() {
     assert.deepEqual(coersion(typeVar1, typeVar2), types.coerce(typeVar1, typeVar2, {}));
   });
 
-  /**
-   * NOTE: I'm not sure it's right to perform the reduction here.
-   * should type information be carried through the coersions until the
-   * entire branch is type checked?
-   */
   it('should follow and reduce typeVar coersion chains', function() {
     var typeVar1 = types.newTypeVar();
     var chain = coersion(typeVar1, types.string);
-    assert.deepEqual({}, types.coerce(typeVar1, types.string, chain));
+    assert.deepEqual(chain, types.coerce(typeVar1, types.string, chain));
   });
 
-  /**
-   * currently failing = pls fix!
   it('should follow long typeVar coersion chains', function() {
     var typeVar1 = types.newTypeVar();
     var typeVar2 = types.newTypeVar();
@@ -80,7 +70,6 @@ describe('coerce', function() {
     var chain = coersion(typeVar1, typeVar2, coersion(typeVar2, typeVar3, coersion(typeVar3, types.string)));
     assert.deepEqual(chain, types.coerce(typeVar1, types.string, chain));
   });
-   */
 
   it('should not infinitely recurse through coersion chains', function() {
     var typeVar1 = types.newTypeVar();
@@ -93,7 +82,14 @@ describe('coerce', function() {
   it('should resolve more complex expressions correctly', function() {
     var typeVar1 = types.newTypeVar();
     var typeVar2 = types.newTypeVar();
+    var typeVar3 = types.newTypeVar();
     assert.deepEqual(coersion(typeVar1, types.unit, coersion(typeVar2, types.unit)), types.coerce(types.Tuple(typeVar1, typeVar1), types.Tuple(types.unit, typeVar2), {}));
+    assert.deepEqual(coersion(typeVar1, types.Tuple(types.JSON, types.string)), types.coerce(types.Tuple(types.JSON, types.string), typeVar1, {}));
+    assert.deepEqual(coersion(typeVar1, types.string), types.coerce(types.List(types.Tuple(types.JSON, types.string)), types.List(types.Tuple(types.JSON, typeVar1)), {}));
+    var c = coersion(typeVar2, types.string);
+    assert.deepEqual(coersion(typeVar1, types.string, c), types.coerce(types.List(types.Tuple(types.JSON, typeVar2)), types.List(types.Tuple(types.JSON, typeVar1)), c));
+    var d = coersion(typeVar3, types.List(types.Tuple(types.JSON, typeVar2)), c);
+    assert.deepEqual(coersion(typeVar1, types.string, d), types.coerce(typeVar3, types.List(types.Tuple(types.JSON, typeVar1)), d));
   });
 });
 

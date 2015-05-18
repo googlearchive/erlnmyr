@@ -33,8 +33,6 @@ module.exports.fileInputs = function(inputSpec) {
 module.exports.map = function(stage) {
   assert.isDefined(stage.input, stage + ' has no input type');
   assert.isDefined(stage.output + ' has no output type');
-  var input = '[' + stage.input + ']';
-  var output = '[' + stage.output + ']';
 
   return {
     impl: function(input, incb) {
@@ -49,8 +47,8 @@ module.exports.map = function(stage) {
       cb();
     },
     name: 'map(' + stage.name + ')',
-    input: input,
-    output: output
+    input: types.List(stage.input),
+    output: types.List(stage.output)
   };
 }
 

@@ -66,7 +66,8 @@ function substitute(type, coersion) {
 }
 
 // TODO complete this, deal with multiple type vars if they ever arise.
-function coerce(left, right, coersion) {
+function coerce(left, right, coersion, visited) {
+  visited = visited || [];
   // 'a -> 'a, string -> string, JSON -> JSON, etc.
   if (left == right)
     return coersion;
@@ -85,14 +86,7 @@ function coerce(left, right, coersion) {
     return leftCoerce;
   }
 
-  if (!isPrimitive(left) || !isPrimitive(right))
-    return undefined;
-
-  assert.equal(isPrimitive(left), true, left + ' is a primitive type');
-  assert.equal(isPrimitive(right), true, right + ' is a primitive type');
-
   // 'a -> 'b
-
   if (isTypeVar(left) && isTypeVar(right)) {
     var result = left;
     while (isTypeVar(result) && coersion[result.tVar] !== undefined)
@@ -101,14 +95,19 @@ function coerce(left, right, coersion) {
   }
 
   // 'a -> string
+  // In this instance, 'a has already been introduced,
+  // so we must actually check that it type-matches the RHS.
   if (isTypeVar(left)) {
     var subs = substitute(left, coersion);
-    if (subs.value == right)
-      return subs.coersion;
     if (subs.value == undefined) {
       coersion[left.tVar] = right;
       return coersion;
     }
+    if (isTypeVar(subs.value) && visited.indexOf(subs.value.tVar) !== -1)
+      return undefined;
+    visited.push(subs.value.tVar);
+    var coersion = coerce(subs.value, right, coersion, visited);
+    return coersion;
   }
 
   // string -> 'a

@@ -45,7 +45,6 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
-  console.log(stageName);
   return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
 /*
   if (stageName[0].toLowerCase() == stageName[0])
@@ -91,10 +90,16 @@ function runExperiment(experiment, incb) {
     for (var j = 0; j < stagesList.length; j++) {
       if (experiment.inputs[i].substring(0, 7) == 'http://') {
 	var input = experiment.inputs[i];
-	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySave(input)), fancyStages.listify()];
+	var inputStages = [
+          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
+          fancyStages.left(device.telemetrySave(input)),
+          fancyStages.listify()];
       } else if (experiment.inputs[i].substring(0, 8) == '!http://') {
 	var input = experiment.inputs[i].slice(1);
-	var inputStages = [fancyStages.immediate(input), fancyStages.tee(), fancyStages.left(device.telemetrySaveNoStyle(input)), fancyStages.listify()];
+	var inputStages = [
+          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
+          fancyStages.left(device.telemetrySaveNoStyle(input)),
+          fancyStages.listify()];
       }else {
 	if (experiment.inputs[i][0] == '!') {
 	  var fileToJSON = stageFor("fileToString");

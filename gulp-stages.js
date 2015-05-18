@@ -127,8 +127,8 @@ module.exports.traceFilter = function() {
       cb(new TraceFilter(data).filter());
     },
     name: 'traceFilter',
-    input: 'JSON',
-    output: 'JSON'
+    input: types.JSON,
+    output: types.JSON
   }
 }
 
@@ -138,8 +138,8 @@ module.exports.traceTree = function() {
       cb(new TraceTree(data).filter());
     },
     name: 'traceTree',
-    input: 'JSON',
-    output: 'JSON'
+    input: types.JSON,
+    output: types.JSON
   }
 }
 
@@ -149,8 +149,8 @@ module.exports.tracePrettyPrint = function() {
       cb(new TracePrettyPrint(data).filter());
     },
     name: 'tracePrettyPrint',
-    input: 'JSON',
-    output: 'String'
+    input: types.JSON,
+    output: types.string
   }
 }
 
