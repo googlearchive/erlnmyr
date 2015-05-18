@@ -91,5 +91,14 @@ describe('coerce', function() {
     var d = coersion(typeVar3, types.List(types.Tuple(types.JSON, typeVar2)), c);
     assert.deepEqual(coersion(typeVar1, types.string, d), types.coerce(typeVar3, types.List(types.Tuple(types.JSON, typeVar1)), d));
   });
+
+  it('should not coerce when things are whack', function() {
+    var typeVar1 = types.newTypeVar();
+    var typeVar2 = types.newTypeVar();
+    assert.deepEqual(undefined, types.coerce(typeVar1, types.string, coersion(typeVar1, types.JSON)));
+    assert.deepEqual(undefined, types.coerce(typeVar1, types.string, coersion(typeVar2, types.JSON, coersion(typeVar1, typeVar2))));
+    assert.deepEqual(undefined, types.coerce(types.Tuple(typeVar1, typeVar1), types.Tuple(types.string, types.JSON), {}));
+    assert.deepEqual(undefined, types.coerce(types.Tuple(typeVar1, typeVar2), types.Tuple(types.string, types.JSON), coersion(typeVar1, typeVar2)));
+  });
 });
 
