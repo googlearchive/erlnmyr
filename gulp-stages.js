@@ -4,6 +4,9 @@ var TreeBuilder = require('./lib/tree-builder');
 var types = require('./gulp-types.js');
 
 var EjsFabricator = require('./lib/ejs-fabricator');
+var TraceFilter = require('./lib/trace-filter');
+var TraceTree = require('./lib/trace-tree');
+var TracePrettyPrint = require('./lib/trace-pretty-print');
 
 function writeFile(output, data, cb) {
   if (typeof data !== 'string')
@@ -115,6 +118,39 @@ module.exports.ejsFabricator = function(prefix) {
     name: 'ejsFabrictor',
     input: 'string',
     output: '[(string,string)]'
+  }
+}
+
+module.exports.traceFilter = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new TraceFilter(data).filter());
+    },
+    name: 'traceFilter',
+    input: 'JSON',
+    output: 'JSON'
+  }
+}
+
+module.exports.traceTree = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new TraceTree(data).filter());
+    },
+    name: 'traceTree',
+    input: 'JSON',
+    output: 'JSON'
+  }
+}
+
+module.exports.tracePrettyPrint = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new TracePrettyPrint(data).filter());
+    },
+    name: 'tracePrettyPrint',
+    input: 'JSON',
+    output: 'String'
   }
 }
 
