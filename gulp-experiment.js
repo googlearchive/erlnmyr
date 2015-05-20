@@ -32,7 +32,8 @@ function stageFor(stageName, inputSpec, input) {
   if (stageName.substring(0, 7) == 'output:') {
     return stageLoader.stage([
       fancyStages.tee(),
-      fancyStages.right(fancyStages.map(fancyStages.right(fancyStages.outputName(inputSpec, stageName.substring(7))))),
+      fancyStages.right(fancyStages.keyMap(fancyStages.outputName(inputSpec, stageName.substring(7)))),
+      fancyStages.right(fancyStages.mapToTuples()),
       fancyStages.right(fancyStages.map(stages.toFile())),
       fancyStages.justLeft()
     ]);
@@ -40,34 +41,19 @@ function stageFor(stageName, inputSpec, input) {
 
   if (stageName == 'ejs') {
     return stageLoader.stage([
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('ejs:'))), // [ {left: [{left: file, right: ejsPrefix}], right: input} ]
-      fancyStages.unejs()
+      fancyStages.valueMap(stageLoader.stageSpecificationToStage('ejs:')),
+      fancyStages.deMap()
     ]);
   }
 
   if (stageName == 'tracePIDSplitter') {
     return stageLoader.stage([
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('tracePIDSplitter'))), // [ ( { string: JSON }, input ) ]
-      fancyStages.unsplit()
+      fancyStages.valueMap(stageLoader.stageSpecificationToStage('tracePIDSplitter')),
+      fancyStages.deMap()
     ])
   }
 
-  return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
-/*
-  if (stageName[0].toLowerCase() == stageName[0])
-    return fancyStages.map(fancyStages.left(stages[stageName]()));
-  if (stageName.indexOf('Fabricator') !== -1)
-    return fancyStages.map(fancyStages.left(fabricators[stageName]));
-  // FIXME: This relies on the fact that filters and writers are both the same thing
-  // fancyStages.right now (i.e. filter and treeBuilderWriter are the same function).
-  // This could well become a problem in the future.
-  // Also, eval: ew. If there was a local var dict I could look up the constructor name directly.
-  console.log(stageName, stageName in filters);
-  if (stageName in filters)
-    return fancyStages.map(fancyStages.left(stages.filter(filters[stageName])));
-  if (stageName in writers)
-    return fancyStages.map(fancyStages.left(stages.treeBuilderWriter(writers[stageName])));
-*/
+  return fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName));
 }
 
 function updateOptions(optionsDict) {
@@ -86,6 +72,21 @@ function init(parsedOptions) {
   options = parsedOptions;
 }
 
+function outputFor(output) {
+  if (output == 'console') {
+    return [stages.taggedConsoleOutput()];
+  } else {
+    return [
+      fancyStages.keyMap(fancyStages.outputName(input, output)),
+      fancyStages.mapToTuples(),
+      fancyStages.map(stages.toFile())
+    ];
+  }
+}
+
+// exposed so this can be overridden in testing
+module.exports.outputFor = outputFor;
+
 function runExperiment(experiment, incb) {
   updateOptions(experiment.flags);
   var pipelines = [];
@@ -98,16 +99,18 @@ function runExperiment(experiment, incb) {
       if (experiment.inputs[i].substring(0, 7) == 'http://') {
 	var input = experiment.inputs[i];
 	var inputStages = [
-          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
-          fancyStages.left(device.telemetrySave(input)),
-          fancyStages.listify()];
+          fancyStages.immediate(input),
+          fancyStages.listify(),
+          fancyStages.asKeys(),
+          fancyStages.valueMap(device.telemetrySave())];
       } else if (experiment.inputs[i].substring(0, 8) == '!http://') {
 	var input = experiment.inputs[i].slice(1);
-	var inputStages = [
-          fancyStages.immediate({left: undefined, right: input}, types.Tuple(types.unit, types.string)),
-          fancyStages.left(device.telemetrySaveNoStyle(input)),
-          fancyStages.listify()];
-      }else {
+        var inputStages = [
+          fancyStages.immediate(input),
+          fancyStages.listify(),
+          fancyStages.asKeys(),
+          fancyStages.valueMap(device.telemetrySaveNoStyle())];
+      } else {
 	if (experiment.inputs[i][0] == '!') {
 	  var fileToJSON = stageFor("fileToString");
 	  var input = experiment.inputs[i].slice(1);
@@ -115,16 +118,11 @@ function runExperiment(experiment, incb) {
 	  var fileToJSON = stageFor("fileToJSON");
 	  var input = experiment.inputs[i];
 	}
-	var inputStages = [fancyStages.fileInputs(input), fancyStages.map(fancyStages.tee()), fileToJSON];
+	var inputStages = [fancyStages.fileInputs(input), fancyStages.asKeys(), fileToJSON];
       }
       var pl = inputStages.concat(
           stagesList[j].stages.map(function(a) { return stageFor(a, input); }));
-      if (stagesList[j].output == 'console') {
-	pl.push(fancyStages.map(stages.taggedConsoleOutput()));
-      } else {
-	pl.push(fancyStages.map(fancyStages.right(fancyStages.outputName(input, stagesList[j].output))));
-	pl.push(fancyStages.map(stages.toFile()));
-      }
+      pl = pl.concat(module.exports.outputFor(stagesList[j].output));
       pipelines.push(pl);
     }
   }

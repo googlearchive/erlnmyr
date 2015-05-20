@@ -1,7 +1,9 @@
 var assert = require('chai').assert;
 var stageLoader = require('../../gulp-stage-loader');
+var stages = require('../../gulp-stages');
 var fancyStages = require('../../gulp-fancy-stages');
 var types = require('../../gulp-types');
+var experiment = require('../../gulp-experiment');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
@@ -83,3 +85,29 @@ describe('Style Tokenizer / Detokenizer', function() {
     testPipeline(tokenizeDetokenizePipeline("tests/pipeline/inline-style.json"), done);
   });
 });
+
+function compare(name) {
+  return {
+    impl: function(input, cb) {
+      stages.fileToString().impl(name, function(data) {
+        assert.equal(data, input);
+        cb(input);
+      });
+    },
+    name: 'compare',
+    input: types.string,
+    output: types.string
+  };
+}
+ 
+
+describe('experiment', function() {
+  it('should be able to run', function(done) {
+    experiment.outputFor = function(name) {
+      return [fancyStages.valueMap(compare(name))];
+    }
+
+    testPipeline(['file:tests/pipeline/simple.exp', 'parseExperiment', 'experimentPhase'].map(stageLoader.stageSpecificationToStage), done);
+  });
+});
+    

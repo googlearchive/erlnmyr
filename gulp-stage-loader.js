@@ -19,6 +19,7 @@ var fabricators = {
 };
 
 var stages = require('./gulp-stages');
+var fancyStages = require('./gulp-fancy-stages');
 var types = require('./gulp-types');
 var device = require('./gulp-device');
 var experiment = require('./gulp-experiment');
@@ -28,9 +29,8 @@ var argInputs = {
   'JSON': stages.JSONReader,
   'file': stages.fileReader,
   'output': stages.fileOutput,
-  'save': device.telemetrySave,
-  'perf': device.telemetryPerf,
-  'ejs': stages.ejsFabricator
+  'ejs': stages.ejsFabricator,
+  'immediate': fancyStages.immediate
 }
 
 var byConstruction = [
@@ -54,11 +54,23 @@ function stageSpecificationToStage(stage) {
     if (stage in byName[i])
       return byName[i][stage]();
   }
+
+  assert(false, "No stage found for specification " + stage);
 }
 
 function processStages(stages, cb, fail) {
   assert.equal(stages[0].input, 'unit');
   processStagesWithInput(null, stages, cb, fail);
+}
+
+function typeCheck(stages) {
+  var coersion = {};
+  for (var i = 0; i < stages.length - 1; i++) {
+    var inputCoersion = coersion;
+    coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
+    assert.isDefined(coersion, "Type checking failed for " + stages[i].name + ':' + JSON.stringify(stages[i].output) + 
+      " -> " + stages[i + 1].name + ':' + JSON.stringify(stages[i + 1].input) + " (" + JSON.stringify(inputCoersion) + ")");
+  }
 }
 
 /*
@@ -67,13 +79,7 @@ function processStages(stages, cb, fail) {
  * Sorry for potato quality.
  */
 function processStagesWithInput(input, stages, cb, fail) {
-  var coersion = {};
-  for (var i = 0; i < stages.length - 1; i++) {
-    var inputCoersion = coersion;
-    coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
-    assert.isDefined(coersion, "Type checking failed for " + stages[i].name + ':' + JSON.stringify(stages[i].output) + 
-      " -> " + stages[i + 1].name + ':' + JSON.stringify(stages[i + 1].input) + " (" + JSON.stringify(inputCoersion) + ")");
-  }
+  typeCheck(stages);
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
       try {
@@ -86,16 +92,22 @@ function processStagesWithInput(input, stages, cb, fail) {
   cb(input);
 };
 
+// TODO: This doesn't currently fail if the internal type is consistent and the external type is consistent
+// but they aren't consistent with each other.
+// for example, if the provided list uses tee() then justLeft(), regardless of what steps are in between,
+// this typechecks as 'a -> 'a from the perspective of the outside world.
 module.exports.stage = function(list) {
   return {
     impl: function(input, cb) {
       processStagesWithInput(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
     },
+    name: '[' + list.map(function(a) { return a.name; }) + ']',
     input: list[0].input,
     output: list[list.length - 1].output
   };
 }
 
+module.exports.typeCheck = typeCheck;
 module.exports.processStages = processStages;
 module.exports.processStagesWithInput = processStagesWithInput;
 module.exports.stageSpecificationToStage = stageSpecificationToStage;

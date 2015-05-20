@@ -2,6 +2,8 @@ var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var http = require('http');
 
+var types = require('./gulp-types');
+
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {
   if (options.chromium !== undefined)
@@ -14,6 +16,7 @@ function init(parsedOptions) {
   updatePYTHONPATH();
 }
 
+// TODO can probably unwrap this now.
 function telemetryTask(pyScript, pyArgs) {
   return function(unused, cb) {
     var result = "";
@@ -24,25 +27,25 @@ function telemetryTask(pyScript, pyArgs) {
   };
 }
 
-function telemetrySave(url) {
+function telemetrySave() {
   return {
-    impl: function(unused, cb) {
-      telemetryTask('save.py', ['--browser='+options.saveBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    impl: function(url, cb) {
+      telemetryTask('save.py', ['--browser='+options.saveBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
-    name:'telemetrySave: ' + url,
-    input: 'unit',
-    output: 'JSON'
+    name:'telemetrySave',
+    input: types.string,
+    output: types.JSON
   };
 }
 
-function telemetrySaveNoStyle(url) {
+function telemetrySaveNoStyle() {
   return {
-    impl: function(unused, cb) {
-      telemetryTask('save-no-style.py', ['--browser='+options.saveBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    impl: function(url, cb) {
+      telemetryTask('save-no-style.py', ['--browser='+options.saveBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
-    name:'telemetrySaveNoStyle: ' + url,
-    input: 'unit',
-    output: 'JSON'
+    name:'telemetrySaveNoStyle',
+    input: types.string,
+    output: types.JSON
   };
 }
 
@@ -66,25 +69,25 @@ function stopServing(server) {
 }
 
 // perform perf testing of the provided url
-function telemetryPerf(url) {
+function telemetryPerf() {
   return {
-    impl: function(unused, cb) {
-      telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url])(unused, function(data) { cb(JSON.parse(data)); });
+    impl: function(url, cb) {
+      telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
-    name: 'telemetryPerf: ' + url,
-    input: 'unit',
-    output: 'JSON'
+    name: 'telemetryPerf',
+    input: types.string,
+    output: types.JSON
   };
 }
 
 // start a local server and perf test pipeline-provided data
 function simplePerfer() {
-  var telemetryStep = telemetryPerf('http://localhost:8000');
+  var telemetryStep = telemetryPerf();
   return {
     impl: function(data, cb) {
       startADBForwarding(function() {
         var server = startServing(data);
-        telemetryStep.impl(undefined, function(result) {
+        telemetryStep.impl('http://localhost:8000', function(result) {
           stopServing(server);
           stopADBForwarding(function() {
             cb(result);
@@ -93,8 +96,8 @@ function simplePerfer() {
       });
     },
     name: 'simplePerfer',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 

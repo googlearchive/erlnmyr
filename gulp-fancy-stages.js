@@ -20,9 +20,15 @@ function readerForInput(name) {
 module.exports.fileInputs = function(inputSpec) {
   return {
     impl: function(unused, cb) {
-      var re = new RegExp('^' + inputSpec + '$');
-      var files = fs.readdirSync('.');
-      cb(files.filter(re.exec.bind(re)));
+      var pieces = inputSpec.split('/');
+      var dir = pieces.slice(0, pieces.length - 1).join('/');
+      var file = pieces[pieces.length - 1];
+      var re = new RegExp('^' + file + '$');
+      if (dir == '')
+        var files = fs.readdirSync('.');
+      else
+        var files = fs.readdirSync(dir);
+      cb(files.filter(re.exec.bind(re)).map(function(file) { return dir == '' ? file : dir + '/' + file; }));
     },
     name: 'fileInputs: ' + inputSpec,
     input: types.unit,
@@ -129,42 +135,6 @@ module.exports.concat = function() {
   }
 }
 
- // [ {left: [{left: file, right: ejsPrefix}], right: input} ]
-module.exports.unejs = function() {
-  return {
-    impl: function(input, cb) {
-      var output = []
-      input.forEach(function(inputItem) {
-	for (var i = 0; i < inputItem.left.length; i++)
-	  output.push({left: inputItem.left[i].left, right: inputItem.right + inputItem.left[i].right});
-      });
-      cb(output);
-    },
-    name: 'unejs',
-    input: types.List(types.Tuple(types.List(types.Tuple(types.string, types.string)), types.string)),
-    output: types.List(types.Tuple(types.string, types.string))
-  }
-}
-
-// TODO: If I switch over to map types everywhere, I should be able to get rid of this and unejs in 
-// favor of something much more generic.
-module.exports.unsplit = function() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(input, cb) {
-      var output = [];
-      input.forEach(function(inputItem) {
-        for (key in inputItem.left)
-          output.push({left: inputItem.left[key], right: key + inputItem.right});
-      });
-      cb(output);
-    },
-    name: 'unsplit',
-    input: types.List(types.Tuple(types.Map(typeVar), types.string)),
-    output: types.List(types.Tuple(typeVar, types.string))
-  };
-}
-
 module.exports.listify = function() {
   var typeVar = types.newTypeVar();
   return {
@@ -182,5 +152,89 @@ module.exports.immediate = function(x, type) {
     name: 'immediate',
     input: types.unit,
     output: type
+  };
+}
+
+module.exports.valueMap = function(stage) {
+  return {
+    impl: function(input, incb) {
+      var output = {};
+      cb = function() { incb(output); };
+      for (key in input) {
+        cb = (function(cb, key) { return function() { stage.impl(input[key], function(data) { output[key] = data; cb(); }); }})(cb, key);
+      }
+      cb();
+    },
+    name: 'valueMap(' + stage.name + ')',
+    input: types.Map(stage.input),
+    output: types.Map(stage.output)
+  };
+}
+
+module.exports.keyMap = function(stage) {
+  assert.equal(stage.input, types.string);
+  assert.equal(stage.output, types.string);
+  var typeVar = types.newTypeVar();
+  return {
+    impl: function(input, incb) {
+      var output = {};
+      cb = function() { incb(output); };
+      for (key in input) {
+        cb = (function(cb, key) { return function() { stage.impl(key, function(data) { output[data] = input[key]; cb(); }); }})(cb, key);
+      }
+      cb();
+    },
+    name: 'valueMap(' + stage.name + ')',
+    input: types.Map(typeVar),
+    output: types.Map(typeVar)
+  };
+}
+
+module.exports.mapToTuples = function() {
+  var typeVar = types.newTypeVar();
+  return {
+    impl: function(input, cb) {
+      var output = [];
+      for (var key in input) {
+        output.push({left: key, right: input[key]});
+      }
+      cb(output);
+    },
+    name: 'mapToTuples',
+    input: types.Map(typeVar),
+    output: types.List(types.Tuple(types.string, typeVar))
+  };
+}
+
+module.exports.deMap = function() {
+  var typeVar = types.newTypeVar();
+  return {
+    impl: function(input, cb) {
+      var output = {};
+      for (key in input) {
+        for (key2 in input[key]) {
+          output[key + '~' + key2] = input[key][key2];
+        }
+      }
+      cb(output);
+    },
+    name: 'deMap',
+    input: types.Map(types.Map(typeVar)),
+    output: types.Map(typeVar)
+  };
+}
+
+module.exports.asKeys = function() {
+  return {
+    impl: function(input, cb) {
+      var output = {};
+      for (var i = 0; i < input.length; i++) {
+        output[input[i]] = input[i];
+      }
+      cb(output);
+    },
+    name: 'asKeys',
+    input: types.List(types.string),
+    output: types.Map(types.string)
   };
 }
