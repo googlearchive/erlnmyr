@@ -45,6 +45,13 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
+  if (stageName == 'tracePIDSplitter') {
+    return stageLoader.stage([
+      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('tracePIDSplitter'))), // [ ( { string: JSON }, input ) ]
+      fancyStages.unsplit()
+    ])
+  }
+
   return fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage(stageName)));
 /*
   if (stageName[0].toLowerCase() == stageName[0])

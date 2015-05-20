@@ -52,6 +52,20 @@ function rightType(type) {
   return type.right;
 }
 
+// string-keyed maps
+function Map(type) {
+  return {value: type};
+}
+
+function isMap(type) {
+  return typeof type == 'object' && type.value !== undefined;
+}
+
+function demap(type) {
+  assert.isTrue(isMap(type));
+  return type.value;
+}
+
 function substitute(type, coersion) {
   assert.isTrue(isPrimitive(type) && isTypeVar(type), type + ' is a primitive type var');
   var subs = {};
@@ -84,6 +98,10 @@ function coerce(left, right, coersion, visited) {
     for (key in rightCoerce)
       leftCoerce[key] = rightCoerce[key];
     return leftCoerce;
+  }
+
+  if (isMap(left) && isMap(right)) {
+    return coerce(demap(left), demap(right), coersion);
   }
 
   // 'a -> 'b
@@ -124,5 +142,6 @@ for (primitive in primitives)
 module.exports.newTypeVar = newTypeVar;
 module.exports.List = List;
 module.exports.Tuple = Tuple;
+module.exports.Map = Map;
 module.exports.coerce = coerce;
  
