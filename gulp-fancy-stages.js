@@ -135,42 +135,6 @@ module.exports.concat = function() {
   }
 }
 
- // [ {left: [{left: file, right: ejsPrefix}], right: input} ]
-module.exports.unejs = function() {
-  return {
-    impl: function(input, cb) {
-      var output = []
-      input.forEach(function(inputItem) {
-	for (var i = 0; i < inputItem.left.length; i++)
-	  output.push({left: inputItem.left[i].left, right: inputItem.right + inputItem.left[i].right});
-      });
-      cb(output);
-    },
-    name: 'unejs',
-    input: types.List(types.Tuple(types.List(types.Tuple(types.string, types.string)), types.string)),
-    output: types.List(types.Tuple(types.string, types.string))
-  }
-}
-
-// TODO: If I switch over to map types everywhere, I should be able to get rid of this and unejs in 
-// favor of something much more generic.
-module.exports.unsplit = function() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(input, cb) {
-      var output = [];
-      input.forEach(function(inputItem) {
-        for (key in inputItem.left)
-          output.push({left: inputItem.left[key], right: key + inputItem.right});
-      });
-      cb(output);
-    },
-    name: 'unsplit',
-    input: types.List(types.Tuple(types.Map(typeVar), types.string)),
-    output: types.List(types.Tuple(typeVar, types.string))
-  };
-}
-
 module.exports.listify = function() {
   var typeVar = types.newTypeVar();
   return {

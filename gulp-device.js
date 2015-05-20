@@ -2,6 +2,8 @@ var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var http = require('http');
 
+var types = require('./gulp-types');
+
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {
   if (options.chromium !== undefined)
@@ -31,8 +33,8 @@ function telemetrySave() {
       telemetryTask('save.py', ['--browser='+options.saveBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
     name:'telemetrySave',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 
@@ -42,8 +44,8 @@ function telemetrySaveNoStyle() {
       telemetryTask('save-no-style.py', ['--browser='+options.saveBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
     name:'telemetrySaveNoStyle',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 
@@ -73,8 +75,8 @@ function telemetryPerf() {
       telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
     name: 'telemetryPerf',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 
@@ -94,8 +96,8 @@ function simplePerfer() {
       });
     },
     name: 'simplePerfer',
-    input: 'string',
-    output: 'JSON'
+    input: types.string,
+    output: types.JSON
   };
 }
 
