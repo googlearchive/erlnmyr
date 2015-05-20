@@ -2,6 +2,7 @@ var assert = require('chai').assert;
 var stageLoader = require('../../gulp-stage-loader');
 var fancyStages = require('../../gulp-fancy-stages');
 var types = require('../../gulp-types');
+var experiment = require('../../gulp-experiment');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
@@ -83,3 +84,10 @@ describe('Style Tokenizer / Detokenizer', function() {
     testPipeline(tokenizeDetokenizePipeline("tests/pipeline/inline-style.json"), done);
   });
 });
+
+describe('experiment', function() {
+  it('should be able to run', function(done) {
+    testPipeline(['file:tests/pipeline/simple.exp', 'parseExperiment', 'experimentPhase'].map(stageLoader.stageSpecificationToStage), done);
+  });
+});
+    

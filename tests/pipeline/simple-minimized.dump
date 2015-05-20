@@ -1,0 +1,11 @@
+HTMLDocumentParser::processParsedChunkFromBackgroundParser: 304 (0)
+HTMLDocumentParser::processParsedChunkFromBackgroundParser: 18579 (728)
+  Document::updateRenderTree: 384 (905)
+    Document::updateStyle: 371 (991)
+  FrameView::layout: 17776 (3246)
+    FrameView::layout: 143 (48982)
+
+HTMLDocumentParser::processParsedChunkFromBackgroundParser: 0.723ms
+Document::updateRenderTree: 0.013ms
+Document::updateStyle: 0.371ms
+FrameView::layout: 17.776ms

@@ -118,7 +118,7 @@ module.exports.ejsFabricator = function(prefix) {
     },
     name: 'ejsFabrictor',
     input: types.string,
-    output: types.List(types.Tuple(types.string, types.string))
+    output: types.Map(types.string)
   }
 }
 
@@ -198,9 +198,9 @@ module.exports.fileOutput = function(filename) {
 module.exports.toFile = function() {
   var typeVar = types.newTypeVar();
   return {
-    impl: function(data, cb) { writeFile(data.right, data.left, cb); },
+    impl: function(data, cb) { writeFile(data.left, data.right, cb); },
     name: 'toFile',
-    input: types.Tuple(typeVar, types.string),
+    input: types.Tuple(types.string, typeVar),
     output: typeVar
   };
 }
@@ -218,9 +218,17 @@ module.exports.consoleOutput = function() {
 module.exports.taggedConsoleOutput = function() {
   var typeVar = types.newTypeVar();
   return {
-    impl: function(data, cb) { console.log(data.right); console.log('----------------'), console.log(data.left); cb(data); },
+    impl: function(data, cb) { 
+      for (key in data) {
+        console.log(key);
+        console.log('----------------'), 
+        console.log(data[key]);
+        console.log();
+      }
+      cb(data);
+    },
     name: 'taggedConsoleOutput',
-    input: types.Tuple(typeVar, types.string),
-    output: types.Tuple(typeVar, types.string)
+    input: types.Map(types.string),
+    output: types.Map(types.string)
   };
 }

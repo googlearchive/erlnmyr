@@ -13,6 +13,8 @@ var options = parseArgs(process.argv.slice(2));
 device.init(options);
 experiment.init(options);
 
+var tasks = {};
+
 gulp.task('test', function() {
   return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
       .pipe(mocha({
@@ -23,6 +25,7 @@ gulp.task('test', function() {
 });
 
 function buildTask(name, stageList) {
+  tasks[name] = stageList;
   gulp.task(name, function(incb) {
     var cb = function(data) { incb(); };
     stageList = stageList.map(stageLoader.stageSpecificationToStage);
@@ -53,9 +56,9 @@ buildTask('generate', ['JSON:' + options.file, 'SchemaBasedFabricator', 'output:
 /*
  * examples using device telemetry
  */
-buildTask('get', ['save:' + options.url, 'output:result.json']);
-buildTask('perf', ['perf:' + options.url, 'output:trace.json']);
-buildTask('endToEnd', ['save:' + options.url, 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
+buildTask('get', ['immediate:' + options.url, 'telemetrySave', 'output:result.json']);
+buildTask('perf', ['immediate:' + options.url, 'telemetryPerf', 'output:trace.json']);
+buildTask('endToEnd', ['immediate:' + options.url, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
 
 /*
  * running an experiment
@@ -71,6 +74,7 @@ gulp.task('ejs', function(incb) {
     [
       stageLoader.stageSpecificationToStage('file:' + options.file),
       stageLoader.stageSpecificationToStage('ejs:' + options.outputPrefix),
+      fancyStages.mapToTuples(),
       fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
     ], cb, function(e) { throw e; });
 });
@@ -92,3 +96,5 @@ gulp.task('mhtml', function(incb) {
       fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
     ], cb, function(e) { throw e; });
 });
+
+module.exports.tasks = tasks;
