@@ -72,6 +72,21 @@ function init(parsedOptions) {
   options = parsedOptions;
 }
 
+function outputFor(output) {
+  if (output == 'console') {
+    return [stages.taggedConsoleOutput()];
+  } else {
+    return [
+      fancyStages.keyMap(fancyStages.outputName(input, output)),
+      fancyStages.mapToTuples(),
+      fancyStages.map(stages.toFile())
+    ];
+  }
+}
+
+// exposed so this can be overridden in testing
+module.exports.outputFor = outputFor;
+
 function runExperiment(experiment, incb) {
   updateOptions(experiment.flags);
   var pipelines = [];
@@ -107,13 +122,7 @@ function runExperiment(experiment, incb) {
       }
       var pl = inputStages.concat(
           stagesList[j].stages.map(function(a) { return stageFor(a, input); }));
-      if (stagesList[j].output == 'console') {
-	pl.push(stages.taggedConsoleOutput());
-      } else {
-        pl.push(fancyStages.keyMap(fancyStages.outputName(input, stagesList[j].output))),
-        pl.push(fancyStages.mapToTuples()),
-	pl.push(fancyStages.map(stages.toFile()));
-      }
+      pl = pl.concat(module.exports.outputFor(stagesList[j].output));
       pipelines.push(pl);
     }
   }
