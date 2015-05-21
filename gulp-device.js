@@ -69,10 +69,10 @@ function stopServing(server) {
 }
 
 // perform perf testing of the provided url
-function telemetryPerf() {
+function telemetryPerfStep(pythonScript) {
   return {
     impl: function(url, cb) {
-      telemetryTask('perf.py', ['--browser='+options.perfBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
+      telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
     },
     name: 'telemetryPerf',
     input: types.string,
@@ -80,9 +80,20 @@ function telemetryPerf() {
   };
 }
 
+function telemetryPerf() {
+  return telemetryPerfStep('perf.py');
+}
+
 // start a local server and perf test pipeline-provided data
 function simplePerfer() {
-  var telemetryStep = telemetryPerf();
+  return perfer(telemetryPerf());
+}
+
+function layoutPerfer() {
+  return perfer(telemetryPerfStep('layout-perf.py'));
+}
+
+function perfer(telemetryStep) {
   return {
     impl: function(data, cb) {
       startADBForwarding(function() {
@@ -106,3 +117,4 @@ module.exports.telemetrySave = telemetrySave;
 module.exports.telemetrySaveNoStyle = telemetrySaveNoStyle;
 module.exports.telemetryPerf = telemetryPerf;
 module.exports.simplePerfer = simplePerfer;
+module.exports.layoutPerfer = layoutPerfer;
