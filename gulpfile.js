@@ -3,11 +3,13 @@ var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
 
-var device = require('./gulp-device');
-var experiment = require('./gulp-experiment');
-var stageLoader = require('./gulp-stage-loader');
+// TODO: device and experiment are only loaded so that they can be initialized with options.
+// There must be a nicer way to set options across a project.
+var device = require('./core/device');
+var experiment = require('./core/experiment');
+var stageLoader = require('./core/stage-loader');
 
-var fancyStages = require('./gulp-fancy-stages');
+var fancyStages = require('./core/fancy-stages');
 
 var options = parseArgs(process.argv.slice(2));
 device.init(options);

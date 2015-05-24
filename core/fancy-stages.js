@@ -1,7 +1,7 @@
 var fs = require('fs');
 var assert = require('chai').assert;
 
-var types = require('./gulp-types');
+var types = require('./types');
 
 function collectInputs(inputSpec) {
   if (inputSpec.substring(0, 7) == 'http://')
