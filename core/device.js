@@ -2,7 +2,7 @@ var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var http = require('http');
 
-var types = require('./gulp-types');
+var types = require('./types');
 
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {

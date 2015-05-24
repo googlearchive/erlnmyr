@@ -1,28 +1,28 @@
 var assert = require('chai').assert;
 
 var writers = {
-  HTMLWriter: require('./lib/html-writer'),
-  JSWriter: require('./lib/js-writer'),
-  StatsWriter: require('./lib/stats-writer')
+  HTMLWriter: require('../lib/html-writer'),
+  JSWriter: require('../lib/js-writer'),
+  StatsWriter: require('../lib/stats-writer')
 };
 
 var filters = {
-  StyleFilter: require('./lib/style-filter'),
-  StyleMinimizationFilter: require('./lib/style-minimization-filter'),
-  StyleTokenizerFilter: require('./lib/style-tokenizer-filter'),
-  NukeIFrameFilter: require('./lib/nuke-iframe-filter'),
-  StyleDetokenizerFilter: require('./lib/style-detokenizer-filter')
+  StyleFilter: require('../lib/style-filter'),
+  StyleMinimizationFilter: require('../lib/style-minimization-filter'),
+  StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
+  NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
+  StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
 };
 
 var fabricators = {
-  SchemaBasedFabricator: require('./lib/schema-based-fabricator'),
+  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
 
-var stages = require('./gulp-stages');
-var fancyStages = require('./gulp-fancy-stages');
-var types = require('./gulp-types');
-var device = require('./gulp-device');
-var experiment = require('./gulp-experiment');
+var stages = require('./stages');
+var fancyStages = require('./fancy-stages');
+var types = require('./types');
+var device = require('./device');
+var experiment = require('./experiment');
 
 
 var argInputs = {

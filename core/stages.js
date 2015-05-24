@@ -1,14 +1,14 @@
 var fs = require('fs');
 
-var TreeBuilder = require('./lib/tree-builder');
-var types = require('./gulp-types.js');
+var TreeBuilder = require('../lib/tree-builder');
+var types = require('./types.js');
 
-var EjsFabricator = require('./lib/ejs-fabricator');
-var TraceFilter = require('./lib/trace-filter');
-var TraceTree = require('./lib/trace-tree');
-var TracePrettyPrint = require('./lib/trace-pretty-print');
-var TracePIDSplitter = require('./lib/trace-pid-splitter');
-var TraceTreeSplitter = require('./lib/trace-tree-splitter');
+var EjsFabricator = require('../lib/ejs-fabricator');
+var TraceFilter = require('../lib/trace-filter');
+var TraceTree = require('../lib/trace-tree');
+var TracePrettyPrint = require('../lib/trace-pretty-print');
+var TracePIDSplitter = require('../lib/trace-pid-splitter');
+var TraceTreeSplitter = require('../lib/trace-tree-splitter');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)

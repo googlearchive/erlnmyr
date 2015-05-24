@@ -1,8 +1,8 @@
 var assert = require('chai').assert;
 
 var tasks = require('../gulpfile').tasks;
-var stageLoader = require('../gulp-stage-loader');
-var fancyStages = require('../gulp-fancy-stages');
+var stageLoader = require('../core/stage-loader');
+var fancyStages = require('../core/fancy-stages');
 
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
@@ -12,7 +12,7 @@ describe('basicTargetCoverage', function() {
     }
   });
 
-  // TODO: Once gulp-stage-loader has string names for all the fancy stages, roll the special gulpfile targets
+  // TODO: Once stage-loader has string names for all the fancy stages, roll the special gulpfile targets
   // into the standard ones and remove these two tests.
   it('should be possible to type check the ejs stage list', function() {
     stageLoader.typeCheck([

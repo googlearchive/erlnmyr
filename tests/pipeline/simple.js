@@ -1,9 +1,9 @@
 var assert = require('chai').assert;
-var stageLoader = require('../../gulp-stage-loader');
-var stages = require('../../gulp-stages');
-var fancyStages = require('../../gulp-fancy-stages');
-var types = require('../../gulp-types');
-var experiment = require('../../gulp-experiment');
+var stageLoader = require('../../core/stage-loader');
+var stages = require('../../core/stages');
+var fancyStages = require('../../core/fancy-stages');
+var types = require('../../core/types');
+var experiment = require('../../core/experiment');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };

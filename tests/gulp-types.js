@@ -1,6 +1,6 @@
 var assert = require('chai').assert;
 
-var types = require('../gulp-types');
+var types = require('../core/types');
 
 function coersion(a, b, existing) {
   existing = existing || {};

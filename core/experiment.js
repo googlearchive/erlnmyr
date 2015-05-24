@@ -1,10 +1,10 @@
-var ParseExperiment = require('./lib/parse-experiment');
+var ParseExperiment = require('../lib/parse-experiment');
 
-var stageLoader = require('./gulp-stage-loader');
-var fancyStages = require('./gulp-fancy-stages');
-var stages = require('./gulp-stages');
-var device = require('./gulp-device');
-var types = require('./gulp-types');
+var stageLoader = require('./stage-loader');
+var fancyStages = require('./fancy-stages');
+var stages = require('./stages');
+var device = require('./device');
+var types = require('./types');
 
 // Returns a list of {stages: [pipeline-element], output: result}
 function appendEdges(experiment, stages, edges) {
