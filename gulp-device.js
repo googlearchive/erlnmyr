@@ -69,10 +69,10 @@ function stopServing(server) {
 }
 
 // perform perf testing of the provided url
-function telemetryPerfStep(pythonScript) {
+function telemetryPerfStep(pythonScript, extraOptions) {
   return {
     impl: function(url, cb) {
-      telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url])(undefined, function(data) { cb(JSON.parse(data)); });
+      telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
     },
     name: 'telemetryPerf',
     input: types.string,
@@ -89,8 +89,12 @@ function simplePerfer() {
   return perfer(telemetryPerf());
 }
 
-function layoutPerfer() {
-  return perfer(telemetryPerfStep('layout-perf.py'));
+function layoutPerfer(options) {
+  if (options.iterations)
+    options = [options.iterations];
+  else
+    options = [];
+  return perfer(telemetryPerfStep('layout-perf.py', options));
 }
 
 function perfer(telemetryStep) {

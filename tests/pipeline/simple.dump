@@ -4,8 +4,10 @@ HTMLDocumentParser::processParsedChunkFromBackgroundParser: 17796 (369)
     Document::updateStyle: 285 (470)
   FrameView::layout: 17153 (1062)
     FrameView::layout: 142 (33516)
+1796FC85-1727-4749-862A-F13474E595A3: 13 (56244)
 
 HTMLDocumentParser::processParsedChunkFromBackgroundParser: 0.606ms
 Document::updateRenderTree: 0.008ms
 Document::updateStyle: 0.285ms
 FrameView::layout: 17.153ms
+1796FC85-1727-4749-862A-F13474E595A3: 0.013ms
