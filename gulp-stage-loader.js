@@ -40,7 +40,8 @@ var byConstruction = [
 ];
 var byName = [device, experiment, stages];
 
-function stageSpecificationToStage(stage) {
+function stageSpecificationToStage(stage, options) {
+  options = options || {};
   var spec = stage.split(':');
   if (spec.length > 1 && spec[0] in argInputs)
     return argInputs[spec[0]](spec.slice(1, spec.length).join(':'));
@@ -52,7 +53,7 @@ function stageSpecificationToStage(stage) {
 
   for (var i = 0; i < byName.length; i++) {
     if (stage in byName[i])
-      return byName[i][stage]();
+      return byName[i][stage](options);
   }
 
   assert(false, "No stage found for specification " + stage);

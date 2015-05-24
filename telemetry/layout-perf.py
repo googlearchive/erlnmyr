@@ -28,7 +28,12 @@ with browserFactory.Create(options) as browser:
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
   oldDisplay = tab.EvaluateJavaScript("document.documentElement.style.display");
-  tab.EvaluateJavaScript("(function() { document.documentElement.style.display = 'none'; return document.documentElement.offsetTop; })()");
   browser.platform.tracing_controller.Start(options, category_filter);
-  tab.EvaluateJavaScript("(function() { document.documentElement.style.display = '" + oldDisplay + "'; return document.documentElement.offsetTop; })()");
+  iterations = 1
+  if len(args) == 2:
+    iterations = int(args[1])
+  for i in range(iterations):
+    tab.EvaluateJavaScript("(function() { document.documentElement.style.display = 'none'; return document.documentElement.offsetTop; })()");
+    tab.EvaluateJavaScript("(function() { document.documentElement.style.display = '" + oldDisplay + "'; console.time('iteration" + str(i) + 
+      "'); var x = document.documentElement.offsetTop; console.timeEnd('iteration" + str(i) + "'); })()");
   browser.platform.tracing_controller.Stop().Serialize(sys.stdout);

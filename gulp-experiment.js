@@ -27,7 +27,9 @@ function experimentTask(name, experiment) {
   gulp.task(name, function(cb) { runExperiment(experiment, cb); });
 }
 
-function stageFor(stageName, inputSpec, input) {
+var multiplexingStages = ['tracePIDSplitter', 'traceTreeSplitter'];
+
+function stageFor(stageName, options, inputSpec) {
   // override output definition to deal with output name generation
   if (stageName.substring(0, 7) == 'output:') {
     return stageLoader.stage([
@@ -39,6 +41,7 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
+  // TODO: convert ejs to option processing, roll this in with multiplexingStages
   if (stageName == 'ejs') {
     return stageLoader.stage([
       fancyStages.valueMap(stageLoader.stageSpecificationToStage('ejs:')),
@@ -46,14 +49,14 @@ function stageFor(stageName, inputSpec, input) {
     ]);
   }
 
-  if (stageName == 'tracePIDSplitter') {
+  if (multiplexingStages.indexOf(stageName) > -1) {
     return stageLoader.stage([
-      fancyStages.valueMap(stageLoader.stageSpecificationToStage('tracePIDSplitter')),
+      fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName, options)),
       fancyStages.deMap()
     ])
   }
 
-  return fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName));
+  return fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName, options));
 }
 
 function updateOptions(optionsDict) {
@@ -72,7 +75,7 @@ function init(parsedOptions) {
   options = parsedOptions;
 }
 
-function outputFor(output) {
+function outputFor(input, output) {
   if (output == 'console') {
     return [stages.taggedConsoleOutput()];
   } else {
@@ -121,8 +124,8 @@ function runExperiment(experiment, incb) {
 	var inputStages = [fancyStages.fileInputs(input), fancyStages.asKeys(), fileToJSON];
       }
       var pl = inputStages.concat(
-          stagesList[j].stages.map(function(a) { return stageFor(a, input); }));
-      pl = pl.concat(module.exports.outputFor(stagesList[j].output));
+          stagesList[j].stages.map(function(a) { return stageFor(a, experiment.options[a], input); }));
+      pl = pl.concat(module.exports.outputFor(input, stagesList[j].output));
       pipelines.push(pl);
     }
   }

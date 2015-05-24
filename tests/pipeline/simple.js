@@ -90,7 +90,7 @@ function compare(name) {
   return {
     impl: function(input, cb) {
       stages.fileToString().impl(name, function(data) {
-        assert.equal(data, input);
+        assert.equal(data, input, "for file " + name);
         cb(input);
       });
     },
@@ -103,7 +103,7 @@ function compare(name) {
 
 describe('experiment', function() {
   it('should be able to run', function(done) {
-    experiment.outputFor = function(name) {
+    experiment.outputFor = function(unused, name) {
       return [fancyStages.valueMap(compare(name))];
     }
 

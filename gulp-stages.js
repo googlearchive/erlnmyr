@@ -8,6 +8,7 @@ var TraceFilter = require('./lib/trace-filter');
 var TraceTree = require('./lib/trace-tree');
 var TracePrettyPrint = require('./lib/trace-pretty-print');
 var TracePIDSplitter = require('./lib/trace-pid-splitter');
+var TraceTreeSplitter = require('./lib/trace-tree-splitter');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -144,10 +145,34 @@ module.exports.traceTree = function() {
   }
 }
 
-module.exports.tracePrettyPrint = function() {
+module.exports.traceTreeSplitter = function(options) {
+  options = override(TraceTreeSplitter.defaults, options);
   return {
     impl: function(data, cb) {
-      cb(new TracePrettyPrint(data).filter());
+      cb(new TraceTreeSplitter(data, options).filter());
+    },
+    name: 'traceTreeSplitter',
+    input: types.JSON,
+    output: types.Map(types.JSON)
+  }
+}
+
+function override(defaults, options) {
+  var result = {};
+  for (key in defaults) {
+    if (key in options)
+      result[key] = options[key];
+    else
+      result[key] = defaults[key];
+  }
+  return result;
+}
+
+module.exports.tracePrettyPrint = function(options) {
+  options = override(TracePrettyPrint.defaults, options);
+  return {
+    impl: function(data, cb) {
+      cb(new TracePrettyPrint(data, options).filter());
     },
     name: 'tracePrettyPrint',
     input: types.JSON,
