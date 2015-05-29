@@ -1,13 +1,14 @@
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var http = require('http');
+var path = require('path');
 
 var types = require('./types');
 
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {
   if (options.chromium !== undefined)
-    process.env.PYTHONPATH += ':' + options.chromium + '/tools/telemetry';
+    process.env.PYTHONPATH += ':' + path.normalize(options.chromium) + '/tools/telemetry';
 }
 
 var options = undefined;
@@ -49,12 +50,17 @@ function telemetrySaveNoStyle() {
   };
 }
 
+function adbPath() {
+  var adb = options.adb || 'adb';
+  return path.normalize(adb);
+}
+
 function startADBForwarding(then) {
-  exec(options.adb + ' reverse tcp:8000 tcp:8000', then);
+  exec(adbPath() + ' reverse tcp:8000 tcp:8000', then);
 }
 
 function stopADBForwarding(then) {
-  exec(options.adb + ' reverse --remove tcp:8000', then);
+  exec(adbPath() + ' reverse --remove tcp:8000', then);
 }
 
 function startServing(data) {
