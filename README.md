@@ -46,14 +46,22 @@ To save a JS file (result.js.html)
 
 ### Measuring DOM performance
 
-You'll ned a local chromium checkout. You'll also need adb.
+You'll ned a local chromium checkout. You'll also need adb if you want to run perf tests on a rooted Android device.
 
-`gulp perf --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=system`
+`gulp perf --url=http://example.com --chromium=/path/to/chromium --perfBrowser=system`
+
+or
+
+`gulp perf --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=android-jb-system-chrome`
 
 Note that this will measure load performance of the live page. If you want to dump just the DOM content
 and measure that instead, use:
 
-`gulp endToEnd --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=system --saveBrowser=system`
+`gulp endToEnd --url=http://example.com --chromium=/path/to/chromium --perfBrowser=system --saveBrowser=system`
+
+or, to perf test on Android:
+
+`gulp endToEnd --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=android-jb-system-chrome --saveBrowser=system`
 
 ## Recorder Format
 
