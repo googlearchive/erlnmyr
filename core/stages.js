@@ -123,10 +123,11 @@ module.exports.ejsFabricator = function(prefix) {
   }
 }
 
-module.exports.traceFilter = function() {
+module.exports.traceFilter = function(options) {
+  options = override(TraceFilter.defaults, options);
   return {
     impl: function(data, cb) {
-      cb(new TraceFilter(data).filter());
+      cb(new TraceFilter(data, options).filter());
     },
     name: 'traceFilter',
     input: types.JSON,
