@@ -18,6 +18,43 @@ Builder of Tree Builders
     (http://dev.chromium.org/developers/how-tos/get-the-code). Note that you
     don't need to build chromium, just check it out.
 
+### Saving the DOM of web pages
+
+If you have a local chromium checkout, and assuming that it's installed at /path/to/chromium:
+
+`gulp get --url="http://example.com/my-super-exciting-DOM.html" --chromium=/path/to/chromium --saveBrowser=system
+
+This will save the DOM content of the provided url in a result.json file.
+
+If you don't have a local chromium checkout, you can still save pages by
+navigating to them in Chrome, opening dev tools, and dumping the contents
+of `save.js` into the console.
+
+### Converting DOM to HTML or JS
+
+To save an HTML file (result.html.html)
+
+`gulp html --file=result.json`
+
+To save a JS file (result.js.html)
+
+`gulp js --file=result.json`
+
+### Dumping Stats about DOM
+
+`gulp stats --file=result.json`
+
+### Measuring DOM performance
+
+You'll ned a local chromium checkout. You'll also need adb.
+
+`gulp perf --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=system`
+
+Note that this will measure load performance of the live page. If you want to dump just the DOM content
+and measure that instead, use:
+
+`gulp endToEnd --url=http://example.com --chromium=/path/to/chromium --adb=/path/to/adb --perfBrowser=system --saveBrowser=system`
+
 ## Recorder Format
 
 Base format is JSON of an array: `[]`.
