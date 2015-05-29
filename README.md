@@ -1,6 +1,23 @@
 # tree-builder-builder
 Builder of Tree Builders
 
+## Quick Start Guide
+
+### Installing all the bits
+
+1.  Install git
+2.  Grab the source code:
+    `git clone https://github.com/dglazkov/tree-builder-builder.git`
+3.  Install node.js from https://nodejs.org/download/
+4.  `cd tree-builder-builder`
+5.  `npm install`
+6.  (optional) Install gulp globally so it'll be on your path:
+    `sudo npm install -g gulp`
+7.  (optional) if you want to be able to run automated perf tests or easily
+    extract DOM from URLs, check out a chromium tree 
+    (http://dev.chromium.org/developers/how-tos/get-the-code). Note that you
+    don't need to build chromium, just check it out.
+
 ## Recorder Format
 
 Base format is JSON of an array: `[]`.
