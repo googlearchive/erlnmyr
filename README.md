@@ -22,7 +22,7 @@ Builder of Tree Builders
 
 If you have a local chromium checkout, and assuming that it's installed at /path/to/chromium:
 
-`gulp get --url="http://example.com/my-super-exciting-DOM.html" --chromium=/path/to/chromium --saveBrowser=system
+`gulp get --url="http://example.com/my-super-exciting-DOM.html" --chromium=/path/to/chromium --saveBrowser=system`
 
 This will save the DOM content of the provided url in a result.json file.
 
