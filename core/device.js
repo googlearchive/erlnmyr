@@ -8,7 +8,7 @@ var types = require('./types');
 // update PYTHONPATH for all telemetry invocations
 function updatePYTHONPATH() {
   if (options.chromium !== undefined)
-    process.env.PYTHONPATH += ':' + path.normalize(options.chromium) + '/tools/telemetry';
+    process.env.PYTHONPATH += path.delimiter + path.normalize(options.chromium) + '/tools/telemetry';
 }
 
 var options = undefined;
