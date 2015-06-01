@@ -47,18 +47,24 @@ describe('graph.connect', function() {
     var b = new graph.Pipe('b');
     graph.connect(a, b);
     assertConnected(a, b);
+    assert.deepEqual(a.graph.inputs(), [a]);
+    assert.deepEqual(a.graph.outputs(), [b]);
   });
   it('should allow a connection to connect to a pipe', function() {
     var a = new graph.Connection();
     var b = new graph.Pipe('b');
     graph.connect(a, b);
     assertConnected(a, b);
+    assert.deepEqual(a.graph.inputs(), [a]);
+    assert.deepEqual(a.graph.outputs(), [b]);
   });
   it('should allow a pipe to connect to a connection', function() {
     var a = new graph.Pipe('a');
     var b = new graph.Connection();
     graph.connect(a, b);
     assertConnected(a, b);
+    assert.deepEqual(a.graph.inputs(), [a]);
+    assert.deepEqual(a.graph.outputs(), [b]);
   });
 
   /*
@@ -80,6 +86,8 @@ describe('graph.connect', function() {
     assertConnected(a, d);
     assert(!reachable(a, c), "c should not be reachable from a");
     assert(!reachable(c, b), "b should not be reachable from c");
+    assert.deepEqual(a.graph.inputs(), [a, c]);
+    assert.deepEqual(a.graph.outputs(), [b, d]);
   });
 });
 
@@ -111,5 +119,8 @@ describe('Pipe.from', function() {
     var out = makeExample(con);
 
     assertConnected(con, out);
+
+    assert.deepEqual(a.graph.inputs(), [con]);
+    assert.deepEqual(a.graph.outputs(), [out]);
   });
 });

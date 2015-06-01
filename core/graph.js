@@ -100,6 +100,20 @@ Graph.prototype.contains = function(a) {
     return this.edges[a.id] == a;
 }
 
+Graph.prototype._filterBy = function(f, list) {
+  return Object.keys(list).map(function(id) { return list[id]; }).filter(f);
+}
+
+Graph.prototype.inputs = function() {
+  return this._filterBy(function(edge) { return edge.in == undefined; }, this.edges).concat(
+    this._filterBy(function(node) { return node.fromPipes.length == 0; }, this.nodes));
+}
+
+Graph.prototype.outputs = function() {
+  return this._filterBy(function(edge) { return edge.out == undefined; }, this.edges).concat(
+    this._filterBy(function(node) { return node.toPipes.length == 0; }, this.nodes));
+}
+
 function mergeGraphs(a, b) {
   if (a.graph == b.graph && a.graph !== undefined)
     return;
@@ -188,7 +202,7 @@ function connect(a, b) {
     connectFromPipe(edge, b);
   }
 }
-    
+ 
 module.exports.Pipe = Pipe;
 module.exports.Connection = Connection;
 module.exports.connect = connect;
