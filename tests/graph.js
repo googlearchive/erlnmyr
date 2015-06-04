@@ -1,6 +1,7 @@
 var assert = require('chai').assert;
 
 var graph = require('../core/graph.js');
+var linearize = require('../core/linearize.js');
 
 function reachable(a, b) {
   var reachableSet = {};
@@ -49,6 +50,7 @@ describe('graph.connect', function() {
     assertConnected(a, b);
     assert.deepEqual(a.graph.inputs(), [a]);
     assert.deepEqual(a.graph.outputs(), [b]);
+    assert.deepEqual(linearize(a.graph), [[a], [b]]);
   });
   it('should allow a connection to connect to a pipe', function() {
     var a = new graph.Connection();
@@ -57,6 +59,7 @@ describe('graph.connect', function() {
     assertConnected(a, b);
     assert.deepEqual(a.graph.inputs(), [a]);
     assert.deepEqual(a.graph.outputs(), [b]);
+    assert.deepEqual(linearize(a.graph), [[b]]);
   });
   it('should allow a pipe to connect to a connection', function() {
     var a = new graph.Pipe('a');
@@ -65,6 +68,7 @@ describe('graph.connect', function() {
     assertConnected(a, b);
     assert.deepEqual(a.graph.inputs(), [a]);
     assert.deepEqual(a.graph.outputs(), [b]);
+    assert.deepEqual(linearize(a.graph), [[a]]);
   });
 
   /*
@@ -88,6 +92,8 @@ describe('graph.connect', function() {
     assert(!reachable(c, b), "b should not be reachable from c");
     assert.deepEqual(a.graph.inputs(), [a, c]);
     assert.deepEqual(a.graph.outputs(), [b, d]);
+    var x = a.out.toPipes[1];
+    assert.deepEqual(linearize(a.graph), [[a, c], [b, x], [d]]);
   });
 });
 
@@ -122,5 +128,11 @@ describe('Pipe.from', function() {
 
     assert.deepEqual(a.graph.inputs(), [con]);
     assert.deepEqual(a.graph.outputs(), [out]);
+    
+    var aa = a.out.toPipes[1];
+    var bb = b.out.toPipes[1];
+    var cc = c.out.toPipes[1];
+    a.graph.dump();
+    // assert.deepEqual(linearize(a.graph), [[a], [b, aa], [c, bb], [d, cc], [e]]);
   });
 });

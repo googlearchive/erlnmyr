@@ -114,6 +114,18 @@ Graph.prototype.outputs = function() {
     this._filterBy(function(node) { return node.toPipes.length == 0; }, this.nodes));
 }
 
+Graph.prototype.edgesCount = function() {
+  return Object.keys(this.edges).length;
+}
+
+Graph.prototype.dump = function() {
+  for (var e in this.edges) {
+    var edge = this.edges[e];
+    console.log(edge.in == undefined ? '_' : edge.in.id, '-' + edge.stageName + '->', 
+                edge.out == undefined ? '_' : edge.out.id);
+  }
+}
+
 function mergeGraphs(a, b) {
   if (a.graph == b.graph && a.graph !== undefined)
     return;
