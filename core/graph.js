@@ -47,8 +47,29 @@ Pipe.prototype.from = function(connections) {
   if (typeof(connections.length) !== 'number')
     connections = [connections];
 
-  for (var i = 0; i < connections.length; i++)
+  var directConnection = false;
+  var connected = {};
+  for (var i = 0; i < connections.length; i++) {
+    if (connections[i].toPipes.length == 0) {
+      connect(connections[i], this);
+      directConnection = true;
+      connected[i] = i;
+    }
+  }
+
+  if (!directConnection) {
+    var connection = new Connection();
+    connect(connections[0], connection);
+    connect(connection, this);
+    connected[0] = 0;
+  }
+
+  for (var i = 0; i < connections.length; i++) {
+    if (connected[i] !== undefined) {
+      continue;
+    }
     connect(connections[i], this);
+  }
 
   if (this.out == undefined) {
     var connection = new Connection();
@@ -68,7 +89,7 @@ Graph.prototype.addEdge = function(edge) {
   assert(this.edges[edge.id] == undefined);
   this.edges[edge.id] = edge;
   edge.graph = this;
-}   
+}
 
 Graph.prototype.addNode = function(node) {
   if (node == undefined || this.nodes[node.id] == node)
@@ -137,12 +158,12 @@ function mergeGraphs(a, b) {
     updateBothSides = true;
   } else if (a.graph != undefined && b.graph != undefined && a.graph != b.graph) {
     a.graph.merge(b.graph);
-  } 
+  }
 
   if (a.graph == undefined || updateBothSides) {
     if (a.isPipe())
       b.graph.addEdge(a);
-    else 
+    else
       b.graph.addNode(a);
   }
   if (b.graph == undefined || updateBothSides) {
@@ -214,7 +235,7 @@ function connect(a, b) {
     connectFromPipe(edge, b);
   }
 }
- 
+
 module.exports.Pipe = Pipe;
 module.exports.Connection = Connection;
 module.exports.connect = connect;

@@ -1,5 +1,5 @@
 /**
- * I think this can just be the edges of a graph, teased out into a list 
+ * I think this can just be the edges of a graph, teased out into a list
  * of concurrent stages.
  */
 
@@ -25,16 +25,14 @@ function linearize(graph) {
     var result = [];
   }
 
-  console.log(current);
-
   while (reachedCount < edges) {
     var next = [];
+    var nDict = {};
     for (var i = 0; i < current.length; i++) {
       var outNode = current[i].isConnection() ? current[i] : current[i].out;
       if (outNode == undefined)
         continue;
 
-      console.log('outNode:', outNode);
       var allInputsLinearized = true;
       for (var j = 0; j < outNode.fromPipes.length; j++) {
         if (!(outNode.fromPipes[j].id in reached)) {
@@ -44,8 +42,10 @@ function linearize(graph) {
       }
       if (allInputsLinearized) {
         for (var j = 0; j < outNode.toPipes.length; j++) {
-          if (!(outNode.toPipes[j].id in reached))
+          if (!(outNode.toPipes[j].id in reached) && !(outNode.toPipes[j].id in nDict)) {
             next.push(outNode.toPipes[j]);
+            nDict[outNode.toPipes[j].id] = outNode.toPipes[j];
+          }
         }
       }
     }
@@ -53,7 +53,7 @@ function linearize(graph) {
 
     for (var i = 0; i < next.length; i++)
       reached[next[i].id] = next[i];
-    
+
     reachedCount += next.length;
     result.push(next);
 
