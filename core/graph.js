@@ -47,6 +47,24 @@ Pipe.prototype.from = function(connections) {
   if (typeof(connections.length) !== 'number')
     connections = [connections];
 
+  /**
+   * If we were to always connect first connection in the list
+   * to this pipe's input then we're at risk of creating cycles.
+   * For example, if the connections are the output of 'a' and
+   * the output of 'b', but 'a' connects to 'b' already, then
+   * if we connect 'a' to this, then 'b' to this, we've constructed
+   * a cycle ('a' output -> 'b' -> this, which is 'a' output -> 'b' -> ...).
+   *
+   * We can resolve this by always constructing a new link, but that
+   * means that often we've built empty padding where we don't need it.
+   *
+   * Instead, we walk through the list of connections, and the first that
+   * doesn't have an output can be directly connected to this. The rest
+   * then get connected via a shunt.
+   *
+   * Note that if all connections have outputs then we fall back on all
+   * having a shunt.
+   */
   var directConnection = false;
   var connected = {};
   for (var i = 0; i < connections.length; i++) {

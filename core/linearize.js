@@ -40,6 +40,11 @@ function linearize(graph) {
           break;
         }
       }
+      /**
+       * nDict is needed to capture those pipes that are newly reached
+       * in this stage, without adding them to the global reached list
+       * so that other last-stage inputs don't also see them as reached.
+       */
       if (allInputsLinearized) {
         for (var j = 0; j < outNode.toPipes.length; j++) {
           if (!(outNode.toPipes[j].id in reached) && !(outNode.toPipes[j].id in nDict)) {
