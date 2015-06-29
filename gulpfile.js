@@ -10,6 +10,7 @@ var experiment = require('./core/experiment');
 var stageLoader = require('./core/stage-loader');
 
 var fancyStages = require('./core/fancy-stages');
+var streams = require('./core/streams');
 
 var options = parseArgs(process.argv.slice(2));
 device.init(options);
@@ -98,5 +99,23 @@ gulp.task('mhtml', function(incb) {
       fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
     ], cb, function(e) { throw e; });
 });
+
+
+
+gulp.task('mhtml2', function(incb) {
+  var cb = function(data) { incb(); };
+  var a = new streams.StreamedStage(fancyStages.fileInputs(options.inputSpec));
+  var b = new streams.StreamTagger(function(data, tags) { return {key: 'filename', value: data} }, 'from', streams.stageSpec(a));
+  var c = new streams.StreamedStage(stageLoader.stageSpecificationToStage('fileToJSON'), streams.stageSpec(b));
+  var d = new streams.StreamedStage(stageLoader.stageSpecificationToStage('HTMLWriter'), streams.stageSpec(c));
+  var e = new streams.StreamTagger(function(data, tags) {
+    var re = new RegExp(options.inputSpec);
+    var filename = tags['filename'].replace(re, options.outputSpec);
+    return {key: 'filename', value: filename}
+  }, 'from', streams.stageSpec(d)),
+  var f = 
+  stageLoader.processStages(
+      [
+        streams.clone(
 
 module.exports.tasks = tasks;

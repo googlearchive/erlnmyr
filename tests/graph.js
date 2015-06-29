@@ -132,7 +132,6 @@ describe('Pipe.from', function() {
     var aa = a.out.toPipes[1];
     var bb = b.out.toPipes[1];
     var cc = c.out.toPipes[1];
-    a.graph.dump();
     assert.deepEqual(linearize(a.graph), [[a], [b, aa], [c, bb], [d, cc], [e]]);
   });
 });

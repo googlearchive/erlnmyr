@@ -79,6 +79,14 @@ function substitute(type, coersion) {
   return subs;
 }
 
+function Stream(tags) {
+  return {tags: tags};
+}
+
+function isStream(type) {
+  return typeof type == 'object' && type.tags !== undefined;
+}
+
 // TODO complete this, deal with multiple type vars if they ever arise.
 function coerce(left, right, coersion, visited) {
   visited = visited || [];
@@ -102,6 +110,21 @@ function coerce(left, right, coersion, visited) {
 
   if (isMap(left) && isMap(right)) {
     return coerce(demap(left), demap(right), coersion);
+  }
+
+  if (isStream(left) && isStream(right)) {
+    for (var i = 0; i < left.tags.length; i++) {
+      var leftTag = left.tags[i];
+      for (var j = 0; j < right.tags.length; j++) {
+        var rightTag = right.tags[i];
+        if (leftTag.key == rightTag.key && leftTag.value == rightTag.value) {
+          var coersion = coerce(leftTag.type, rightTag.type, coersion);
+          if (coersion == undefined)
+            return undefined;
+        }
+      }
+    }
+    return coersion;
   }
 
   // 'a -> 'b
