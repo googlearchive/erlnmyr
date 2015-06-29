@@ -3,6 +3,7 @@ var types = require('./types');
 var _instanceID = 0;
 function newInstanceID() {
   return (_instanceID++) + '';
+}
 
 function Stream() {
   this.data = [];
@@ -15,8 +16,9 @@ Stream.prototype = {
   get: function(key, match) {
     var results = [];
     var newData = [];
-    for (item of this.data) {
-      if (item.tags[tagKey] == match)
+    for (var i = 0; i < this.data.length; i++) {
+      var item = this.data[i];
+      if (item.tags[key] == match || (item.tags[key] !== undefined && match == undefined))
         results.push(item);
       else
         newData.push(item);
@@ -30,33 +32,59 @@ function stageSpec(stage) {
   return {name: stage.name, id: stage.id};
 }
 
-function StreamedStage(stage, fromSpec, id) {
-  this.name = '<<' + stage.name + '>>';
+function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
+  this.name = name;
   this.id = id || newInstanceID();
   this.impl = function(stream, incb) {
-    var inputs = stream.get('from', fromSpec);
-    var cb = function() {
+    // TODO: should stream be constructed as input instead?
+    if (stream == null) {
+      stream = new Stream();
+    }
+    fn(stream.get(fromKey, fromValue), function(results) {
+      for (var i = 0; i < results.length; i++) {
+        var data = results[i].data;
+        var tags = results[i].tags;
+        tags.from = stageSpec(this);
+        tags.fromList = tags.fromList || [];
+        tags.fromList.push(tags.from);
+        stream.put(data, tags);
+      }
       incb(stream);
-    }
-    for (var i = inputs.length - 1; i >= 0; i--) {
-      cb = (function(cb, i) {
-        return function() {
-          stage.impl(input[i].data, function(data) {
-            var tags = input[i].tags;
-            tags.from = stageSpec(this);
-            tags.fromList = tags.fromList || [];
-            tags.fromList.push(tags.from);
-            stream.put(input[i].data, tags);
-            cb();
-          });
-        }
-      })(cb, i);
-    }
-    cb();
+    }, stream);
   };
-  this.input = Stream([{key: "from", value: fromSpec, type: stage.input}]);
-  this.output = Stream([{key: "from", value: stageSpec(this), type: stage.output}]);
-};
+  fromKey = fromKey || 'from';
+  var inputList = inputList || [];
+  inputList.push({key: fromKey, value: fromValue, type: fromType});
+  var outputList = outputList || [];
+  outputList.push({key: 'from', value: stageSpec(this), type: toType});
+  this.input = types.Stream(inputList);
+  this.output = types.Stream(outputList);
+} 
+
+function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
+  return new CoreStream(function(data, incb) {
+      var results = [];
+      var cb = function() { incb(results); }
+      // TODO: this is probably wrong. Actually, fancyStages.fileInputs 
+      // isn't a standard streamedStage as it takes nothing and produces lists.
+      if (data.length == 0 && input == types.unit) {
+        fn({data: undefined, tags: {}}, function(data) { results.push(data); cb(); });
+      }
+      for (var i = data.length - 1; i >= 0; i--) {
+        cb = (function(cb, i) {
+          return function() {
+            fn(data[i], function(data) { results.push(data); cb(); });
+          }
+        })(cb, i);
+      }
+    }, name, id, input, output, fromKey, fromValue);
+}
+
+function streamedStage(stage, id, fromKey, fromValue) {
+  return coreStreamAsync(function(data, cb) {
+      stage.impl(data.data, function(dataOut) { console.log(dataOut); dataOut.tags = data.tags; cb(dataOut); });
+    }, '<<' + stage.name + '>>', id, stage.input, stage.output, fromKey, fromValue);
+}
 
 function cloneTags(tag) {
   var result = {};
@@ -65,49 +93,42 @@ function cloneTags(tag) {
   return result;
 }
 
-function StreamCloner(fromKey, fromValue, toKey, toValue, id) {
+function clone(toKey, value1, value2, id) {
   var typeVar = types.newTypeVar();
-  this.name = 'clone';
-  this.id = id || newInstanceID();
-  this.impl = function(stream, cb) {
-    var data = stream.get(fromKey, fromValue);
-    for (var i = 0; i < data.length; i++) {
-      data[i].tags.fromList = data[i].tags.fromList || [];
-      data[i].tags.fromList.push(stageSpec(this));
-      var fromTag = cloneTags(data[i].tags);
-      fromTag[fromKey] = fromValue;
-      stream.put(data[i].data, fromTag);
-      data[i].tags[toKey] = toValue;
-      stream.put(data[i].data, data[i].tags);
-    }
-    cb(stream);
-  }
-  this.input = Stream([{key: fromKey, value: fromValue, type: typeVar}]);
-  this.output = Stream([{key: fromKey, value: fromValue, type: typeVar},
-                        {key: toKey, value: toValue, type: typeVar}]);
+  return new CoreStream(function(data, incb, stream) {
+      for (var i = 0; i < data.length; i++) {
+        var newTags = cloneTags(data[i].tags);
+        data[i].tags[toKey] = value1;
+        stream.put(data[i].data, data[i].tags);
+        data[i].tags = newTags;
+        data[i].tags[toKey] = value2;
+        stream.put(data[i].data, data[i].tags);
+      }
+      incb(data);
+    }, 'clone', id, typeVar, typeVar, fromKey, fromValue, [], 
+    [{key: toKey, value: value1, type: typeVar}, {key: toKey, value: value2, type: typeVar}]);
 }
 
-function StreamTagger(fn, fromKey, fromValue, id) {
+function tag(fn, id, fromKey, fromValue) {
   var typeVar = types.newTypeVar();
-  this.name = 'tag';
-  this.id = id || newInstanceID();
-  this.impl = function(stream, cb) {
-    var data = stream.get(fromKey, fromValue);
-    for (var i = 0; i < data.length; i++) {
-      var tag = fn(data[i].data, data[i].tags);
-      data[i].tags[tag.key] = tag.value;
-      data[i].tags.from = stageSpec(this);
-      data[i].tags.fromList = data[i].tags.fromList || [];
-      data[i].tags.fromList.push(data[i].tags.from);
-      stream.put(data[i].data, data[i].tags);
-    }
-    cb(stream);
-  };
-  this.input = Stream([{key: fromKey, value: fromValue, type: stage.input}]);
-  this.output = Stream([{key: "from", value: stageSpec(this), type: stage.output}]);
+  return new CoreStream(function(data, incb) {
+      for (var i = 0; i < data.length; i++) {
+        var tag = fn(data[i].data, data[i].tags);
+        data[i].tags[tag.key] = tag.value;
+      }
+      incb(data);
+    }, 'tag', id, typeVar, typeVar, fromKey, fromValue);
+}
+
+function write(id, fromKey, fromValue) {
+  var typeVar = types.newTypeVar();
+  return coreStreamAsync(function(data, incb) {
+      writeFile(data.tags['filename'], data.data, function() { incb(data); });
+    }, 'write', typeVar, typeVar, fromKey, fromValue);
 }
 
 module.exports.clone = clone;
 module.exports.stageSpec = stageSpec;
-module.exports.StreamedStage = StreamedStage;
-
+module.exports.streamedStage = streamedStage;
+module.exports.tag = tag;
+module.exports.write = write;

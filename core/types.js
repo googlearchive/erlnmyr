@@ -166,5 +166,6 @@ module.exports.newTypeVar = newTypeVar;
 module.exports.List = List;
 module.exports.Tuple = Tuple;
 module.exports.Map = Map;
+module.exports.Stream = Stream;
 module.exports.coerce = coerce;
  

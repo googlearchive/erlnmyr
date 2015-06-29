@@ -60,7 +60,8 @@ function stageSpecificationToStage(stage, options) {
 }
 
 function processStages(stages, cb, fail) {
-  assert.equal(stages[0].input, 'unit');
+  // TODO: Put this back when I work out what it means for stages.
+  // assert.equal(stages[0].input, 'unit');
   processStagesWithInput(null, stages, cb, fail);
 }
 
