@@ -11,25 +11,23 @@ function Stream() {
   this.data = [];
 }
 
-// TODO: Experiment with get taking a 
-// callback that is invoked on each element.
-
 Stream.prototype = {
   put: function(data, tags) {
     this.data.push({tags: tags, data: data});
   },
-  get: function(key, match) {
-    var results = [];
+  get: function(key, match, fn) {
     var newData = [];
     for (var i = 0; i < this.data.length; i++) {
       var item = this.data[i];
-      if (item.tags[key] == match || (item.tags[key] !== undefined && match == undefined))
-        results.push(item);
-      else
+      if (item.tags[key] == match || (item.tags[key] !== undefined && match == undefined)) {
+        var result = fn(item);
+        if (result !== undefined)
+          newData.push(result);
+      } else {
         newData.push(item);
+      }
     }
     this.data = newData;
-    return results;
   }
 }
 
@@ -37,26 +35,9 @@ function stageSpec(stage) {
   return {name: stage.name, id: stage.id};
 }
 
-function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
+function CoreStreamBase(name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
   this.name = name;
   this.id = id || newInstanceID();
-  this.impl = function(stream, incb) {
-    // TODO: should stream be constructed as input instead?
-    if (stream == null) {
-      stream = new Stream();
-    }
-    fn(stream.get(fromKey, fromValue), function(results) {
-      for (var i = 0; i < results.length; i++) {
-        var data = results[i].data;
-        var tags = results[i].tags;
-        tags.from = stageSpec(this);
-        tags.fromList = tags.fromList || [];
-        tags.fromList.push(tags.from);
-        stream.put(data, tags);
-      }
-      incb(stream);
-    }, stream);
-  };
   fromKey = fromKey || 'from';
   var inputList = inputList || [];
   inputList.push({key: fromKey, value: fromValue, type: fromType});
@@ -66,6 +47,48 @@ function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputLis
   this.output = types.Stream(outputList);
 }
 
+CoreStreamBase.prototype.tag = function(result) {
+  var tags = result.tags;
+  tags.from = stageSpec(this);
+  tags.fromList = tags.fromList || [];
+  tags.fromList.push(tags.from);
+}
+
+
+/**
+ * CoreStream's implementation function takes lists of tagged data and returns
+ * lists of tagged data.
+ */
+function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
+  CoreStreamBase.call(this, name, id, fromType, toType, fromKey, fromValue, inputList, outputList);
+  this.fn = fn;
+  this.fromKey = fromKey;
+  this.fromValue = fromValue;
+};
+
+CoreStream.prototype = Object.create(CoreStreamBase.prototype);
+CoreStream.prototype.impl = function(stream, incb) {
+  // TODO: should stream be constructed as input instead?
+  if (stream == null) {
+    stream = new Stream();
+  }
+  var inputs = [];
+  stream.get(this.fromKey, this.fromValue, function(result) {
+    inputs.push(result);
+  });
+  this.fn(inputs, function(results) {
+    for (var i = 0; i < results.length; i++) {
+      this.tag(results[i]);
+      stream.put(results[i].data, results[i].tags);
+    }
+    incb(stream);
+  }.bind(this), stream);
+}
+
+/**
+ * coreStreamAsync's implementation function takes a tagged data item and
+ * returns a tagged data item.
+ */
 function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
   return new CoreStream(function(data, incb) {
       var results = [];
