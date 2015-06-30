@@ -100,6 +100,15 @@ gulp.task('mhtml', function(incb) {
     ], cb, function(e) { throw e; });
 });
 
+function tagFilename() {
+  return stream.tag(function(data, tags) { return {key: 'filename', value: data} });
+}
+
+function genFilename() {
+  return stream.tag(function(data, tags) {
+    var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
+    return {key: 'filename', value: filename} });
+}
 
 
 gulp.task('mhtml2', function(incb) {
@@ -107,14 +116,30 @@ gulp.task('mhtml2', function(incb) {
   stageLoader.processStages(
       [
         stream.streamedStage0ToN(fancyStages.fileInputs(options.inputSpec)),
-        stream.tag(function(data, tags) { return {key: 'filename', value: data} }),
+        tagFilename(),
         stream.streamedStage1To1(stageLoader.stageSpecificationToStage('fileToJSON')),
         stream.streamedStage1To1(stageLoader.stageSpecificationToStage('HTMLWriter')),
-        stream.tag(function(data, tags) {
-          var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
-          return {key: 'filename', value: filename} }),
+        genFilename(),
         stream.write()
       ], cb, function(e) { throw e; });
 });
+
+gulp.task('processLogs', function(incb) {
+  var cb = function(data) { incb(); };
+  stageLoader.processStages(
+      [
+        stream.streamedStage0ToN(fancyStages.fileInputs(options.inputSpec)),
+        stream.streamedStage1To1(stageLoader.stage(
+            [
+              stageLoader.stageSpecificationToStage('fileToJSON'),
+              stageLoader.stageSpecificationToStage('traceFilter'),
+              stageLoader.stageSpecificationToStage('tracePIDSplitter'),
+              fancyStages.valueMap(stageLoader.stageSpecificationToStage('traceTree')),
+              fancyStages.valueMap(stageLoader.stageSpecificationToStage('tracePrettyPrint')),
+            ])),
+        stream.streamedStage1To1(fancyStages.valueMap(stageLoader.stageSpecificationToStage('consoleOutput')))
+      ], cb, function(e) { throw e; });
+});
+
 
 module.exports.tasks = tasks;
