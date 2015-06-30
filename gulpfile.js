@@ -10,6 +10,7 @@ var experiment = require('./core/experiment');
 var stageLoader = require('./core/stage-loader');
 
 var fancyStages = require('./core/fancy-stages');
+var stream = require('./core/stream');
 
 var options = parseArgs(process.argv.slice(2));
 device.init(options);
@@ -92,11 +93,28 @@ gulp.task('mhtml', function(incb) {
     [
       fancyStages.fileInputs(options.inputSpec),
       fancyStages.map(fancyStages.tee()),
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('fileToJSON'))),
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('HTMLWriter'))),
-      fancyStages.map(fancyStages.right(fancyStages.outputName(options.inputSpec, options.outputSpec))),
+      fancyStages.map(fancyStages.right(stageLoader.stageSpecificationToStage('fileToJSON'))),
+      fancyStages.map(fancyStages.right(stageLoader.stageSpecificationToStage('HTMLWriter'))),
+      fancyStages.map(fancyStages.left(fancyStages.outputName(options.inputSpec, options.outputSpec))),
       fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
     ], cb, function(e) { throw e; });
+});
+
+
+
+gulp.task('mhtml2', function(incb) {
+  var cb = function(data) { incb(); };
+  stageLoader.processStages(
+      [
+        stream.streamedStage0ToN(fancyStages.fileInputs(options.inputSpec)),
+        stream.tag(function(data, tags) { return {key: 'filename', value: data} }),
+        stream.streamedStage1To1(stageLoader.stageSpecificationToStage('fileToJSON')),
+        stream.streamedStage1To1(stageLoader.stageSpecificationToStage('HTMLWriter')),
+        stream.tag(function(data, tags) {
+          var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
+          return {key: 'filename', value: filename} }),
+        stream.write()
+      ], cb, function(e) { throw e; });
 });
 
 module.exports.tasks = tasks;
