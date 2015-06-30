@@ -1,4 +1,6 @@
 var types = require('./types');
+var assert = require('chai').assert;
+var stages = require('./stages');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -8,6 +10,9 @@ function newInstanceID() {
 function Stream() {
   this.data = [];
 }
+
+// TODO: Experiment with get taking a 
+// callback that is invoked on each element.
 
 Stream.prototype = {
   put: function(data, tags) {
@@ -59,17 +64,12 @@ function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputLis
   outputList.push({key: 'from', value: stageSpec(this), type: toType});
   this.input = types.Stream(inputList);
   this.output = types.Stream(outputList);
-} 
+}
 
 function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
   return new CoreStream(function(data, incb) {
       var results = [];
       var cb = function() { incb(results); }
-      // TODO: this is probably wrong. Actually, fancyStages.fileInputs 
-      // isn't a standard streamedStage as it takes nothing and produces lists.
-      if (data.length == 0 && input == types.unit) {
-        fn({data: undefined, tags: {}}, function(data) { results.push(data); cb(); });
-      }
       for (var i = data.length - 1; i >= 0; i--) {
         cb = (function(cb, i) {
           return function() {
@@ -77,12 +77,24 @@ function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
           }
         })(cb, i);
       }
+      cb();
     }, name, id, input, output, fromKey, fromValue);
 }
 
-function streamedStage(stage, id, fromKey, fromValue) {
+function streamedStage0ToN(stage, id, fromKey, fromValue) {
+  assert(stage.input == types.unit);
+  assert(types.isList(stage.output));
+  return new CoreStream(function(data, incb) {
+    stage.impl([], function(dataOut) {
+      dataOut = dataOut.map(function(data) { return {data: data, tags: {} }; });
+      incb(dataOut);
+    });
+  }, '<<' + stage.name + '>>', id, stage.input, types.deList(stage.output), fromKey, fromValue);
+}
+
+function streamedStage1To1(stage, id, fromKey, fromValue) {
   return coreStreamAsync(function(data, cb) {
-      stage.impl(data.data, function(dataOut) { console.log(dataOut); dataOut.tags = data.tags; cb(dataOut); });
+      stage.impl(data.data, function(dataOut) { dataOut = {data: dataOut, tags: data.tags} ; cb(dataOut); });
     }, '<<' + stage.name + '>>', id, stage.input, stage.output, fromKey, fromValue);
 }
 
@@ -105,7 +117,7 @@ function clone(toKey, value1, value2, id) {
         stream.put(data[i].data, data[i].tags);
       }
       incb(data);
-    }, 'clone', id, typeVar, typeVar, fromKey, fromValue, [], 
+    }, 'clone', id, typeVar, typeVar, fromKey, fromValue, [],
     [{key: toKey, value: value1, type: typeVar}, {key: toKey, value: value2, type: typeVar}]);
 }
 
@@ -120,15 +132,16 @@ function tag(fn, id, fromKey, fromValue) {
     }, 'tag', id, typeVar, typeVar, fromKey, fromValue);
 }
 
-function write(id, fromKey, fromValue) {
+function write(id) {
   var typeVar = types.newTypeVar();
   return coreStreamAsync(function(data, incb) {
-      writeFile(data.tags['filename'], data.data, function() { incb(data); });
-    }, 'write', typeVar, typeVar, fromKey, fromValue);
+      stages.writeFile(data.tags['filename'], data.data, function() { incb(data); });
+    }, 'write', typeVar, typeVar, 'filename');
 }
 
 module.exports.clone = clone;
 module.exports.stageSpec = stageSpec;
-module.exports.streamedStage = streamedStage;
+module.exports.streamedStage1To1 = streamedStage1To1;
+module.exports.streamedStage0ToN = streamedStage0ToN;
 module.exports.tag = tag;
 module.exports.write = write;

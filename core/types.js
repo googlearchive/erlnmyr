@@ -29,7 +29,7 @@ function isList(type) {
   return typeof type == 'object' && type.base !== undefined;
 }
 
-function delist(type) {
+function deList(type) {
   assert.isTrue(isList(type));
   return type.base;
 }
@@ -95,7 +95,7 @@ function coerce(left, right, coersion, visited) {
     return coersion;
 
   if (isList(left) && isList(right)) {
-    return coerce(delist(left), delist(right), coersion);
+    return coerce(deList(left), deList(right), coersion);
   }
 
   if (isTuple(left) && isTuple(right)) {
@@ -117,7 +117,7 @@ function coerce(left, right, coersion, visited) {
       var leftTag = left.tags[i];
       for (var j = 0; j < right.tags.length; j++) {
         var rightTag = right.tags[i];
-        if (leftTag.key == rightTag.key && leftTag.value == rightTag.value) {
+        if (leftTag.key == rightTag.key && (leftTag.value == rightTag.value || leftTag.value == undefined || rightTag.value == undefined)) {
           var coersion = coerce(leftTag.type, rightTag.type, coersion);
           if (coersion == undefined)
             return undefined;
@@ -164,8 +164,9 @@ for (primitive in primitives)
   module.exports[primitive] = primitive;
 module.exports.newTypeVar = newTypeVar;
 module.exports.List = List;
+module.exports.isList = isList;
+module.exports.deList = deList;
 module.exports.Tuple = Tuple;
 module.exports.Map = Map;
 module.exports.Stream = Stream;
 module.exports.coerce = coerce;
- 

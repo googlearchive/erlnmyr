@@ -24,6 +24,8 @@ function writeFile(output, data, cb) {
   });
 }
 
+module.exports.writeFile = writeFile;
+
 function readJSONFile(filename, cb) {
   console.log('reading', filename, 'as JSON');
   fs.readFile(filename, 'utf8', function(err, data) {

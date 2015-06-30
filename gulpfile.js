@@ -106,14 +106,14 @@ gulp.task('mhtml2', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-	stream.streamedStage(fancyStages.fileInputs(options.inputSpec)),
-	stream.tag(function(data, tags) { console.log(data, tags); return {key: 'filename', value: data} }),
-	stream.streamedStage(stageLoader.stageSpecificationToStage('fileToJSON')),
-	stream.streamedStage(stageLoader.stageSpecificationToStage('HTMLWriter')),
-	stream.tag(function(data, tags) {
-	  var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
-	  return {key: 'filename', value: filename} }),
-	stream.write()
+        stream.streamedStage0ToN(fancyStages.fileInputs(options.inputSpec)),
+        stream.tag(function(data, tags) { return {key: 'filename', value: data} }),
+        stream.streamedStage1To1(stageLoader.stageSpecificationToStage('fileToJSON')),
+        stream.streamedStage1To1(stageLoader.stageSpecificationToStage('HTMLWriter')),
+        stream.tag(function(data, tags) {
+          var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
+          return {key: 'filename', value: filename} }),
+        stream.write()
       ], cb, function(e) { throw e; });
 });
 
