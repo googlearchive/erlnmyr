@@ -23,6 +23,7 @@ var fancyStages = require('./fancy-stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
+var newExperiment = require('./new-experiment');
 
 
 var argInputs = {
@@ -38,7 +39,7 @@ var byConstruction = [
   {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];
-var byName = [device, experiment, stages];
+var byName = [device, experiment, stages, newExperiment];
 
 function stageSpecificationToStage(stage, options) {
   options = options || {};

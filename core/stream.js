@@ -112,13 +112,19 @@ function streamedStage0ToN(stage, id, fromKey, fromValue) {
       dataOut = dataOut.map(function(data) { return {data: data, tags: {} }; });
       incb(dataOut);
     });
-  }, '<<' + stage.name + '>>', id, stage.input, types.deList(stage.output), fromKey, fromValue);
+  }, '<0<' + stage.name + '>N>', id, stage.input, types.deList(stage.output), fromKey, fromValue);
 }
 
 function streamedStage1To1(stage, id, fromKey, fromValue) {
   return coreStreamAsync(function(data, cb) {
       stage.impl(data.data, function(dataOut) { dataOut = {data: dataOut, tags: data.tags} ; cb(dataOut); });
-    }, '<<' + stage.name + '>>', id, stage.input, stage.output, fromKey, fromValue);
+    }, '<1<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
+}
+
+function streamedStage(stage, id, fromKey, fromValue) {
+  if (stage.input == 'unit' && types.isList(stage.output))
+    return streamedStage0ToN(stage, id, fromKey, fromValue);
+  return streamedStage1To1(stage, id, fromKey, fromValue);
 }
 
 function cloneTags(tag) {
@@ -166,5 +172,6 @@ module.exports.clone = clone;
 module.exports.stageSpec = stageSpec;
 module.exports.streamedStage1To1 = streamedStage1To1;
 module.exports.streamedStage0ToN = streamedStage0ToN;
+module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
