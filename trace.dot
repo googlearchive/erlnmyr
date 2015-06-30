@@ -1,0 +1,17 @@
+digraph trace {
+
+  subgraph cluster0 {
+    readJSON -> {traceFilter_1; traceFilter_2} -> tracePIDSplitter -> traceTree -> tracePrettyPrint;
+    color=blue;
+  }
+
+  filenames -> readJSON;
+  tracePrettyPrint -> console;
+
+  filenames [RE="*.trace.json"];
+
+  traceFilter_1 [label="traceFilter", traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
+  traceFilter_2 [stage="traceFilter"];
+
+  tracePrettyPrint [showTrace="false"];
+}
