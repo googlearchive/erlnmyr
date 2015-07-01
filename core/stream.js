@@ -17,8 +17,10 @@ Stream.prototype = {
   },
   get: function(key, match, fn) {
     var newData = [];
-    for (var i = 0; i < this.data.length; i++) {
-      var item = this.data[i];
+    var oldData = this.data;
+    this.data = [];
+    for (var i = 0; i < oldData.length; i++) {
+      var item = oldData[i];
       if (item.tags[key] == match || (item.tags[key] !== undefined && match == undefined)) {
         var result = fn(item);
         if (result !== undefined)
@@ -27,7 +29,7 @@ Stream.prototype = {
         newData.push(item);
       }
     }
-    this.data = newData;
+    this.data = this.data.concat(newData);
   }
 }
 
@@ -38,13 +40,16 @@ function stageSpec(stage) {
 function CoreStreamBase(name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
   this.name = name;
   this.id = id || newInstanceID();
-  fromKey = fromKey || 'from';
-  var inputList = inputList || [];
-  inputList.push({key: fromKey, value: fromValue, type: fromType});
-  var outputList = outputList || [];
-  outputList.push({key: 'from', value: stageSpec(this), type: toType});
-  this.input = types.Stream(inputList);
-  this.output = types.Stream(outputList);
+  this.fromType = fromType;
+  this.toType = toType;
+  this.fromKey = fromKey || 'from';
+  this.fromValue = fromValue;
+  this.inputList = inputList || [];
+  this.inputList.push({key: this.fromKey, value: this.fromValue, type: this.fromType});
+  this.outputList = outputList || [];
+  this.outputList.push({key: 'from', value: stageSpec(this), type: this.toType});
+  this.input = types.Stream(this.inputList);
+  this.output = types.Stream(this.outputList);
 }
 
 CoreStreamBase.prototype.tag = function(result) {
@@ -52,6 +57,85 @@ CoreStreamBase.prototype.tag = function(result) {
   tags.from = stageSpec(this);
   tags.fromList = tags.fromList || [];
   tags.fromList.push(tags.from);
+  if (this.outputName !== undefined)
+    tags[this.outputName] = this.outputValue;
+}
+
+// TODO: setInput rather than fromKey / fromValue??
+CoreStreamBase.prototype.setOutput = function(name, value) {
+  // TODO: Make this work when setOutput is called again
+  assert(this.outputName == undefined);
+  this.outputName = name;
+  this.outputValue = value;
+  this.outputList.push({key: name, value: value, type: this.toType});
+  this.output = types.Stream(this.outputList);
+}
+
+function RoutingStage(inRoutes, outRoutes) {
+  assert(inRoutes.length == outRoutes.length);
+  this.name = 'routing';
+  this.id = inRoutes + ' : ' + outRoutes;
+  this.impl = function(stream, cb) {
+    for (var i = 0; i < inRoutes.length; i++) {
+      var ins = inRoutes[i];
+      var outs = outRoutes[i];
+      for (var j = 0; j < ins.length; j++) {
+        stream.get('eto', ins[j] + '', function(result) {
+          for (var k = 0; k < outs.length; k++) {
+            var tags = cloneTags(result.tags);
+            tags.efrom = outs[k] + '';
+            stream.put(result.data, tags);
+          }
+        }.bind(this));
+      }
+    }
+    cb(stream);
+  }
+  var inputs = [];
+  var outputs = [];
+  for (var i = 0; i < inRoutes.length; i++) {
+    var typeVar = types.newTypeVar();
+    for (var j = 0; j < inRoutes[i].length; j++)
+      inputs.push({key: 'eto', value: inRoutes[i][j] + '', type: typeVar});
+    for (var k = 0; k < outRoutes[i].length; k++)
+      outputs.push({key: 'efrom', value: outRoutes[i][k] + '', type: typeVar});
+  }
+  this.input = types.Stream(inputs);
+  this.output = types.Stream(outputs);
+}
+
+function stageWrapper(stageList, id) {
+  var first = stageList[0];
+  var last = stageList[stageList.length - 1];
+  var name = '<<[' + stageList.map(function(stage) { return stage.name; }).join() + ']>>';
+
+  var stream = new CoreStream(function(stream, incb) {
+    var inputs = [];
+    stream.get(this.fromKey, this.fromValue, function(result) {
+      inputs.push(result);
+    });
+    var cb = function(data) { stream.data = stream.data.concat(data.data); incb(stream); };
+    if (inputs.length > 0)
+      stream.put(inputs[0]);
+    stageLoader.processStagesWithInput(stream, stages, function(stream) {
+      for (var i = inputs.length - 1; i >= 0; i--) {
+        cb = (function(cb, i) {
+          return function(data) {
+            stream.data = stream.data.concat(data.data);
+            var smallStream = new Stream();
+            smallStream.put(inputs[i]);
+            stageLoader.processStagesWithInput(smallStream, stages, cb, function(e) { throw e; });
+          }
+        })(cb, i);
+      }
+      cb();
+    }, function(e) { throw e; });
+  }, name, id, first.fromType, last.toType, first.fromKey, first.fromValue);
+  // TODO: inputList/outputList??
+  if (last.outputName !== undefined) {
+    stream.setOutput(last.outputName, last.outputValue);
+  }
+  return stream;
 }
 
 
@@ -62,8 +146,6 @@ CoreStreamBase.prototype.tag = function(result) {
 function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
   CoreStreamBase.call(this, name, id, fromType, toType, fromKey, fromValue, inputList, outputList);
   this.fn = fn;
-  this.fromKey = fromKey;
-  this.fromValue = fromValue;
 };
 
 CoreStream.prototype = Object.create(CoreStreamBase.prototype);
@@ -104,11 +186,11 @@ function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
     }, name, id, input, output, fromKey, fromValue);
 }
 
-function streamedStage0ToN(stage, id, fromKey, fromValue) {
+function streamedStageList0ToN(stage, id, fromKey, fromValue) {
   assert(stage.input == types.unit);
   assert(types.isList(stage.output));
   return new CoreStream(function(data, incb) {
-    stage.impl([], function(dataOut) {
+    stage.impl(undefined, function(dataOut) {
       dataOut = dataOut.map(function(data) { return {data: data, tags: {} }; });
       incb(dataOut);
     });
@@ -116,14 +198,40 @@ function streamedStage0ToN(stage, id, fromKey, fromValue) {
 }
 
 function streamedStage1To1(stage, id, fromKey, fromValue) {
+  console.log('I', JSON.stringify(stage.input), 'O', JSON.stringify(stage.output));
   return coreStreamAsync(function(data, cb) {
       stage.impl(data.data, function(dataOut) { dataOut = {data: dataOut, tags: data.tags} ; cb(dataOut); });
     }, '<1<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
 }
 
+function streamedStageMap1ToN(stage, id, fromKey, fromValue) {
+  assert(types.isMap(stage.output));
+  return new CoreStream(function(data, incb) {
+    var result = [];
+    var cb = function() {incb(result); }
+    for (var i = data.length - 1; i >= 0; i--) {
+      cb = (function(cb, i) {
+        return function() {
+          stage.impl(data[i].data, function(dataOut) {
+            for (key in dataOut) {
+              var tags = data[i].tags;
+              tags[id == undefined ? stage.name : id] = key;
+              result.push({data: dataOut[key], tags: tags});
+            }
+            cb();
+          });
+        }
+      })(cb, i);
+    }
+    cb();
+  }, '<1<' + stage.name + '>N>', id, stage.input, types.deMap(stage.output), fromKey, fromValue);
+}
+
 function streamedStage(stage, id, fromKey, fromValue) {
   if (stage.input == 'unit' && types.isList(stage.output))
-    return streamedStage0ToN(stage, id, fromKey, fromValue);
+    return streamedStageList0ToN(stage, id, fromKey, fromValue);
+  if (types.isMap(stage.output) && !(types.isMap(stage.input)))
+    return streamedStageMap1ToN(stage, id, fromKey, fromValue);
   return streamedStage1To1(stage, id, fromKey, fromValue);
 }
 
@@ -170,8 +278,8 @@ function write(id) {
 
 module.exports.clone = clone;
 module.exports.stageSpec = stageSpec;
-module.exports.streamedStage1To1 = streamedStage1To1;
-module.exports.streamedStage0ToN = streamedStage0ToN;
 module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
+module.exports.RoutingStage = RoutingStage;
+module.exports.stageWrapper = stageWrapper;

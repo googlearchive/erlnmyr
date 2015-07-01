@@ -61,7 +61,7 @@ function isMap(type) {
   return typeof type == 'object' && type.value !== undefined;
 }
 
-function demap(type) {
+function deMap(type) {
   assert.isTrue(isMap(type));
   return type.value;
 }
@@ -109,14 +109,14 @@ function coerce(left, right, coersion, visited) {
   }
 
   if (isMap(left) && isMap(right)) {
-    return coerce(demap(left), demap(right), coersion);
+    return coerce(deMap(left), deMap(right), coersion);
   }
 
   if (isStream(left) && isStream(right)) {
     for (var i = 0; i < left.tags.length; i++) {
       var leftTag = left.tags[i];
       for (var j = 0; j < right.tags.length; j++) {
-        var rightTag = right.tags[i];
+        var rightTag = right.tags[j];
         if (leftTag.key == rightTag.key && (leftTag.value == rightTag.value || leftTag.value == undefined || rightTag.value == undefined)) {
           var coersion = coerce(leftTag.type, rightTag.type, coersion);
           if (coersion == undefined)
@@ -168,5 +168,7 @@ module.exports.isList = isList;
 module.exports.deList = deList;
 module.exports.Tuple = Tuple;
 module.exports.Map = Map;
+module.exports.isMap = isMap;
+module.exports.deMap = deMap;
 module.exports.Stream = Stream;
 module.exports.coerce = coerce;

@@ -17,6 +17,7 @@ function readerForInput(name) {
   return JSONReader(name);
 }
 
+// TODO: Work out the right way to deal with this sort of thing.
 module.exports.fileInputs = function(inputSpec) {
   return {
     impl: function(unused, cb) {
