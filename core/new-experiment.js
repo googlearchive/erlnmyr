@@ -35,7 +35,6 @@ function doExperiment() {
           pipes[edge.w] = mkPipe(edge.w, inGraph);
         graph.connect(pipes[edge.v], pipes[edge.w]);
       }
-      pipes[edges[0].v].graph.dump();
       var linear = linearize(pipes[edges[0].v].graph);
       var linearNames = linear.map(function(x) { return x.map(function(a) { return a.nodeName; })});
 
@@ -63,9 +62,6 @@ function doExperiment() {
         return result;
       });
 
-      console.log(linearNames);
-      console.log(linearGroups);
-
       var stageStack = [[]];
       var groupStack = [];
 
@@ -92,10 +88,6 @@ function doExperiment() {
           groupStack.pop();
           var stages = stageStack.pop(); // do wrapping here
           var consolidated = stream.stageWrapper(stages);
-
-          console.log('\n\n',stages,'\n\n');
-          console.log(consolidated, '\n\n');
-
           stageStack[stageStack.length - 1].push(consolidated);
         }
 

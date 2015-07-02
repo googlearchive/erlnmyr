@@ -1,6 +1,7 @@
 var types = require('./types');
 var assert = require('chai').assert;
 var stages = require('./stages');
+var stageLoader = require('./stage-loader');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -109,33 +110,37 @@ function stageWrapper(stageList, id) {
   var last = stageList[stageList.length - 1];
   var name = '<<[' + stageList.map(function(stage) { return stage.name; }).join() + ']>>';
 
-  var stream = new CoreStream(function(stream, incb) {
+  var streamStage = new CoreStreamBase(name, id, first.fromType, last.toType, first.fromKey, first.fromValue);
+
+  streamStage.impl = function(stream, incb) {
     var inputs = [];
     stream.get(this.fromKey, this.fromValue, function(result) {
       inputs.push(result);
     });
-    var cb = function(data) { stream.data = stream.data.concat(data.data); incb(stream); };
+    var cb = function(outStream) { incb(outStream); };
     if (inputs.length > 0)
-      stream.put(inputs[0]);
-    stageLoader.processStagesWithInput(stream, stages, function(stream) {
-      for (var i = inputs.length - 1; i >= 0; i--) {
+      stream.put(inputs[0].data, inputs[0].tags);
+    stageLoader.processStagesWithInput(stream, stageList, function(outStream) {
+      for (var i = inputs.length - 1; i >= 1; i--) {
         cb = (function(cb, i) {
-          return function(data) {
-            stream.data = stream.data.concat(data.data);
+          return function() {
             var smallStream = new Stream();
-            smallStream.put(inputs[i]);
-            stageLoader.processStagesWithInput(smallStream, stages, cb, function(e) { throw e; });
+            smallStream.put(inputs[i].data, inputs[i].tags);
+            stageLoader.processStagesWithInput(smallStream, stageList, function(result) {
+              outStream.data = outStream.data.concat(result.data);
+              cb(outStream);
+            }, function(e) { throw e; });
           }
         })(cb, i);
       }
       cb();
     }, function(e) { throw e; });
-  }, name, id, first.fromType, last.toType, first.fromKey, first.fromValue);
+  };
   // TODO: inputList/outputList??
   if (last.outputName !== undefined) {
-    stream.setOutput(last.outputName, last.outputValue);
+    streamStage.setOutput(last.outputName, last.outputValue);
   }
-  return stream;
+  return streamStage;
 }
 
 
@@ -198,7 +203,6 @@ function streamedStageList0ToN(stage, id, fromKey, fromValue) {
 }
 
 function streamedStage1To1(stage, id, fromKey, fromValue) {
-  console.log('I', JSON.stringify(stage.input), 'O', JSON.stringify(stage.output));
   return coreStreamAsync(function(data, cb) {
       stage.impl(data.data, function(dataOut) { dataOut = {data: dataOut, tags: data.tags} ; cb(dataOut); });
     }, '<1<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
