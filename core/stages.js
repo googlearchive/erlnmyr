@@ -58,7 +58,6 @@ function readFile(filename, cb) {
 }
 
 function readFileRaw(filename, cb) {
-  console.log('reading', filename);
   fs.readFile(filename, function(err, data) {
     if (err)
       throw err;
@@ -355,4 +354,15 @@ module.exports.filenames = function(options) {
   }
 }
 
+module.exports.input = function(options) {
+  options = override({data: ''}, options);
+  return {
+    impl: function(unused, cb) {
+      cb([options.data]);
+    },
+    name: 'input',
+    input: types.unit,
+    output: types.List(types.string)
+  }
+}
 

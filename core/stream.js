@@ -53,16 +53,25 @@ function CoreStreamBase(name, id, fromType, toType, fromKey, fromValue, inputLis
   this.output = types.Stream(this.outputList);
 }
 
+CoreStreamBase.prototype.isStream = true;
+
 CoreStreamBase.prototype.tag = function(result) {
   var tags = result.tags;
   tags.from = stageSpec(this);
-  tags.fromList = tags.fromList || [];
-  tags.fromList.push(tags.from);
+  // TODO: make this work
+  // tags.fromList = tags.fromList || [];
+  // tags.fromList.push(tags.from);
   if (this.outputName !== undefined)
     tags[this.outputName] = this.outputValue;
 }
 
-// TODO: setInput rather than fromKey / fromValue??
+CoreStreamBase.prototype.setInput = function(name, value) {
+  this.fromKey = name;
+  this.fromValue = value;
+  // TODO: this wont work for stages with multiple inputs
+  this.inputList = [{key: this.fromKey, value: this.fromValue, type: this.fromType}];
+  this.input = types.Stream(this.inputList);
+}
 CoreStreamBase.prototype.setOutput = function(name, value) {
   // TODO: Make this work when setOutput is called again
   assert(this.outputName == undefined);
@@ -241,7 +250,7 @@ function streamedStage(stage, id, fromKey, fromValue) {
 
 function cloneTags(tag) {
   var result = {};
-  for (key in tag)
+  for (var key in tag)
     result[key] = tag[key];
   return result;
 }
@@ -280,10 +289,11 @@ function write(id) {
     }, 'write', typeVar, typeVar, 'filename');
 }
 
-module.exports.clone = clone;
+module.exports.cloneTags = cloneTags;
 module.exports.stageSpec = stageSpec;
 module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
 module.exports.RoutingStage = RoutingStage;
 module.exports.stageWrapper = stageWrapper;
+module.exports.CoreStream = CoreStream;

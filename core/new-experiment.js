@@ -73,8 +73,12 @@ function doExperiment() {
           }
         }
 
-       var streams = linear[i].map(function(pipe, idx) {
-          var thisStream = stream.streamedStage(stageLoader.stageSpecificationToStage(pipe.stageName, pipe.options), undefined, 'efrom', idx + '');
+        var streams = linear[i].map(function(pipe, idx) {
+          var thisStream = stageLoader.stageSpecificationToStage(pipe.stageName, pipe.options);
+          if (!thisStream.isStream) {
+            thisStream = stream.streamedStage(thisStream);
+          }
+          thisStream.setInput('efrom', idx + '');
           thisStream.setOutput('eto', idx + '');
           return thisStream;
         });
@@ -99,7 +103,7 @@ function doExperiment() {
         var routingStage = new stream.RoutingStage(ins, outs);
         stageStack[stageStack.length - 1].push(routingStage);
 
-     }
+      }
 
       assert(stageStack.length == 1);
       stageLoader.processStages(stageStack[0], cb, function(e) { throw e; });
