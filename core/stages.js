@@ -1,4 +1,6 @@
 var fs = require('fs');
+var zlib = require('zlib');
+var StringDecoder = require('string_decoder').StringDecoder;
 
 var TreeBuilder = require('../lib/tree-builder');
 var types = require('./types.js');
@@ -27,19 +29,37 @@ function writeFile(output, data, cb) {
 
 module.exports.writeFile = writeFile;
 
+function gunzip(buffer, cb) {
+  zlib.gunzip(buffer, function(err, data) {
+    if (err) {
+      cb(buffer);
+      return;
+    }
+    gunzip(data, cb);
+  });
+}
+
 function readJSONFile(filename, cb) {
   console.log('reading', filename, 'as JSON');
   fs.readFile(filename, 'utf8', function(err, data) {
     if (err)
       throw err;
-    var data = JSON.parse(data);
-    cb(data);
+    cb(JSON.parse(data));
   });
 }
 
 function readFile(filename, cb) {
   console.log('reading', filename, 'as string');
   fs.readFile(filename, 'utf8', function(err, data) {
+    if (err)
+      throw err;
+    cb(data);
+  });
+}
+
+function readFileRaw(filename, cb) {
+  console.log('reading', filename);
+  fs.readFile(filename, function(err, data) {
     if (err)
       throw err;
     cb(data);
@@ -66,10 +86,52 @@ module.exports.JSONReader = function(filename) {
   };
 }
 
+module.exports.reader = function(filename) {
+  return {
+    impl: function(_, cb) { readFileRaw(filename, cb); },
+    name: 'reader: ' + filename,
+    input: types.unit,
+    output: types.buffer
+  };
+}
+
 module.exports.fileToJSON = function() {
   return {
     impl: readJSONFile,
     name: 'fileToJSON',
+    input: types.string,
+    output: types.JSON
+  };
+}
+
+module.exports.fileToBuffer = function() {
+  return {
+    impl: readFileRaw,
+    name: 'fileToBuffer',
+    input: types.string,
+    output: types.buffer
+  };
+}
+
+module.exports.gunzipAndDecode = function() {
+  return {
+    impl: function(data, cb) {
+      gunzip(data, function(data) {
+        cb(new StringDecoder('utf8').write(data));
+      });
+    },
+    name: 'gunzipAndDecode',
+    input: types.buffer,
+    output: types.string
+  };
+}
+
+module.exports.jsonParse = function() {
+  return {
+    impl: function(string, cb) {
+      cb(JSON.parse(string));
+    },
+    name: 'jsonParse',
     input: types.string,
     output: types.JSON
   };
