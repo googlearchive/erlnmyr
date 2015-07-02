@@ -1,17 +1,20 @@
 digraph trace {
 
+  input [data="/usr/local/google/home/dstockwell/local/traces"]
+  input -> readDir -> fileToBuffer;
+
   subgraph cluster0 {
-    fileToBuffer -> gunzipAndDecode -> jsonParse -> traceFilter -> tracePIDSplitter -> traceTIDSplitter -> traceTree -> tracePrettyPrint;
+    fileToBuffer -> gunzipAndDecode -> jsonParse;
+    jsonParse -> traceFilter -> tracePIDSplitter -> traceTIDSplitter -> traceTree;
+    traceTree -> tracePrettyPrint -> log;
+
     color=blue;
     strategy=pipeline;
   }
 
-  filenames -> fileToBuffer;
-  tracePrettyPrint -> consoleOutput;
+  log -> dummy;
 
-  filenames [RE="/usr/local/google/home/dstockwell/local/traces/.*"];
-
+  log [tags="filename"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
-
   tracePrettyPrint [showTrace="false"];
 }

@@ -18,6 +18,7 @@ var fabricators = {
   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
 
+var phaseLib = require('./phase-lib');
 var stages = require('./stages');
 var fancyStages = require('./fancy-stages');
 var types = require('./types');
@@ -39,7 +40,7 @@ var byConstruction = [
   {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];
-var byName = [device, experiment, stages, newExperiment];
+var byName = [device, experiment, phaseLib, stages, newExperiment];
 
 function stageSpecificationToStage(stage, options) {
   options = options || {};
