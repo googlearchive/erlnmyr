@@ -8,6 +8,7 @@ var TraceFilter = require('../lib/trace-filter');
 var TraceTree = require('../lib/trace-tree');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
+var TraceTIDSplitter = require('../lib/trace-tid-splitter');
 var TraceTreeSplitter = require('../lib/trace-tree-splitter');
 
 function writeFile(output, data, cb) {
@@ -194,6 +195,17 @@ module.exports.tracePIDSplitter = function() {
   };
 }
 
+module.exports.traceTIDSplitter = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new TraceTIDSplitter(data).split());
+    },
+    name: 'traceTIDSplitter',
+    input: types.JSON,
+    output: types.Map(types.JSON)
+  };
+}
+
 var treeBuilder = function(WriterType) {
   return function(data, cb) {
     var writer = new WriterType();
@@ -246,10 +258,10 @@ module.exports.consoleOutput = function() {
 module.exports.taggedConsoleOutput = function() {
   var typeVar = types.newTypeVar();
   return {
-    impl: function(data, cb) { 
+    impl: function(data, cb) {
       for (key in data) {
         console.log(key);
-        console.log('----------------'), 
+        console.log('----------------'),
         console.log(data[key]);
         console.log();
       }
@@ -260,3 +272,25 @@ module.exports.taggedConsoleOutput = function() {
     output: types.Map(types.string)
   };
 }
+
+module.exports.filenames = function(options) {
+  options = override({RE: ''}, options);
+  return {
+    impl: function(unused, cb) {
+      var pieces = options.RE.split('/');
+      var dir = pieces.slice(0, pieces.length - 1).join('/');
+      var file = pieces[pieces.length - 1];
+      var re = new RegExp('^' + file + '$');
+      if (dir == '')
+        var files = fs.readdirSync('.');
+      else
+        var files = fs.readdirSync(dir);
+      cb(files.filter(re.exec.bind(re)).map(function(file) { return dir == '' ? file : dir + '/' + file; }));
+    },
+    name: 'filenames',
+    input: types.unit,
+    output: types.List(types.string)
+  }
+}
+
+

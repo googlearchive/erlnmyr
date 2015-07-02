@@ -23,6 +23,7 @@ var fancyStages = require('./fancy-stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
+var newExperiment = require('./new-experiment');
 
 
 var argInputs = {
@@ -30,7 +31,7 @@ var argInputs = {
   'file': stages.fileReader,
   'output': stages.fileOutput,
   'ejs': stages.ejsFabricator,
-  'immediate': fancyStages.immediate
+  'immediate': fancyStages.immediate,
 }
 
 var byConstruction = [
@@ -38,7 +39,7 @@ var byConstruction = [
   {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];
-var byName = [device, experiment, stages];
+var byName = [device, experiment, stages, newExperiment];
 
 function stageSpecificationToStage(stage, options) {
   options = options || {};
@@ -72,8 +73,8 @@ function typeCheck(stages) {
     // console.log('checking ' + JSON.stringify(stages[i].output) + ' : ' + JSON.stringify(stages[i + 1].input));
     // console.log(' --> ' + JSON.stringify(coersion));
     coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
-    assert.isDefined(coersion, "Type checking failed for " + stages[i].name + ':' + JSON.stringify(stages[i].output) + 
-      " -> " + stages[i + 1].name + ':' + JSON.stringify(stages[i + 1].input) + " (" + JSON.stringify(inputCoersion) + ")");
+    assert.isDefined(coersion, "Type checking failed for\n  " + stages[i].name + ': ' + JSON.stringify(stages[i].output) + 
+      "\n  ->\n  " + stages[i + 1].name + ': ' + JSON.stringify(stages[i + 1].input) + "\n    " + JSON.stringify(inputCoersion));
   }
 }
 
