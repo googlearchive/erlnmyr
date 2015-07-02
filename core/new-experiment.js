@@ -83,7 +83,7 @@ function doExperiment() {
         if (i == linear.length - 1)
           break;
 
-       while (groupStack.length > 0 && (linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
+        while (groupStack.length > 0 && (linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
           // we've reached the end of this group stack
           groupStack.pop();
           var stages = stageStack.pop(); // do wrapping here
