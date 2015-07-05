@@ -58,6 +58,7 @@ function readFile(filename, cb) {
 }
 
 function readFileRaw(filename, cb) {
+  console.log('reading', filename, 'raw');
   fs.readFile(filename, function(err, data) {
     if (err)
       throw err;

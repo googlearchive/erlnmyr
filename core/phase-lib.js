@@ -2,55 +2,45 @@ var fs = require('fs');
 var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
+var phase = require('./phase');
 
-function readDir() {
-  function impl(items, cb) {
-    cb(items.map(function(item) {
-      var dirname = item.data;
-      return fs.readdirSync(dirname).map(function(filename) {
-        filename = path.join(dirname, filename);
-        var tags = stream.cloneTags(item.tags);
-        tags.filename = filename;
-        return {data: filename, tags: tags};
-      });
-    }).reduce(function(a, b) {
-      return a.concat(b);
-    }, []));
-  };
-  return new stream.CoreStream(impl, 'readDir', undefined, types.string, types.string);
+function register(info, impl, defaults) {
+  function override(defaults, options) {
+    var result = {};
+    for (key in defaults) {
+      if (key in options)
+        result[key] = options[key];
+      else
+        result[key] = defaults[key];
+    }
+    return result;
+  } 
+  module.exports[info.name] = function(options) {
+    var options = override(defaults, options);
+    return new phase.PhaseBase(info, impl, options);
+  }
 }
 
-function log(options) {
-  var tags = (options.tags && options.tags.split(', ')) || [];
-  function impl(items, cb) {
-    cb(items.map(function(item) {
-      tags.forEach(function(tag) {
-        console.log(tag, item.tags[tag]);
-      });
-      console.log(item.data);
-      return item;
-    }));
-  };
-  return new stream.CoreStream(impl, 'log', undefined, types.string, types.string);
-}
+register({name: 'readDir', input: types.string, output: types.string, arity: '1:N'},
+  function(dirName, tags) {
+    fs.readdirSync(dirName).forEach(function(filename) {
+      this.put(path.join(dirName, filename)).tag('filename', filename);
+    }.bind(this));
+  });
 
-function toTag(options) {
-  function impl(items, cb) {
-    cb(items.map(function(item) {
-      return {data: item.tags[options.tag], tags: item.tags};
-    }));
-  };
-  return new stream.CoreStream(impl, 'toTag', undefined, types.string, types.string);
-}
 
-function dummy(options) {
-  function impl(items, cb) {
-    return items;
-  };
-  return new stream.CoreStream(impl, 'dummy', undefined, types.string, types.string);
-}
+register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
+  function(data, tags) {
+    // TODO: well defined default.
+    var tagsToPrint = (this.options.tags && this.options.tags.split(', ')) || [];
+    tagsToPrint.forEach(function(tag) {
+      console.log(tag, tags.read(tag));
+    });
+    console.log(data);
+    return data;
+  },
+  { tags: '' });
 
-module.exports.readDir = readDir;
-module.exports.toTag = toTag;
-module.exports.log = log;
-module.exports.dummy = dummy;
+register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
+  function(data) { return data; });
+
