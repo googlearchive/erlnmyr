@@ -76,10 +76,9 @@ PhaseBase.prototype.impl1ToN = function(stream, mycb) {
     this.runtime.setTags(item.tags);
     this.runtime.impl(item.data, this.runtime.tags);
   }.bind(this));
-  console.log(JSON.stringify(stream));
   mycb(stream);
 }
-    
+
 Tags.prototype.clone = function() {
   var result = {};
   for (var key in this.tags)

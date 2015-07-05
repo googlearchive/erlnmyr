@@ -1,165 +1,114 @@
-var ParseExperiment = require('../lib/parse-experiment');
-
-var stageLoader = require('./stage-loader');
-var fancyStages = require('./fancy-stages');
-var stages = require('./stages');
-var device = require('./device');
+var dot = require('graphlib-dot');
 var types = require('./types');
+var graph = require('./graph');
+var linearize = require('./linearize');
+var stream = require('./stream');
+var stageLoader = require('./stage-loader');
+var assert = require('chai').assert;
 
-// Returns a list of {stages: [pipeline-element], output: result}
-function appendEdges(experiment, stages, edges) {
-  var newList = [];
-  for (var j = 0; j < edges.length; j++) {
-    var newStages = stages.concat(edges[j].stages);
-    if (edges[j].output in experiment.tree) {
-      if (edges[j].output.substring(edges[j].output.length - 1) !== '*'){
-        newStages.push('output:' + edges[j].output);
-      }
-      newList = newList.concat(appendEdges(experiment, newStages, experiment.tree[edges[j].output]));
-    } else {
-      newList.push({stages: newStages, output: edges[j].output});
+function mkPipe(nodeName, inGraph) {
+  var options = inGraph.node(nodeName);
+  var stageName = nodeName;
+  if (options !== undefined) {
+    if (options.stage) {
+      stageName = options.stage;
+    } else if (options.label) {
+      stageName = options.label;
     }
   }
-  return newList;
+  var result = new graph.Pipe(stageName, options);
+  result.nodeName = nodeName;
+  return result;
 }
 
-function experimentTask(name, experiment) {
-  gulp.task(name, function(cb) { runExperiment(experiment, cb); });
-}
-
-var multiplexingStages = ['tracePIDSplitter', 'traceTreeSplitter'];
-
-function stageFor(stageName, options, inputSpec) {
-  // override output definition to deal with output name generation
-  if (stageName.substring(0, 7) == 'output:') {
-    return stageLoader.stage([
-      fancyStages.tee(),
-      fancyStages.right(fancyStages.keyMap(fancyStages.outputName(inputSpec, stageName.substring(7)))),
-      fancyStages.right(fancyStages.mapToTuples()),
-      fancyStages.right(fancyStages.map(stages.toFile())),
-      fancyStages.justLeft()
-    ]);
-  }
-
-  // TODO: convert ejs to option processing, roll this in with multiplexingStages
-  if (stageName == 'ejs') {
-    return stageLoader.stage([
-      fancyStages.valueMap(stageLoader.stageSpecificationToStage('ejs:')),
-      fancyStages.deMap()
-    ]);
-  }
-
-  if (multiplexingStages.indexOf(stageName) > -1) {
-    return stageLoader.stage([
-      fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName, options)),
-      fancyStages.deMap()
-    ])
-  }
-
-  return fancyStages.valueMap(stageLoader.stageSpecificationToStage(stageName, options));
-}
-
-function updateOptions(optionsDict) {
-  for (key in optionsDict) {
-    if (key in options) {
-      console.warn('Overriding option ' + key + ' from commandline value ' + options[key] + ' to ' + optionsDict[key]);
-    }
-    options[key] = optionsDict[key];
-  }
-  if (optionsDict.chromium)
-    device.init(options);
-}
-
-var options = undefined;
-function init(parsedOptions) {
-  options = parsedOptions;
-}
-
-function outputFor(input, output) {
-  if (output == 'console') {
-    return [stages.taggedConsoleOutput()];
-  } else {
-    return [
-      fancyStages.keyMap(fancyStages.outputName(input, output)),
-      fancyStages.mapToTuples(),
-      fancyStages.map(stages.toFile())
-    ];
-  }
-}
-
-// exposed so this can be overridden in testing
-module.exports.outputFor = outputFor;
-
-function runExperiment(experiment, incb) {
-  updateOptions(experiment.flags);
-  var pipelines = [];
-  for (var i = 0; i < experiment.inputs.length; i++) {
-    var edges = experiment.tree[experiment.inputs[i]];
-    var stagesList = [];
-    stagesList = appendEdges(experiment, stagesList, edges);
-
-    for (var j = 0; j < stagesList.length; j++) {
-      if (experiment.inputs[i].substring(0, 7) == 'http://') {
-	var input = experiment.inputs[i];
-	var inputStages = [
-          fancyStages.immediate(input),
-          fancyStages.listify(),
-          fancyStages.asKeys(),
-          fancyStages.valueMap(device.telemetrySave())];
-      } else if (experiment.inputs[i].substring(0, 8) == '!http://') {
-	var input = experiment.inputs[i].slice(1);
-        var inputStages = [
-          fancyStages.immediate(input),
-          fancyStages.listify(),
-          fancyStages.asKeys(),
-          fancyStages.valueMap(device.telemetrySaveNoStyle())];
-      } else {
-	if (experiment.inputs[i][0] == '!') {
-	  var fileToJSON = stageFor("fileToString");
-	  var input = experiment.inputs[i].slice(1);
-	} else {
-	  var fileToJSON = stageFor("fileToJSON");
-	  var input = experiment.inputs[i];
-	}
-	var inputStages = [fancyStages.fileInputs(input), fancyStages.asKeys(), fileToJSON];
-      }
-      var pl = inputStages.concat(
-          stagesList[j].stages.map(function(a) { return stageFor(a, experiment.options[a], input); }));
-      pl = pl.concat(module.exports.outputFor(input, stagesList[j].output));
-      pipelines.push(pl);
-    }
-  }
-  var cb = function() { incb(); }
-  for (var i = 0; i < pipelines.length; i++) {
-    var cb = (function(i, cb) {
-      return function() {
-        stageLoader.processStages(pipelines[i], cb, function(e) {
-          console.log('failed pipeline', e, '\n', e.stack); cb(null);
-        });
-      }
-    })(i, cb);
-  }
-  cb(null);
-}
-
-function experimentPhase() {
+function doExperiment() {
   return {
-    impl: runExperiment,
-    name: 'experimentPhase',
-    input: types.experiment,
+    impl: function(data, cb) {
+      var inGraph = dot.read(data);
+      var edges = inGraph.edges();
+      var pipes = {};
+      for (var i = 0; i < edges.length; i++) {
+        var edge = edges[i];
+        if (!pipes[edge.v])
+          pipes[edge.v] = mkPipe(edge.v, inGraph);
+        if (!pipes[edge.w])
+          pipes[edge.w] = mkPipe(edge.w, inGraph);
+        graph.connect(pipes[edge.v], pipes[edge.w]);
+      }
+      var linear = linearize(pipes[edges[0].v].graph);
+      var linearNames = linear.map(function(x) { return x.map(function(a) { return a.nodeName; })});
+
+      var linearGroups = linearNames.map(function(a) { return a.map(function(x) {
+        var result = [];
+        var parent = inGraph.parent(x);
+        while (parent !== undefined) {
+          if (inGraph.node(parent).strategy == 'pipeline')
+            result.push(parent);
+          parent = inGraph.parent(parent);
+        }
+        return result;
+      }); });
+
+      linearGroups = linearGroups.map(function(x) {
+        var result = [];
+        for (var i = 0; i < x[0].length; i++) {
+          for (var j = 1; j < x.length; j++) {
+            if (x[j].indexOf(x[0][i]) == -1)
+              break;
+          }
+          if (j == x.length)
+            result.push(x[0][i]);
+        }
+        return result;
+      });
+
+      var stageStack = [[]];
+      var groupStack = [];
+
+      for (var i = 0; i < linear.length; i++) {
+         for (var j = 0; j < linearGroups[i].length; j++) {
+          if (groupStack.indexOf(linearGroups[i][j]) == -1) {
+            groupStack.push(linearGroups[i][j]);
+            stageStack.push([]);
+          }
+        }
+
+        var streams = linear[i].map(function(pipe, idx) {
+          var thisStream = stageLoader.stageSpecificationToStage(pipe.stageName, pipe.options);
+          thisStream.setInput('efrom', idx + '');
+          thisStream.setOutput('eto', idx + '');
+          return thisStream;
+        });
+        stageStack[stageStack.length - 1] = stageStack[stageStack.length - 1].concat(streams);
+
+        if (i == linear.length - 1)
+          break;
+
+        while (groupStack.length > 0 && (linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
+          // we've reached the end of this group stack
+          groupStack.pop();
+          var stages = stageStack.pop(); // do wrapping here
+          var consolidated = stream.stageWrapper(stages);
+          stageStack[stageStack.length - 1].push(consolidated);
+        }
+
+        var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(function(v, i, s) { return s.indexOf(v) == i; });
+        var ins = outgoing.map(function(con) { return con.fromPipes; });
+        ins = ins.map(function(a) { return a.map(function(b) { return linearNames[i].indexOf(b.nodeName); })});
+        var outs = outgoing.map(function(con) { return con.toPipes; });
+        outs = outs.map(function(a) { return a.map(function(b) { return linearNames[i + 1].indexOf(b.nodeName); })});
+        var routingStage = new stream.RoutingStage(ins, outs);
+        stageStack[stageStack.length - 1].push(routingStage);
+
+      }
+
+      assert(stageStack.length == 1);
+      stageLoader.processStages(stageStack[0], cb, function(e) { throw e; });
+    },
+    name: 'doExperiment',
+    input: types.string,
     output: types.unit
   };
 }
 
-function parseExperiment() {
-  return {
-    impl: function(data, cb) { cb(new ParseExperiment().parse(data)); },
-    name: 'parseExperiment',
-    input: types.string,
-    output: types.experiment
-  };
-}
-
-module.exports.init = init;
-module.exports.experimentPhase = experimentPhase;
-module.exports.parseExperiment = parseExperiment;
+module.exports.doExperiment = doExperiment;

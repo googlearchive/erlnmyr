@@ -359,11 +359,11 @@ module.exports.input = function(options) {
   options = override({data: ''}, options);
   return {
     impl: function(unused, cb) {
-      cb([options.data]);
+      cb(options.data);
     },
     name: 'input',
     input: types.unit,
-    output: types.List(types.string)
+    output: types.string
   }
 }
 

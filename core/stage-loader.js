@@ -1,4 +1,5 @@
 var assert = require('chai').assert;
+var stream = require('./stream');
 
 var writers = {
   HTMLWriter: require('../lib/html-writer'),
@@ -24,8 +25,6 @@ var fancyStages = require('./fancy-stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
-var newExperiment = require('./new-experiment');
-
 
 var argInputs = {
   'JSON': stages.JSONReader,
@@ -40,9 +39,9 @@ var byConstruction = [
   {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];
-var byName = [device, experiment, phaseLib, stages, newExperiment];
+var byName = [device, experiment, phaseLib, stages];
 
-function stageSpecificationToStage(stage, options) {
+function _stageSpecificationToStage(stage, options) {
   options = options || {};
   var spec = stage.split(':');
   if (spec.length > 1 && spec[0] in argInputs)
@@ -59,6 +58,14 @@ function stageSpecificationToStage(stage, options) {
   }
 
   assert(false, "No stage found for specification " + stage);
+}
+
+// TODO once everything is a phase, this can be removed.
+function stageSpecificationToStage(stage, options) {
+  var stage = _stageSpecificationToStage(stage, options);
+  if (!stage.isStream)
+    stage = stream.streamedStage(stage);
+  return stage;
 }
 
 function processStages(stages, cb, fail) {

@@ -14,7 +14,6 @@ var stream = require('./core/stream');
 
 var options = parseArgs(process.argv.slice(2));
 device.init(options);
-experiment.init(options);
 
 var tasks = {};
 
@@ -66,9 +65,7 @@ buildTask('endToEnd', ['immediate:' + options.url, 'telemetrySave', 'HTMLWriter'
 /*
  * running an experiment
  */
-buildTask('runExperiment', ['file:' + options.file, 'parseExperiment', 'experimentPhase']);
-
-buildTask('runExperiment2', ['file:' + options.file, 'doExperiment']);
+buildTask('runExperiment', ['file:' + options.file, 'doExperiment']);
 
 /*
  * ejs fabrication
