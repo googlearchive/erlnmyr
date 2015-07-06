@@ -58,3 +58,31 @@ register({name: 'writeStringFile', input: types.string, output: types.string, ar
       return data;
     },
     { tag: '', filename: 'result' });
+
+register({name: 'input', output: types.string, arity: '0:1'},
+    function(tags) {
+      if (this.options.tag)
+        tags.tag('data', this.options.data);
+      return this.options.data;
+    },
+    { data: '', tag: true});
+
+register({name: 'retag', input: types.string, output: types.string, arity: '1:1'},
+  function(data, tags) {
+    var input = tags.read(this.options.tag);
+    if (input !== undefined)
+      tags.tag(this.options.tag, input.replace(new RegExp(this.options.in), this.options.out));
+    return data;
+  },
+  { tag: '', in: '', out: ''});
+
+// TODO: This is for testing. Does it belong here?
+register({name: 'compare', input: types.string, output: types.string, arity: '1:1'},
+  function(data, tags) {
+    var input = tags.read(this.options.tag);
+    var inFile = fs.readFileSync(input, 'utf8');
+    if (!(inFile == data)) {
+      throw new Error(input + " file doesn't match provided data");
+    }
+  },
+  { tag: ''});

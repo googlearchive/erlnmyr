@@ -1,10 +1,10 @@
-HTMLDocumentParser::processParsedChunkFromBackgroundParser: 256 (0)
-HTMLDocumentParser::processParsedChunkFromBackgroundParser: 17796 (369)
-  Document::updateRenderTree: 293 (453)
-    Document::updateStyle: 285 (470)
-  FrameView::layout: 17153 (1062)
-    FrameView::layout: 142 (33516)
-1796FC85-1727-4749-862A-F13474E595A3: 13 (56244)
+HTMLDocumentParser::processParsedChunkFromBackgroundParser: 256 (0) [42930/1299]
+HTMLDocumentParser::processParsedChunkFromBackgroundParser: 17796 (369) [42930/1299]
+  Document::updateRenderTree: 293 (453) [42930/1299]
+    Document::updateStyle: 285 (470) [42930/1299]
+  FrameView::layout: 17153 (1062) [42930/1299]
+    FrameView::layout: 142 (33516) [42930/1299]
+1796FC85-1727-4749-862A-F13474E595A3: 13 (56244) [42930/1299]
 
 HTMLDocumentParser::processParsedChunkFromBackgroundParser: 0.606ms
 Document::updateRenderTree: 0.008ms

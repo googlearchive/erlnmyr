@@ -101,15 +101,10 @@ function compare(name) {
     output: types.string
   };
 }
- 
 
 describe('experiment', function() {
   it('should be able to run', function(done) {
-    experiment.outputFor = function(unused, name) {
-      return [fancyStages.valueMap(compare(name))];
-    }
-
-    testPipeline(['file:tests/pipeline/simple.exp', 'parseExperiment', 'experimentPhase'].map(stageLoader.stageSpecificationToStage), done);
+    testPipeline(['file:tests/pipeline/simple.exp', 'doExperiment'].map(stageLoader.stageSpecificationToStage), done);
   });
 });
-    
+
