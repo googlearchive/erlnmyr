@@ -1,4 +1,5 @@
 var types = require('./types');
+var streamLib = require('./stream');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -15,6 +16,9 @@ function PhaseBase(info, impl, options) {
   this.inputType = info.input;
   this.outputType = info.output;
   switch(info.arity) {
+    case '0:1':
+      this.impl = this.impl0To1;
+      break;
     case '1:1':
     default:
       this.impl = this.impl1To1;
@@ -60,6 +64,15 @@ PhaseBase.prototype.makeOutputList = function() {
 function Tags(tags) {
   this.tags = tags;
 }
+
+PhaseBase.prototype.impl0To1 = function(stream, mycb) {
+  this.runtime.stream = stream || new streamLib.Stream();
+  this.runtime.setTags({});
+  var result = this.runtime.impl(this.runtime.tags);
+  this.runtime.tags.tag(this.outputKey, this.outputValue);
+  this.runtime.put(result);
+  mycb(this.runtime.stream);
+};
 
 PhaseBase.prototype.impl1To1 = function(stream, mycb) {
   this.runtime.stream = stream;

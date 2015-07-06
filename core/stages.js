@@ -354,16 +354,3 @@ module.exports.filenames = function(options) {
     output: types.List(types.string)
   }
 }
-
-module.exports.input = function(options) {
-  options = override({data: ''}, options);
-  return {
-    impl: function(unused, cb) {
-      cb(options.data);
-    },
-    name: 'input',
-    input: types.unit,
-    output: types.string
-  }
-}
-
