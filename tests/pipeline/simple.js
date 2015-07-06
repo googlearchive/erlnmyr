@@ -4,6 +4,7 @@ var stages = require('../../core/stages');
 var fancyStages = require('../../core/fancy-stages');
 var types = require('../../core/types');
 var experiment = require('../../core/experiment');
+var stream = require('../../core/stream');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
@@ -13,7 +14,7 @@ function testPipeline(stageList, incb) {
 function testOutput(expectedResult) {
   return {
     impl: function(data, cb) {
-      assert.deepEqual(expectedResult, data);
+      assert.deepEqual(expectedResult, data.data[0].data);
       cb();
     },
     name: 'testOutput',
@@ -26,7 +27,7 @@ function testMatch() {
   var typeVar = types.newTypeVar();
   return {
     impl: function(data, cb) {
-      assert.deepEqual(data.right, data.left);
+      assert.deepEqual(data.right.data[0].data, data.left.data[0].data);
       cb();
     },
     name: 'testMatch',
@@ -35,10 +36,11 @@ function testMatch() {
   }
 }
 
+// FIXME: Make this much nicer
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
-    fancyStages.immediate(undefined, types.unit),
-    fancyStages.tee(),
+    fancyStages.immediate({left: new stream.Stream(), right: new stream.Stream()},
+          types.Tuple(types.Stream({key: 'from', type: types.unit}), types.Stream({key: 'from', type: types.unit}))),
     fancyStages.left(stageLoader.stageSpecificationToStage("JSON:" + jsonFile)),
     fancyStages.right(stageLoader.stageSpecificationToStage("file:" + htmlFile)),
     fancyStages.left(stageLoader.stageSpecificationToStage("HTMLWriter")),
