@@ -1,0 +1,7 @@
+digraph versiontest {
+
+  input [data="/usr/local/google/home/soonm/tree-builder-builder/example.ejs"]
+  versionSync [version="1218943002", chromium="/usr/local/google/home/soonm/chromium/src", platform="linux64"]
+  input -> versionSync -> consoleOutput;
+
+}
