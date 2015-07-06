@@ -51,7 +51,6 @@ register({name: 'writeStringFile', input: types.string, output: types.string, ar
       } else {
         var filename = tags.read(this.options.tag);
       }
-      console.log(tags);
       fs.writeFileSync(filename, data);
       return data;
     },
