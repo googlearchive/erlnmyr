@@ -45,50 +45,7 @@ register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
 register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'},
   function(string) { return JSON.parse(string); });
 
-// var treeBuilder = function(WriterType) {
-//   console.log('MAKE treeBuilder');
-//   return function(data, cb) {
-//     var writer = new WriterType();
-//     var builder = new TreeBuilder();
-//     builder.build(data);
-//     builder.write(writer);
-//     cb(writer.getHTML());
-//   };
-// };
-
-// module.exports.filter = function(FilterType) {
-//   return {
-//     impl: treeBuilder(FilterType),
-//     name: 'filter: ' + FilterType.name,
-//     input: types.JSON,
-//     output: types.JSON,
-//   };
-// }
-
-// module.exports.treeBuilderWriter = function(WriterType) {
-//   return {
-//     impl: treeBuilder(WriterType),
-//     name: 'treeBuilderWriter: ' + WriterType.name,
-//     input: types.JSON,
-//     output: types.string
-//   };
-// }
-
-// module.exports.fabricator = function(FabType, input) {
-//   input = input || types.JSON;
-//   return {
-//     impl: function(data, cb) {
-//       var fab = new FabType(data);
-//       cb(fab.fabricate());
-//     },
-//     name: 'fabricator: ' + FabType,
-//     input: input,
-//     output: types.JSON
-//   };
-// }
-
 var treeBuilder = function(Type) {
-  console.log('Make treeBuilder', Type);
   return function(data) {
     var writer = new Type();
     var builder = new TreeBuilder();
@@ -113,18 +70,14 @@ var fabricators = {
   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
 for (WriterType in writers) {
-  console.log(WriterType);
   register({name: WriterType, input: types.JSON, output: types.JSON, arity: '1:1'},
     treeBuilder(writers[WriterType]));
 }
 for (FilterType in filters) {
-  console.log(FilterType);
   register({name: FilterType, input: types.JSON, output: types.JSON, arity: '1:1'},
     treeBuilder(filters[FilterType]));
 }
 for (FabType in fabricators) {
-  console.log(FabType);
-  console.log(fabricators[FabType]);
   register({name: FabType, input: types.JSON, output: types.JSON, arity: '1:1'},
     function(data) {
       var fab = new (fabricators[FabType])(data);
