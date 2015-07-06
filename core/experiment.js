@@ -8,15 +8,15 @@ var assert = require('chai').assert;
 
 function mkPipe(nodeName, inGraph) {
   var options = inGraph.node(nodeName);
-  var stageName = nodeName;
+  var phaseName = nodeName;
   if (options !== undefined) {
     if (options.stage) {
-      stageName = options.stage;
+      phaseName = options.stage;
     } else if (options.label) {
-      stageName = options.label;
+      phaseName = options.label;
     }
   }
-  var result = new graph.Pipe(stageName, options);
+  var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;
 }
@@ -62,14 +62,14 @@ function doExperiment() {
         return result;
       });
 
-      var stageStack = [[]];
+      var phaseStack = [[]];
       var groupStack = [];
 
       for (var i = 0; i < linear.length; i++) {
          for (var j = 0; j < linearGroups[i].length; j++) {
           if (groupStack.indexOf(linearGroups[i][j]) == -1) {
             groupStack.push(linearGroups[i][j]);
-            stageStack.push([]);
+            phaseStack.push([]);
           }
         }
 
@@ -79,7 +79,7 @@ function doExperiment() {
           thisStream.setOutput('eto', idx + '');
           return thisStream;
         });
-        stageStack[stageStack.length - 1] = stageStack[stageStack.length - 1].concat(streams);
+        phaseStack[phaseStack.length - 1] = phaseStack[phaseStack.length - 1].concat(streams);
 
         if (i == linear.length - 1)
           break;
@@ -87,9 +87,9 @@ function doExperiment() {
         while (groupStack.length > 0 && (linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
           // we've reached the end of this group stack
           groupStack.pop();
-          var stages = stageStack.pop(); // do wrapping here
-          var consolidated = stream.stageWrapper(stages);
-          stageStack[stageStack.length - 1].push(consolidated);
+          var phases = phaseStack.pop(); // do wrapping here
+          var consolidated = stream.stageWrapper(phases);
+          phaseStack[phaseStack.length - 1].push(consolidated);
         }
 
         var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(function(v, i, s) { return s.indexOf(v) == i; });
@@ -98,12 +98,12 @@ function doExperiment() {
         var outs = outgoing.map(function(con) { return con.toPipes; });
         outs = outs.map(function(a) { return a.map(function(b) { return linearNames[i + 1].indexOf(b.nodeName); })});
         var routingStage = new stream.RoutingStage(ins, outs);
-        stageStack[stageStack.length - 1].push(routingStage);
+        phaseStack[phaseStack.length - 1].push(routingStage);
 
       }
 
-      assert(stageStack.length == 1);
-      stageLoader.processStages(stageStack[0], cb, function(e) { throw e; });
+      assert(phaseStack.length == 1);
+      stageLoader.processStages(phaseStack[0], cb, function(e) { throw e; });
     },
     name: 'doExperiment',
     input: types.string,
