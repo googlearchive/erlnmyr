@@ -1,5 +1,6 @@
 var types = require('./types');
 var streamLib = require('./stream');
+var trace = require('./trace');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -112,7 +113,7 @@ Tags.prototype.read = function(key) {
 
 function PhaseBaseRuntime(base, impl) {
   this.phaseBase = base;
-  this.impl = impl.bind(this);
+  this.impl = trace.wrap({cat: 'core', name: base.name}, impl.bind(this));
 }
 
 PhaseBaseRuntime.prototype.setTags = function(tags) {

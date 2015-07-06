@@ -1,5 +1,4 @@
 var gulp = require('gulp');
-var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
 
@@ -11,8 +10,9 @@ var stageLoader = require('./core/stage-loader');
 
 var fancyStages = require('./core/fancy-stages');
 var stream = require('./core/stream');
+var options = require('./core/options');
+var trace = require('./core/trace');
 
-var options = parseArgs(process.argv.slice(2));
 device.init(options);
 
 var tasks = {};
@@ -34,7 +34,10 @@ buildTestTask('travis-test', 'spec');
 function buildTask(name, stageList) {
   tasks[name] = stageList;
   gulp.task(name, function(incb) {
-    var cb = function(data) { incb(); };
+    var cb = function(data) {
+      trace.dump();
+      incb();
+    };
     stageList = stageList.map(stageLoader.stageSpecificationToStage);
     stageLoader.processStages(stageList, cb, function(e) { throw e; });
   });

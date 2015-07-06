@@ -1,5 +1,6 @@
 var assert = require('chai').assert;
 var stream = require('./stream');
+var trace = require('./trace');
 
 var phaseLib = require('./phase-lib');
 var stages = require('./stages');
@@ -35,8 +36,15 @@ function _stageSpecificationToStage(stage, options) {
 // TODO once everything is a phase, this can be removed.
 function stageSpecificationToStage(stage, options) {
   var stage = _stageSpecificationToStage(stage, options);
-  if (!stage.isStream)
+  if (!stage.isStream) {
     stage = stream.streamedStage(stage);
+    var impl = stage.impl;
+    stage.impl = function(data, cb) {
+      var t = trace.async({cat: 'core', name: stage.name});
+      cb = t.endWrap(cb);
+      return impl.call(this, data, cb);
+    };
+  }
   return stage;
 }
 
@@ -64,6 +72,9 @@ function typeCheck(stages) {
  * Sorry for potato quality.
  */
 function processStagesWithInput(input, stages, cb, fail) {
+  var t = trace.async({cat: 'core', name: 'processStages'});
+  cb = t.endWrap(cb);
+  fail = t.endWrap(fail);
   typeCheck(stages);
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
