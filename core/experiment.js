@@ -6,14 +6,18 @@ var stream = require('./stream');
 var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 
-function mkPipe(nodeName, inGraph) {
+function mkPhase(nodeName, inGraph) {
   var options = inGraph.node(nodeName);
   var phaseName = nodeName;
   if (options !== undefined) {
+    var splits = phaseName.split('_');
     if (options.stage) {
       phaseName = options.stage;
     } else if (options.label) {
       phaseName = options.label;
+    } else if (splits.length > 1) {
+      phaseName = splits[0];
+      options.id = nodeName;
     }
   }
   var result = new graph.Pipe(phaseName, options);
@@ -30,9 +34,9 @@ function doExperiment() {
       for (var i = 0; i < edges.length; i++) {
         var edge = edges[i];
         if (!pipes[edge.v])
-          pipes[edge.v] = mkPipe(edge.v, inGraph);
+          pipes[edge.v] = mkPhase(edge.v, inGraph);
         if (!pipes[edge.w])
-          pipes[edge.w] = mkPipe(edge.w, inGraph);
+          pipes[edge.w] = mkPhase(edge.w, inGraph);
         graph.connect(pipes[edge.v], pipes[edge.w]);
       }
       var linear = linearize(pipes[edges[0].v].graph);
