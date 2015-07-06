@@ -1,6 +1,6 @@
 digraph trace {
 
-  input [data="/usr/local/google/home/dstockwell/local/traces"]
+  input [data="traces"]
   input -> readDir -> fileToBuffer;
 
   subgraph cluster0 {
