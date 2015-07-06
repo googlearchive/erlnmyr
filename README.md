@@ -1,6 +1,8 @@
 # tree-builder-builder
 Builder of Tree Builders
 
+[![Build Status](https://travis-ci.org/dglazkov/tree-builder-builder.svg?branch=master)](https://travis-ci.org/dglazkov/tree-builder-builder)
+
 ## Quick Start Guide
 
 ### Installing all the bits
