@@ -36,15 +36,12 @@ function testMatch() {
   }
 }
 
-// FIXME: Make this much nicer
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
-    fancyStages.immediate({left: new stream.Stream(), right: new stream.Stream()},
-          types.Tuple(types.Stream({key: 'from', type: types.unit}), types.Stream({key: 'from', type: types.unit}))),
-    fancyStages.left(stageLoader.stageSpecificationToStage("JSON:" + jsonFile)),
-    fancyStages.right(stageLoader.stageSpecificationToStage("file:" + htmlFile)),
-    fancyStages.left(stageLoader.stageSpecificationToStage("HTMLWriter")),
-    testMatch(),
+    stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
+    stageLoader.stageSpecificationToStage("HTMLWriter"),
+    stream.tag(function(data, tags) { return {key: 'data', value: htmlFile}; }),
+    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
   ];
 }
 
