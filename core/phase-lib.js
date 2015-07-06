@@ -41,6 +41,9 @@ register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
   },
   { tags: '' });
 
+register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'},
+  function(string) { return JSON.parse(string); });
+
 register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
   function(data) { return data; });
 

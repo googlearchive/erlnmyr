@@ -126,17 +126,6 @@ module.exports.gunzipAndDecode = function() {
   };
 }
 
-module.exports.jsonParse = function() {
-  return {
-    impl: function(string, cb) {
-      cb(JSON.parse(string));
-    },
-    name: 'jsonParse',
-    input: types.string,
-    output: types.JSON
-  };
-}
-
 module.exports.fileReader = function(filename) {
   return {
     impl: function(_, cb) { readFile(filename, cb); },
