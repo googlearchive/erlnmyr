@@ -74,6 +74,19 @@ register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:
 //   };
 // }
 
+// module.exports.fabricator = function(FabType, input) {
+//   input = input || types.JSON;
+//   return {
+//     impl: function(data, cb) {
+//       var fab = new FabType(data);
+//       cb(fab.fabricate());
+//     },
+//     name: 'fabricator: ' + FabType,
+//     input: input,
+//     output: types.JSON
+//   };
+// }
+
 var treeBuilder = function(Type) {
   console.log('Make treeBuilder', Type);
   return function(data) {
@@ -84,6 +97,11 @@ var treeBuilder = function(Type) {
     return writer.getHTML();
   };
 };
+var writers = {
+  HTMLWriter: require('../lib/html-writer'),
+  JSWriter: require('../lib/js-writer'),
+  StatsWriter: require('../lib/stats-writer')
+};
 var filters = {
   StyleFilter: require('../lib/style-filter'),
   StyleMinimizationFilter: require('../lib/style-minimization-filter'),
@@ -91,20 +109,27 @@ var filters = {
   NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
   StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
 };
-var writers = {
-  HTMLWriter: require('../lib/html-writer'),
-  JSWriter: require('../lib/js-writer'),
-  StatsWriter: require('../lib/stats-writer')
+var fabricators = {
+  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
+for (WriterType in writers) {
+  console.log(WriterType);
+  register({name: WriterType, input: types.JSON, output: types.JSON, arity: '1:1'},
+    treeBuilder(writers[WriterType]));
+}
 for (FilterType in filters) {
   console.log(FilterType);
   register({name: FilterType, input: types.JSON, output: types.JSON, arity: '1:1'},
     treeBuilder(filters[FilterType]));
 }
-for (WriterType in writers) {
-  console.log(WriterType);
-  register({name: WriterType, input: types.JSON, output: types.JSON, arity: '1:1'},
-    treeBuilder(writers[WriterType]));
+for (FabType in fabricators) {
+  console.log(FabType);
+  console.log(fabricators[FabType]);
+  register({name: FabType, input: types.JSON, output: types.JSON, arity: '1:1'},
+    function(data) {
+      var fab = new (fabricators[FabType])(data);
+      return fab.fabricate();
+    });
 }
 
 register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},

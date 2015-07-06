@@ -15,9 +15,9 @@ var stream = require('./stream');
 //   StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
 // };
 
-var fabricators = {
-  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
-};
+// var fabricators = {
+//   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
+// };
 
 var phaseLib = require('./phase-lib');
 var stages = require('./stages');
@@ -37,7 +37,7 @@ var argInputs = {
 var byConstruction = [
   // {list: writers, constructor: stages.treeBuilderWriter},
   // {list: filters, constructor: stages.filter},
-  {list: fabricators, constructor: stages.fabricator}
+  // {list: fabricators, constructor: stages.fabricator}
 ];
 var byName = [device, experiment, phaseLib, stages];
 

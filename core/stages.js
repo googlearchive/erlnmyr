@@ -143,29 +143,16 @@ module.exports.fileToString = function() {
   };
 }
 
-// module.exports.fabricator = function(FabType, input) {
-//   input = input || types.JSON;
-//   return {
-//     impl: function(data, cb) {
-//       var fab = new FabType(data);
-//       cb(fab.fabricate());
-//     },
-//     name: 'fabricator: ' + FabType,
-//     input: input,
-//     output: types.JSON
-//   };
-// }
-
-// module.exports.ejsFabricator = function() {
-//   return {
-//     impl: function(data, cb) {
-//       cb(new EjsFabricator(data, '').fabricate());
-//     },
-//     name: 'ejsFabricator',
-//     input: types.string,
-//     output: types.Map(types.string)
-//   }
-// }
+module.exports.ejsFabricator = function() {
+  return {
+    impl: function(data, cb) {
+      cb(new EjsFabricator(data, '').fabricate());
+    },
+    name: 'ejsFabricator',
+    input: types.string,
+    output: types.Map(types.string)
+  }
+}
 
 module.exports.traceFilter = function(options) {
   options = override(TraceFilter.defaults, options);
