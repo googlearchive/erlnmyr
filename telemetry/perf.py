@@ -1,7 +1,7 @@
 import telemetry.core
 import sys;
-from telemetry.core import browser_options
-from telemetry.core import browser_finder
+from telemetry.internal.browser import browser_options
+from telemetry.internal.browser import browser_finder
 
 from telemetry.core.platform import tracing_category_filter
 from telemetry.core.platform import tracing_options
@@ -18,9 +18,9 @@ with browserFactory.Create(options) as browser:
   tab = browser.tabs.New();
   tab.Activate();
   for i in browser.tabs:
-    if i == tab.id:
+    if i == tab:
       continue
-    browser.tabs.GetTabById(i).Close()
+    i.Close()
 
   category_filter = tracing_category_filter.TracingCategoryFilter()
   options = tracing_options.TracingOptions()

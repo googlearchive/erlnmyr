@@ -1,6 +1,6 @@
 import telemetry.core
-from telemetry.core import browser_options
-from telemetry.core import browser_finder
+from telemetry.internal.browser import browser_options
+from telemetry.internal.browser import browser_finder
 
 from json import dumps
 
@@ -14,9 +14,9 @@ with browserFactory.Create(options) as browser:
   tab = browser.tabs.New();
   tab.Activate();
   for i in browser.tabs:
-    if i == tab.id:
+    if i == tab:
       continue
-    browser.tabs.GetTabById(i).Close()
+    i.Close()
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
   json = tab.EvaluateJavaScript(
