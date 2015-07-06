@@ -217,3 +217,14 @@ module.exports.filenames = function(options) {
     output: types.List(types.string)
   }
 }
+
+module.exports.versionSync = function(options) {
+  return {
+    impl: function(data, cb) {
+      new VersionSync(options, cb);
+    },
+    name: 'versionSync',
+    input: types.string,
+    output: types.string
+  }
+}
