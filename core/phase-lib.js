@@ -3,6 +3,7 @@ var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
 var phase = require('./phase');
+var TreeBuilder = require('../lib/tree-builder');
 
 function register(info, impl, defaults) {
   function override(defaults, options) {
@@ -43,6 +44,46 @@ register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
 
 register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'},
   function(string) { return JSON.parse(string); });
+
+var treeBuilder = function(Type) {
+  return function(data) {
+    var writer = new Type();
+    var builder = new TreeBuilder();
+    builder.build(data);
+    builder.write(writer);
+    return writer.getHTML();
+  };
+};
+var writers = {
+  HTMLWriter: require('../lib/html-writer'),
+  JSWriter: require('../lib/js-writer'),
+  StatsWriter: require('../lib/stats-writer')
+};
+var filters = {
+  StyleFilter: require('../lib/style-filter'),
+  StyleMinimizationFilter: require('../lib/style-minimization-filter'),
+  StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
+  NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
+  StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
+};
+var fabricators = {
+  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
+};
+for (WriterType in writers) {
+  register({name: WriterType, input: types.JSON, output: types.string, arity: '1:1'},
+    treeBuilder(writers[WriterType]));
+}
+for (FilterType in filters) {
+  register({name: FilterType, input: types.JSON, output: types.JSON, arity: '1:1'},
+    treeBuilder(filters[FilterType]));
+}
+for (FabType in fabricators) {
+  register({name: FabType, input: types.JSON, output: types.JSON, arity: '1:1'},
+    function(data) {
+      var fab = new (fabricators[FabType])(data);
+      return fab.fabricate();
+    });
+}
 
 register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
   function(data) { return data; });

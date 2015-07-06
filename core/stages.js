@@ -2,7 +2,6 @@ var fs = require('fs');
 var zlib = require('zlib');
 var StringDecoder = require('string_decoder').StringDecoder;
 
-var TreeBuilder = require('../lib/tree-builder');
 var types = require('./types.js');
 
 var EjsFabricator = require('../lib/ejs-fabricator');
@@ -144,28 +143,6 @@ module.exports.fileToString = function() {
   };
 }
 
-module.exports.filter = function(FilterType) {
-  return {
-    impl: treeBuilder(FilterType),
-    name: 'filter: ' + FilterType.name,
-    input: types.JSON,
-    output: types.JSON,
-  };
-}
-
-module.exports.fabricator = function(FabType, input) {
-  input = input || types.JSON;
-  return {
-    impl: function(data, cb) {
-      var fab = new FabType(data);
-      cb(fab.fabricate());
-    },
-    name: 'fabricator: ' + FabType,
-    input: input,
-    output: types.JSON
-  };
-}
-
 module.exports.ejsFabricator = function() {
   return {
     impl: function(data, cb) {
@@ -254,25 +231,6 @@ module.exports.traceTIDSplitter = function() {
     name: 'traceTIDSplitter',
     input: types.JSON,
     output: types.Map(types.JSON)
-  };
-}
-
-var treeBuilder = function(WriterType) {
-  return function(data, cb) {
-    var writer = new WriterType();
-    var builder = new TreeBuilder();
-    builder.build(data);
-    builder.write(writer);
-    cb(writer.getHTML());
-  };
-};
-
-module.exports.treeBuilderWriter = function(WriterType) {
-  return {
-    impl: treeBuilder(WriterType),
-    name: 'treeBuilderWriter: ' + WriterType.name,
-    input: types.JSON,
-    output: types.string
   };
 }
 

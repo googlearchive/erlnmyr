@@ -1,24 +1,6 @@
 var assert = require('chai').assert;
 var stream = require('./stream');
 
-var writers = {
-  HTMLWriter: require('../lib/html-writer'),
-  JSWriter: require('../lib/js-writer'),
-  StatsWriter: require('../lib/stats-writer')
-};
-
-var filters = {
-  StyleFilter: require('../lib/style-filter'),
-  StyleMinimizationFilter: require('../lib/style-minimization-filter'),
-  StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
-  NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
-  StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
-};
-
-var fabricators = {
-  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
-};
-
 var phaseLib = require('./phase-lib');
 var stages = require('./stages');
 var fancyStages = require('./fancy-stages');
@@ -34,11 +16,6 @@ var argInputs = {
   'immediate': fancyStages.immediate,
 }
 
-var byConstruction = [
-  {list: writers, constructor: stages.treeBuilderWriter},
-  {list: filters, constructor: stages.filter},
-  {list: fabricators, constructor: stages.fabricator}
-];
 var byName = [device, experiment, phaseLib, stages];
 
 function _stageSpecificationToStage(stage, options) {
@@ -46,11 +23,6 @@ function _stageSpecificationToStage(stage, options) {
   var spec = stage.split(':');
   if (spec.length > 1 && spec[0] in argInputs)
     return argInputs[spec[0]](spec.slice(1, spec.length).join(':'));
-
-  for (var i = 0; i < byConstruction.length; i++) {
-    if (stage in byConstruction[i].list)
-      return byConstruction[i].constructor(byConstruction[i].list[stage]);
-  }
 
   for (var i = 0; i < byName.length; i++) {
     if (stage in byName[i])
