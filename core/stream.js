@@ -308,3 +308,4 @@ module.exports.write = write;
 module.exports.RoutingStage = RoutingStage;
 module.exports.stageWrapper = stageWrapper;
 module.exports.CoreStream = CoreStream;
+module.exports.Stream = Stream;
