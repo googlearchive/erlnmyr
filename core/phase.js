@@ -19,13 +19,16 @@ function PhaseBase(info, impl, options) {
   switch(info.arity) {
     case '0:1':
       this.impl = this.impl0To1;
+      this.inputArity = 0;
       break;
     case '1:1':
     default:
       this.impl = this.impl1To1;
+      this.inputArity = 1;
       break;
     case '1:N':
       this.impl = this.impl1ToN;
+      this.inputArity = 1;
       break;
   }
   this.runtime = new PhaseBaseRuntime(this, impl);
@@ -113,7 +116,16 @@ Tags.prototype.read = function(key) {
 
 function PhaseBaseRuntime(base, impl) {
   this.phaseBase = base;
-  this.impl = trace.wrap({cat: 'core', name: base.name}, impl.bind(this));
+  this.impl = trace.wrap(function() {
+    var args = base.inputArity >= 1 ? {tags: {}} : null;
+    if (args) {
+      // Clone to exclude updates.
+      for (var k in this.tags.tags) {
+        args.tags[k] = this.tags.tags[k];
+      }
+    }
+    return {cat: 'core', name: base.name, args: args};
+  }, impl.bind(this));
 }
 
 PhaseBaseRuntime.prototype.setTags = function(tags) {
