@@ -29,6 +29,8 @@ function PhaseBase(info, impl, options) {
   this.inputKey = 'from';
   this.outputKey = 'from';
   this.outputValue = phaseSpec(this);
+  this.makeInputList();
+  this.makeOutputList();
 }
 
 // TODO: remove me once stage loading doesn't need to detect

@@ -177,12 +177,12 @@ module.exports.fabricator = function(FabType, input) {
   };
 }
 
-module.exports.ejsFabricator = function(prefix) {
+module.exports.ejsFabricator = function() {
   return {
     impl: function(data, cb) {
-      cb(new EjsFabricator(data, prefix).fabricate());
+      cb(new EjsFabricator(data, '').fabricate());
     },
-    name: 'ejsFabrictor',
+    name: 'ejsFabricator',
     input: types.string,
     output: types.Map(types.string)
   }

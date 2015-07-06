@@ -44,3 +44,15 @@ register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
 register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
   function(data) { return data; });
 
+register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
+    function(data, tags) {
+      if (this.options.tag == '') {
+        var filename = this.options.filename;
+      } else {
+        var filename = tags.read(this.options.tag);
+      }
+      console.log(tags);
+      fs.writeFileSync(filename, data);
+      return data;
+    },
+    { tag: '', filename: 'result' });

@@ -75,9 +75,8 @@ gulp.task('ejs', function(incb) {
   stageLoader.processStages(
     [
       stageLoader.stageSpecificationToStage('file:' + options.file),
-      stageLoader.stageSpecificationToStage('ejs:' + options.outputPrefix),
-      fancyStages.mapToTuples(),
-      fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
+      stageLoader.stageSpecificationToStage('ejsFabricator'),
+      stageLoader.stageSpecificationToStage('writeStringFile', {tag: 'ejsFabricator'})
     ], cb, function(e) { throw e; });
 });
 
