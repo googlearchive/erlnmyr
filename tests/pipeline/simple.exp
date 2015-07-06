@@ -1,4 +1,6 @@
 digraph experiment {
+  imports="['./lib/trace-phases.js']"
+
   input_normal [label="input", data="tests/pipeline/simple.trace"];
   input_nostyle [label="input", data="tests/pipeline/simple-nostyle.trace"];
   input_reduced [label="input", data="tests/pipeline/simple-reduced.trace"];
