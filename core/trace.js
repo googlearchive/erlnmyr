@@ -14,7 +14,11 @@ if (options.traceFile) {
   module.exports = {
     wrap: function(info, fn) {
       return function() {
-        var t = module.exports.start(info);
+        var localInfo = info;
+        if (typeof info == 'function') {
+          localInfo = info.call(this);
+        }
+        var t = module.exports.start(localInfo);
         try {
           return fn.apply(this, arguments);
         } finally {

@@ -113,7 +113,9 @@ Tags.prototype.read = function(key) {
 
 function PhaseBaseRuntime(base, impl) {
   this.phaseBase = base;
-  this.impl = trace.wrap({cat: 'core', name: base.name}, impl.bind(this));
+  this.impl = trace.wrap(function() {
+    return {cat: 'core', name: base.name, args: {tags: this.tags.tags}};
+  }, impl.bind(this));
 }
 
 PhaseBaseRuntime.prototype.setTags = function(tags) {
