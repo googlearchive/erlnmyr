@@ -76,18 +76,18 @@ function processStagesWithInput(input, stages, cb, fail) {
   cb = t.endWrap(cb);
   fail = t.endWrap(fail);
   typeCheck(stages);
-  for (var i = stages.length - 1; i >= 0; i--) {
-    cb = (function(i, cb) { return function(data) {
-      try {
-        var result = stages[i].impl(data, cb);
-        // TODO: Cleanup and propagate promises once all phases return them.
-        result && result.then(cb);
-      } catch (e) {
-        fail(e);
-      }
-    } })(i, cb);
+  stages = stages.concat().reverse();
+  function process(data) {
+    if (!stages.length) {
+      cb(data);
+      return;
+    }
+    var stage = stages.pop();
+    var result = stage.impl(data, process);
+    // TODO: Cleanup and propagate promises once all phases return them.
+    result && result.then(process);
   }
-  cb(input);
+  process(input);
 };
 
 // TODO: This doesn't currently fail if the internal type is consistent and the external type is consistent
