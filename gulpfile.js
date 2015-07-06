@@ -129,38 +129,4 @@ gulp.task('processLogs', function(incb) {
       ], cb, function(e) { throw e; });
 });
 
-// TODO(dglazkov): Turn into a phase.
-gulp.task('buildChromium', function(cb) {
-  var spawn = require('child_process').spawn;
-  var chromiumPath = options.chromium;
-  if (!chromiumPath)
-    throw new Error('Path to Chromium repo (--chromium=[path/to/cr/src]) is required.');
-  // TODO(dglazkov): Release/Debug and Target should be configurable.
-  // TODO(dglazkov): Support building for android as well.
-  var command = {
-    cmd: 'ninja',
-    args: [ '-C', 'out/Release', 'chrome' ],
-    toString: function() {
-      return this.cmd + ' ' + this.args.join(' ');
-    }
-  };
-  var child = spawn(command.cmd, command.args, {
-    cwd: chromiumPath,
-    stdio: 'ignore',
-  });
-  child.on('error', function(err) {
-    console.log('Unable to execute "' + command + '"');
-    console.log('Is your path correct?');
-  });
-  // TODO(dglazkov): Detect success/failure and report errors.
-  var buffer = [];
-  child.on('close', function(code) {
-    if (code) {
-      console.log('"' + command + '" returned a non-zero exit code.');
-      console.log('This is likely a Chromium build error.');
-    }
-    cb();
-  });
-});
-
 module.exports.tasks = tasks;
