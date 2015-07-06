@@ -17,14 +17,19 @@ device.init(options);
 
 var tasks = {};
 
-gulp.task('test', function() {
-  return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
-      .pipe(mocha({
-        ui: 'bdd',
-        ignoreLeaks: true,
-        reporter: 'nyan'
-    }));
-});
+function buildTestTask(reporter) {
+  return function() {
+    return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
+        .pipe(mocha({
+          ui: 'bdd',
+          ignoreLeaks: true,
+          reporter: reporter
+      }));
+  };
+}
+
+gulp.task('test', buildTestTask('nyan'));
+gulp.task('travis-test', buildTestTask('spec'));
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;

@@ -23,6 +23,6 @@
     "mocha": "^2.2.1"
   },
   "scripts": {
-    "test": "gulp test"
+    "test": "gulp travis-test"
   }
 }
