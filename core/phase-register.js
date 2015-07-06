@@ -19,22 +19,19 @@ function register(info, impl, defaults) {
     return result;
   }
 
-  function Variables() {
-  }
-
   phases[info.name] = function(options) {
-    var implClone = {name: impl.name, arity: impl.arity};
-    var v = new Variables();
-    if (typeof impl.input == 'function')
-      implClone.input = impl.input(v);
+    var infoClone = {name: info.name, arity: info.arity, async: info.async};
+    var v = {};
+    if (typeof info.input == 'function')
+      infoClone.input = info.input(v);
     else
-      implClone.input = impl.input;
-    if (typeof impl.output == 'function')
-      implClone.output = impl.output(v);
+      infoClone.input = info.input;
+    if (typeof info.output == 'function')
+      infoClone.output = info.output(v);
     else
-      implClone.output = impl.output;
+      infoClone.output = info.output;
     var options = override(defaults, options);
-    return new phase.PhaseBase(info, implClone, options);
+    return new phase.PhaseBase(infoClone, impl, options);
   }
 }
 

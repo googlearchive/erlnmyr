@@ -58,8 +58,8 @@ function typeCheck(stages) {
   var coersion = {};
   for (var i = 0; i < stages.length - 1; i++) {
     var inputCoersion = coersion;
-    console.log('checking ' + stages[i].name + ' ' + JSON.stringify(stages[i].output) + ' : ' + stages[i + 1].name + ' ' + JSON.stringify(stages[i + 1].input));
-    console.log(' --> ' + JSON.stringify(coersion));
+    //console.log('checking ' + stages[i].name + ' ' + JSON.stringify(stages[i].output) + ' : ' + stages[i + 1].name + ' ' + JSON.stringify(stages[i + 1].input));
+    //console.log(' --> ' + JSON.stringify(coersion));
     coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
     assert.isDefined(coersion, "Type checking failed for\n  " + stages[i].name + ': ' + JSON.stringify(stages[i].output) + 
       "\n  ->\n  " + stages[i + 1].name + ': ' + JSON.stringify(stages[i + 1].input) + "\n    " + JSON.stringify(inputCoersion));

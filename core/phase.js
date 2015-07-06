@@ -18,7 +18,7 @@ function PhaseBase(info, impl, options) {
   this.outputType = info.output;
   this.async = info.async || false;
   this.inputArity = 1;
-  if (info.async) {
+  if (this.async) {
     switch(info.arity) {
       case '0:1':
         this.impl = this.impl0To1Async;
@@ -89,7 +89,6 @@ PhaseBase.prototype.impl0To1 = function(stream, mycb) {
   this.runtime.stream = stream || new streamLib.Stream();
   this.runtime.setTags({});
   var result = this.runtime.impl(this.runtime.tags);
-  this.runtime.tags.tag(this.outputKey, this.outputValue);
   this.runtime.put(result);
   mycb(this.runtime.stream);
 };
@@ -103,6 +102,28 @@ PhaseBase.prototype.impl1To1 = function(stream, mycb) {
     return {data: result, tags: this.runtime.tags.tags};
   }.bind(this));
   mycb(stream);
+}
+
+PhaseBase.prototype.impl1To1Async = function(stream, mycb) {
+  this.runtime.stream = stream;
+  var items = [];
+  stream.get(this.inputKey, this.inputValue, function(item) {
+    items.push(item);
+  });
+
+  var cb = function() { mycb(stream); };
+  for (var i = items.length - 1; i >= 0; i--) {
+    cb = (function(cb, i) {
+      return function() {    
+        var item = items[i];
+        this.runtime.setTags(item.tags);
+        this.runtime.impl(item.data, this.runtime.tags, function(result) {
+          this.runtime.put(result);
+          cb();
+        }.bind(this));
+      }.bind(this); }.bind(this))(cb, i);
+  }
+  cb();
 }
 
 PhaseBase.prototype.impl1ToN = function(stream, mycb) {
@@ -151,7 +172,7 @@ PhaseBaseRuntime.prototype.setTags = function(tags) {
 
 PhaseBaseRuntime.prototype.put = function(data) {
   this.tags = this.baseTags.clone();
-  this.tags.tag(this.outputKey, this.outputValue);
+  this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
   this.stream.put(data, this.tags.tags);
   return this.tags;
 }

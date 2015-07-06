@@ -16,8 +16,12 @@ register({name: 'readDir', input: types.string, output: types.string, arity: '1:
     }.bind(this));
   });
 
-
-function typeVar(s) { return (function(v) { return v[s]; }); }
+function typeVar(s) { return (function(v) {
+  if (!v[s]) {
+    v[s] = types.newTypeVar();
+  }
+  return v[s];
+}); }
 
 register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
@@ -101,7 +105,7 @@ register({name: 'input', output: types.string, arity: '0:1'},
     },
     { data: '', tag: true});
 
-register({name: 'retag', input: types.string, output: types.string, arity: '1:1'},
+register({name: 'retag', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     var input = tags.read(this.options.tag);
     if (input !== undefined)
@@ -110,7 +114,7 @@ register({name: 'retag', input: types.string, output: types.string, arity: '1:1'
   },
   { tag: '', in: '', out: ''});
 
-register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
+register({name: 'dummy', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data) { return data; });
 
 // TODO: This is for testing. Does it belong here?
@@ -123,3 +127,14 @@ register({name: 'compare', input: types.string, output: types.string, arity: '1:
     }
   },
   { tag: ''});
+
+register({name: 'fileToBuffer', input: types.string, output: types.buffer, arity: '1:1', async: true},
+  function(filename, tags, cb) {
+    console.log('reading', filename, 'raw');
+    fs.readFile(filename, function(err, data) {
+      if (err)
+        throw err;
+      cb(data);
+    });
+  });
+
