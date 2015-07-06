@@ -70,7 +70,7 @@ var fabricators = {
   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
 for (WriterType in writers) {
-  register({name: WriterType, input: types.JSON, output: types.JSON, arity: '1:1'},
+  register({name: WriterType, input: types.JSON, output: types.string, arity: '1:1'},
     treeBuilder(writers[WriterType]));
 }
 for (FilterType in filters) {
