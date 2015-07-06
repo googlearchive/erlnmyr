@@ -24,12 +24,12 @@ describe('basicTargetCoverage', function() {
   });
   it('should be possible to type check the mhtml stage list', function() {
     stageLoader.typeCheck([
-      fancyStages.fileInputs('dummy'),
-      fancyStages.map(fancyStages.tee()),
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('fileToJSON'))),
-      fancyStages.map(fancyStages.left(stageLoader.stageSpecificationToStage('HTMLWriter'))),
-      fancyStages.map(fancyStages.right(fancyStages.outputName('dummy', 'dummy'))),
-      fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
+      stream.streamedStage(fancyStages.fileInputs('dummy')),
+      stream.tag(function() {}),
+      stageLoader.stageSpecificationToStage('fileToJSON'),
+      stageLoader.stageSpecificationToStage('HTMLWriter'),
+      stream.tag(function() {}),
+      stream.write()
     ]);
   });
 });

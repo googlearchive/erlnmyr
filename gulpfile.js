@@ -90,18 +90,6 @@ gulp.task('ejs', function(incb) {
  *
  * example of using stages directly
  */
-gulp.task('mhtml', function(incb) {
-  var cb = function(data) { incb(); };
-  stageLoader.processStages(
-    [
-      fancyStages.fileInputs(options.inputSpec),
-      fancyStages.map(fancyStages.tee()),
-      fancyStages.map(fancyStages.right(stageLoader.stageSpecificationToStage('fileToJSON'))),
-      fancyStages.map(fancyStages.right(stageLoader.stageSpecificationToStage('HTMLWriter'))),
-      fancyStages.map(fancyStages.left(fancyStages.outputName(options.inputSpec, options.outputSpec))),
-      fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
-    ], cb, function(e) { throw e; });
-});
 
 function tagFilename() {
   return stream.tag(function(data, tags) { return {key: 'filename', value: data} });
@@ -113,15 +101,14 @@ function genFilename() {
     return {key: 'filename', value: filename} });
 }
 
-
-gulp.task('mhtml2', function(incb) {
+gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
         stream.streamedStage(fancyStages.fileInputs(options.inputSpec)),
         tagFilename(),
-        stream.streamedStage(stageLoader.stageSpecificationToStage('fileToJSON')),
-        stream.streamedStage(stageLoader.stageSpecificationToStage('HTMLWriter')),
+        stageLoader.stageSpecificationToStage('fileToJSON'),
+        stageLoader.stageSpecificationToStage('HTMLWriter'),
         genFilename(),
         stream.write()
       ], cb, function(e) { throw e; });
