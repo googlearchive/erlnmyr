@@ -9,10 +9,15 @@ function register(info, impl, defaults) {
   function override(defaults, options) {
     var result = {};
     for (key in defaults) {
-      if (key in options)
-        result[key] = options[key];
-      else
+      if (key in options) {
+        try {
+          result[key] = eval(options[key]);
+        } catch (e) {
+          result[key] = options[key];
+        }
+      } else {
         result[key] = defaults[key];
+      }
     }
     return result;
   }
@@ -32,15 +37,13 @@ register({name: 'readDir', input: types.string, output: types.string, arity: '1:
 
 register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
   function(data, tags) {
-    // TODO: well defined default.
-    var tagsToPrint = (this.options.tags && this.options.tags.split(', ')) || [];
-    tagsToPrint.forEach(function(tag) {
+    this.options.tags.forEach(function(tag) {
       console.log(tag, tags.read(tag));
     });
     console.log(data);
     return data;
   },
-  { tags: '' });
+  { tags: [] });
 
 register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'},
   function(string) { return JSON.parse(string); });
