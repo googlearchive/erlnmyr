@@ -4,18 +4,11 @@ var http = require('http');
 var path = require('path');
 
 var types = require('./types');
+var options = require('./options');
 
 // update PYTHONPATH for all telemetry invocations
-function updatePYTHONPATH() {
-  if (options.chromium !== undefined)
-    process.env.PYTHONPATH += path.delimiter + path.normalize(options.chromium) + '/tools/telemetry';
-}
-
-var options = undefined;
-function init(parsedOptions) {
-  options = parsedOptions;
-  updatePYTHONPATH();
-}
+if (options.chromium !== undefined)
+  process.env.PYTHONPATH += path.delimiter + path.normalize(options.chromium) + '/tools/telemetry';
 
 // TODO can probably unwrap this now.
 function telemetryTask(pyScript, pyArgs) {
@@ -122,7 +115,6 @@ function perfer(telemetryStep) {
   };
 }
 
-module.exports.init = init;
 module.exports.telemetrySave = telemetrySave;
 module.exports.telemetrySaveNoStyle = telemetrySaveNoStyle;
 module.exports.telemetryPerf = telemetryPerf;

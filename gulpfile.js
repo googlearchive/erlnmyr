@@ -2,18 +2,11 @@ var gulp = require('gulp');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
 
-// TODO: device and experiment are only loaded so that they can be initialized with options.
-// There must be a nicer way to set options across a project.
-var device = require('./core/device');
-var experiment = require('./core/experiment');
 var stageLoader = require('./core/stage-loader');
-
 var fancyStages = require('./core/fancy-stages');
 var stream = require('./core/stream');
 var options = require('./core/options');
 var trace = require('./core/trace');
-
-device.init(options);
 
 var tasks = {};
 
