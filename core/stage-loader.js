@@ -79,7 +79,9 @@ function processStagesWithInput(input, stages, cb, fail) {
   for (var i = stages.length - 1; i >= 0; i--) {
     cb = (function(i, cb) { return function(data) {
       try {
-        stages[i].impl(data, cb);
+        var result = stages[i].impl(data, cb);
+        // TODO: Cleanup and propagate promises once all phases return them.
+        result && result.then(cb);
       } catch (e) {
         fail(e);
       }
