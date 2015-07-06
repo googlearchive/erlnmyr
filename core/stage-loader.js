@@ -1,19 +1,19 @@
 var assert = require('chai').assert;
 var stream = require('./stream');
 
-var writers = {
-  HTMLWriter: require('../lib/html-writer'),
-  JSWriter: require('../lib/js-writer'),
-  StatsWriter: require('../lib/stats-writer')
-};
+// var writers = {
+//   HTMLWriter: require('../lib/html-writer'),
+//   JSWriter: require('../lib/js-writer'),
+//   StatsWriter: require('../lib/stats-writer')
+// };
 
-var filters = {
-  StyleFilter: require('../lib/style-filter'),
-  StyleMinimizationFilter: require('../lib/style-minimization-filter'),
-  StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
-  NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
-  StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
-};
+// var filters = {
+//   StyleFilter: require('../lib/style-filter'),
+//   StyleMinimizationFilter: require('../lib/style-minimization-filter'),
+//   StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
+//   NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
+//   StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
+// };
 
 var fabricators = {
   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
@@ -35,8 +35,8 @@ var argInputs = {
 }
 
 var byConstruction = [
-  {list: writers, constructor: stages.treeBuilderWriter},
-  {list: filters, constructor: stages.filter},
+  // {list: writers, constructor: stages.treeBuilderWriter},
+  // {list: filters, constructor: stages.filter},
   {list: fabricators, constructor: stages.fabricator}
 ];
 var byName = [device, experiment, phaseLib, stages];
