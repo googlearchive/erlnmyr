@@ -9,6 +9,7 @@ var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
 var TraceTreeSplitter = require('../lib/trace-tree-splitter');
+var VersionSync = require('../lib/version-sync');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -265,5 +266,16 @@ module.exports.filenames = function(options) {
     name: 'filenames',
     input: types.unit,
     output: types.List(types.string)
+  }
+}
+
+module.exports.versionSync = function(options) {
+  return {
+    impl: function(data, cb) {
+      new VersionSync(options, cb);
+    },
+    name: 'versionSync',
+    input: types.string,
+    output: types.string
   }
 }
