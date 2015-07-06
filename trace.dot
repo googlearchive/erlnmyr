@@ -14,7 +14,7 @@ digraph trace {
 
   log -> dummy;
 
-  log [tags="filename"]
+  log [tags="['filename']"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
   tracePrettyPrint [showTrace="false"];
 }
