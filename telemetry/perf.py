@@ -1,4 +1,5 @@
 import telemetry.core
+import telemetry.internal.browser
 import sys;
 from telemetry.internal.browser import browser_options
 from telemetry.internal.browser import browser_finder
