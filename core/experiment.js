@@ -47,6 +47,7 @@ function doExperiment() {
       var linear = linearize(pipes[edges[0].v].graph);
       var linearNames = linear.map(function(x) { return x.map(function(a) { return a.nodeName; })});
 
+      // Find the {strategy:pipeline} groups that each phase participates in.
       var linearGroups = linearNames.map(function(a) { return a.map(function(x) {
         var result = [];
         var parent = inGraph.parent(x);
@@ -58,6 +59,8 @@ function doExperiment() {
         return result;
       }); });
 
+      // For each set of phases at the same linear level, find the groups
+      // that every element of the set is part of.
       linearGroups = linearGroups.map(function(x) {
         var result = [];
         for (var i = 0; i < x[0].length; i++) {
@@ -71,12 +74,15 @@ function doExperiment() {
         return result;
       });
 
+      // Phases being constructed, contains sublists for pipeline phases.
       var phaseStack = [[]];
+      // Names of the current groups.
       var groupStack = [];
 
       for (var i = 0; i < linear.length; i++) {
          for (var j = 0; j < linearGroups[i].length; j++) {
           if (groupStack.indexOf(linearGroups[i][j]) == -1) {
+            // Enter a new group and start a new phase list.
             groupStack.push(linearGroups[i][j]);
             phaseStack.push([]);
           }
@@ -90,10 +96,7 @@ function doExperiment() {
         });
         phaseStack[phaseStack.length - 1] = phaseStack[phaseStack.length - 1].concat(streams);
 
-        if (i == linear.length - 1)
-          break;
-
-        while (groupStack.length > 0 && (linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
+        while (groupStack.length > 0 && (linearGroups.length <= i + 1 || linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {
           // we've reached the end of this group stack
           groupStack.pop();
           var phases = phaseStack.pop(); // do wrapping here
@@ -101,14 +104,18 @@ function doExperiment() {
           phaseStack[phaseStack.length - 1].push(consolidated);
         }
 
+        if (i == linear.length - 1)
+          break;
+
+        // Unique output connections.
         var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(function(v, i, s) { return s.indexOf(v) == i; });
+        // Indexes of from/to to construct the routing stage.
         var ins = outgoing.map(function(con) { return con.fromPipes; });
         ins = ins.map(function(a) { return a.map(function(b) { return linearNames[i].indexOf(b.nodeName); })});
         var outs = outgoing.map(function(con) { return con.toPipes; });
         outs = outs.map(function(a) { return a.map(function(b) { return linearNames[i + 1].indexOf(b.nodeName); })});
         var routingStage = new stream.RoutingStage(ins, outs);
         phaseStack[phaseStack.length - 1].push(routingStage);
-
       }
 
       assert(phaseStack.length == 1);

@@ -14,8 +14,6 @@ digraph trace {
     strategy=pipeline;
   }
 
-  log -> dummy;
-
   log [tags="['filename']"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
   tracePrettyPrint [showTrace="false"];
