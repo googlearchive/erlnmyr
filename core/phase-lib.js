@@ -14,7 +14,7 @@ function register(info, impl, defaults) {
         result[key] = defaults[key];
     }
     return result;
-  } 
+  }
   module.exports[info.name] = function(options) {
     var options = override(defaults, options);
     return new phase.PhaseBase(info, impl, options);

@@ -200,6 +200,15 @@ function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
     }, name, id, input, output, fromKey, fromValue);
 }
 
+function streamedStage0To1(stage, id, fromKey, fromValue) {
+  assert(stage.input == types.unit);
+  return new CoreStream(function(data, incb) {
+    stage.impl(undefined, function(dataOut) {
+      incb([{data: dataOut, tags: {}}]);
+    });
+  }, '<0<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
+}
+
 function streamedStageList0ToN(stage, id, fromKey, fromValue) {
   assert(stage.input == types.unit);
   assert(types.isList(stage.output));
@@ -243,6 +252,8 @@ function streamedStageMap1ToN(stage, id, fromKey, fromValue) {
 function streamedStage(stage, id, fromKey, fromValue) {
   if (stage.input == 'unit' && types.isList(stage.output))
     return streamedStageList0ToN(stage, id, fromKey, fromValue);
+  if (stage.input == 'unit')
+    return streamedStage0To1(stage, id, fromKey, fromValue);
   if (types.isMap(stage.output) && !(types.isMap(stage.input)))
     return streamedStageMap1ToN(stage, id, fromKey, fromValue);
   return streamedStage1To1(stage, id, fromKey, fromValue);
