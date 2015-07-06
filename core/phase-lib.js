@@ -112,13 +112,16 @@ register({name: 'dummy', input: typeVar('a'), output: typeVar('a'), arity: '1:1'
   function(data) { return data; });
 
 // TODO: This is for testing. Does it belong here?
-register({name: 'compare', input: types.string, output: types.string, arity: '1:1'},
+register({name: 'compare', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     var input = tags.read(this.options.tag);
     var inFile = fs.readFileSync(input, 'utf8');
-    if (!(inFile == data)) {
-      throw new Error(input + " file doesn't match provided data");
+    if (typeof data != 'string') {
+      inFile = JSON.parse(inFile);
     }
+    var assert = require('chai').assert;
+    assert.deepEqual(inFile, data);
+    return data;
   },
   { tag: ''});
 
