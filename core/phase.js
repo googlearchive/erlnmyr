@@ -1,6 +1,7 @@
 var types = require('./types');
 var streamLib = require('./stream');
 var trace = require('./trace');
+var Promise = require('bluebird');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -85,15 +86,15 @@ function Tags(tags) {
   this.tags = tags;
 }
 
-PhaseBase.prototype.impl0To1 = function(stream, mycb) {
+PhaseBase.prototype.impl0To1 = function(stream) {
   this.runtime.stream = stream || new streamLib.Stream();
   this.runtime.setTags({});
   var result = this.runtime.impl(this.runtime.tags);
   this.runtime.put(result);
-  mycb(this.runtime.stream);
+  return Promise.resolve(this.runtime.stream);
 };
 
-PhaseBase.prototype.impl1To1 = function(stream, mycb) {
+PhaseBase.prototype.impl1To1 = function(stream) {
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue, function(item) {
     this.runtime.setTags(item.tags);
@@ -101,7 +102,7 @@ PhaseBase.prototype.impl1To1 = function(stream, mycb) {
     this.runtime.tags.tag(this.outputKey, this.outputValue);
     return {data: result, tags: this.runtime.tags.tags};
   }.bind(this));
-  mycb(stream);
+  return Promise.resolve(stream);
 }
 
 PhaseBase.prototype.impl1To1Async = function(stream, mycb) {
@@ -126,13 +127,13 @@ PhaseBase.prototype.impl1To1Async = function(stream, mycb) {
   cb();
 }
 
-PhaseBase.prototype.impl1ToN = function(stream, mycb) {
+PhaseBase.prototype.impl1ToN = function(stream) {
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue, function(item) {
     this.runtime.setTags(item.tags);
     this.runtime.impl(item.data, this.runtime.tags);
   }.bind(this));
-  mycb(stream);
+  return Promise.resolve(stream);
 }
 
 Tags.prototype.clone = function() {
