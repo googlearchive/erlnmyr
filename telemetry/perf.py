@@ -21,7 +21,10 @@ with browserFactory.Create(options) as browser:
   for i in browser.tabs:
     if i == tab:
       continue
-    i.Close()
+    try:
+      browser.tabs.GetTabById(i).Close()
+    except:
+      pass
 
   category_filter = tracing_category_filter.TracingCategoryFilter()
   options = tracing_options.TracingOptions()
