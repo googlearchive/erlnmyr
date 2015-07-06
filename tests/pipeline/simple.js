@@ -23,19 +23,6 @@ function testOutput(expectedResult) {
   }
 }
 
-function testMatch() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) {
-      assert.deepEqual(data.right.data[0].data, data.left.data[0].data);
-      cb();
-    },
-    name: 'testMatch',
-    input: types.Tuple(typeVar, typeVar),
-    output: types.unit
-  }
-}
-
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
     stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
@@ -48,10 +35,10 @@ function fileComparisonPipeline(jsonFile, htmlFile) {
 function tokenizeDetokenizePipeline(jsonFile) {
   return [
     stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
-    fancyStages.tee(),
-    fancyStages.left(stageLoader.stageSpecificationToStage("StyleTokenizerFilter")),
-    fancyStages.left(stageLoader.stageSpecificationToStage("StyleDetokenizerFilter")),
-    testMatch()
+    stageLoader.stageSpecificationToStage("StyleTokenizerFilter"),
+    stageLoader.stageSpecificationToStage("StyleDetokenizerFilter"),
+    stream.tag(function(data, tags) { return {key: 'data', value: jsonFile}; }),
+    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
   ]
 }
 
