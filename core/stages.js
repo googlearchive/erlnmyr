@@ -101,15 +101,6 @@ module.exports.fileToJSON = function() {
   };
 }
 
-module.exports.fileToBuffer = function() {
-  return {
-    impl: readFileRaw,
-    name: 'fileToBuffer',
-    input: types.string,
-    output: types.buffer
-  };
-}
-
 module.exports.gunzipAndDecode = function() {
   return {
     impl: function(data, cb) {

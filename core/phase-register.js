@@ -18,9 +18,20 @@ function register(info, impl, defaults) {
     }
     return result;
   }
+
   phases[info.name] = function(options) {
+    var infoClone = {name: info.name, arity: info.arity, async: info.async};
+    var v = {};
+    if (typeof info.input == 'function')
+      infoClone.input = info.input(v);
+    else
+      infoClone.input = info.input;
+    if (typeof info.output == 'function')
+      infoClone.output = info.output(v);
+    else
+      infoClone.output = info.output;
     var options = override(defaults, options);
-    return new phase.PhaseBase(info, impl, options);
+    return new phase.PhaseBase(infoClone, impl, options);
   }
 }
 
