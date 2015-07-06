@@ -105,26 +105,26 @@ PhaseBase.prototype.impl1To1 = function(stream) {
   return Promise.resolve(stream);
 }
 
-PhaseBase.prototype.impl1To1Async = function(stream, mycb) {
+PhaseBase.prototype.impl1To1Async = function(stream) {
   this.runtime.stream = stream;
   var items = [];
   stream.get(this.inputKey, this.inputValue, function(item) {
     items.push(item);
   });
 
-  var cb = function() { mycb(stream); };
-  for (var i = items.length - 1; i >= 0; i--) {
-    cb = (function(cb, i) {
-      return function() {    
-        var item = items[i];
-        this.runtime.setTags(item.tags);
-        this.runtime.impl(item.data, this.runtime.tags, function(result) {
-          this.runtime.put(result);
-          cb();
-        }.bind(this));
-      }.bind(this); }.bind(this))(cb, i);
+  var runtime = this.runtime;
+  function process() {
+    if (!items.length) {
+      return Promise.resolve(stream);
+    }
+    var item = items.pop();
+    runtime.setTags(item.tags);
+    return runtime.impl(item.data, runtime.tags).then(function(result) {
+      runtime.put(result);
+      return process();
+    });
   }
-  cb();
+  return process();
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
