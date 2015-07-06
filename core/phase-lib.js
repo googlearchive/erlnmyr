@@ -7,7 +7,6 @@ var register = require('./phase-register.js');
 
 var TreeBuilder = require('../lib/tree-builder');
 var EjsFabricator = require('../lib/ejs-fabricator');
-var TraceFilter = require('../lib/trace-filter');
 
 register({name: 'readDir', input: types.string, output: types.string, arity: '1:N'},
   function(dirName, tags) {
@@ -72,12 +71,6 @@ for (FabType in fabricators) {
 
 register({name: 'ejsFabricator', input: types.string, output: types.string, arity: '1:N'},
     function(data) { return new EjsFabricator(data, '').fabricate(); });
-
-register({name: 'traceFilter', input: types.JSON, output: types.JSON, arity: '1:1'},
-    function(data) {
-      return new TraceFilter(data, this.options).filter();
-    },
-    TraceFilter.defaults);
 
 register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {

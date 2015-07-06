@@ -25,6 +25,15 @@ function doExperiment() {
   return {
     impl: function(data, cb) {
       var inGraph = dot.read(data);
+      // TODO: Perhaps create instance of stage-loader and ask it to load these
+      //       to avoid polluting other experiments.
+      if (inGraph.graph().imports) {
+        var imports = eval(inGraph._label.imports);
+        imports.forEach(function(lib) {
+          // TODO: figure out the right way to specify this path
+          require('../' + lib);
+        });
+      }
       var edges = inGraph.edges();
       var pipes = {};
       for (var i = 0; i < edges.length; i++) {
