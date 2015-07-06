@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var stream = require('./stream');
 var trace = require('./trace');
 
-var phaseLib = require('./phase-lib');
+var register = require('./phase-register');
 var stages = require('./stages');
 var fancyStages = require('./fancy-stages');
 var types = require('./types');
@@ -17,7 +17,7 @@ var argInputs = {
   'immediate': fancyStages.immediate,
 }
 
-var byName = [device, experiment, phaseLib, stages];
+var byName = [device, experiment, register.phases, stages];
 
 function _stageSpecificationToStage(stage, options) {
   options = options || {};

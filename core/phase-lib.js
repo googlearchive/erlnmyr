@@ -3,32 +3,11 @@ var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
 var phase = require('./phase');
+var register = require('./phase-register.js');
 
 var TreeBuilder = require('../lib/tree-builder');
 var EjsFabricator = require('../lib/ejs-fabricator');
 var TraceFilter = require('../lib/trace-filter');
-
-function register(info, impl, defaults) {
-  function override(defaults, options) {
-    var result = {};
-    for (key in defaults) {
-      if (key in options) {
-        try {
-          result[key] = eval(options[key]);
-        } catch (e) {
-          result[key] = options[key];
-        }
-      } else {
-        result[key] = defaults[key];
-      }
-    }
-    return result;
-  }
-  module.exports[info.name] = function(options) {
-    var options = override(defaults, options);
-    return new phase.PhaseBase(info, impl, options);
-  }
-}
 
 register({name: 'readDir', input: types.string, output: types.string, arity: '1:N'},
   function(dirName, tags) {
