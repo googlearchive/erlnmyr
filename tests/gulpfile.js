@@ -3,6 +3,7 @@ var assert = require('chai').assert;
 var tasks = require('../gulpfile').tasks;
 var stageLoader = require('../core/stage-loader');
 var fancyStages = require('../core/fancy-stages');
+var stream = require('../core/stream');
 
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
@@ -17,9 +18,8 @@ describe('basicTargetCoverage', function() {
   it('should be possible to type check the ejs stage list', function() {
     stageLoader.typeCheck([
       stageLoader.stageSpecificationToStage('file:dummy'),
-      stageLoader.stageSpecificationToStage('ejs:dummy'),
-      fancyStages.mapToTuples(),
-      fancyStages.map(stageLoader.stageSpecificationToStage('toFile'))
+      stageLoader.stageSpecificationToStage('ejsFabricator'),
+      stageLoader.stageSpecificationToStage('writeStringFile')
     ]);
   });
   it('should be possible to type check the mhtml stage list', function() {
