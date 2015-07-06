@@ -4,8 +4,6 @@ var StringDecoder = require('string_decoder').StringDecoder;
 
 var types = require('./types.js');
 
-var EjsFabricator = require('../lib/ejs-fabricator');
-var TraceFilter = require('../lib/trace-filter');
 var TraceTree = require('../lib/trace-tree');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
@@ -141,29 +139,6 @@ module.exports.fileToString = function() {
     input: types.string,
     output: types.string
   };
-}
-
-module.exports.ejsFabricator = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new EjsFabricator(data, '').fabricate());
-    },
-    name: 'ejsFabricator',
-    input: types.string,
-    output: types.Map(types.string)
-  }
-}
-
-module.exports.traceFilter = function(options) {
-  options = override(TraceFilter.defaults, options);
-  return {
-    impl: function(data, cb) {
-      cb(new TraceFilter(data, options).filter());
-    },
-    name: 'traceFilter',
-    input: types.JSON,
-    output: types.JSON
-  }
 }
 
 module.exports.traceTree = function() {

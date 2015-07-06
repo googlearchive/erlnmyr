@@ -3,7 +3,10 @@ var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
 var phase = require('./phase');
+
 var TreeBuilder = require('../lib/tree-builder');
+var EjsFabricator = require('../lib/ejs-fabricator');
+var TraceFilter = require('../lib/trace-filter');
 
 function register(info, impl, defaults) {
   function override(defaults, options) {
@@ -85,8 +88,14 @@ for (FabType in fabricators) {
     });
 }
 
-register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
-  function(data) { return data; });
+register({name: 'ejsFabricator', input: types.string, output: types.string, arity: '1:N'},
+    function(data) { return new EjsFabricator(data, '').fabricate(); });
+
+register({name: 'traceFilter', input: types.JSON, output: types.JSON, arity: '1:1'},
+    function(data) {
+      return new TraceFilter(data, this.options).filter();
+    },
+    TraceFilter.defaults);
 
 register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {
@@ -116,6 +125,9 @@ register({name: 'retag', input: types.string, output: types.string, arity: '1:1'
     return data;
   },
   { tag: '', in: '', out: ''});
+
+register({name: 'dummy', input: types.string, output: types.string, arity: '1:1'},
+  function(data) { return data; });
 
 // TODO: This is for testing. Does it belong here?
 register({name: 'compare', input: types.string, output: types.string, arity: '1:1'},
