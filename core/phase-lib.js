@@ -17,7 +17,9 @@ register({name: 'readDir', input: types.string, output: types.string, arity: '1:
   });
 
 
-register({name: 'log', input: types.string, output: types.string, arity: '1:1'},
+function typeVar(s) { return (function(v) { return v[s]; }); }
+
+register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     this.options.tags.forEach(function(tag) {
       console.log(tag, tags.read(tag));

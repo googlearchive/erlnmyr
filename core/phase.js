@@ -16,20 +16,36 @@ function PhaseBase(info, impl, options) {
   this.id = info.id || newInstanceID();
   this.inputType = info.input;
   this.outputType = info.output;
-  switch(info.arity) {
-    case '0:1':
-      this.impl = this.impl0To1;
-      this.inputArity = 0;
-      break;
-    case '1:1':
-    default:
-      this.impl = this.impl1To1;
-      this.inputArity = 1;
-      break;
-    case '1:N':
-      this.impl = this.impl1ToN;
-      this.inputArity = 1;
-      break;
+  this.async = info.async || false;
+  this.inputArity = 1;
+  if (info.async) {
+    switch(info.arity) {
+      case '0:1':
+        this.impl = this.impl0To1Async;
+        this.inputArity = 0;
+        break;
+      case '1:1':
+      default:
+        this.impl = this.impl1To1Async;
+        break;
+      case '1:N':
+        this.impl = this.impl1ToNAsync;
+        break;
+    }
+  } else {
+    switch(info.arity) {
+      case '0:1':
+        this.impl = this.impl0To1;
+        this.inputArity = 0;
+        break;
+      case '1:1':
+      default:
+        this.impl = this.impl1To1;
+        break;
+      case '1:N':
+        this.impl = this.impl1ToN;
+        break;
+    }
   }
   this.runtime = new PhaseBaseRuntime(this, impl);
   this.runtime.options = options;
