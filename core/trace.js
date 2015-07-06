@@ -1,4 +1,5 @@
 var fs = require('fs');
+var zlib = require('zlib');
 var options = require('./options');
 
 var events = [];
@@ -85,9 +86,11 @@ if (options.traceFile) {
           event.cat = '';
         }
       });
-      fs.writeFileSync(options.traceFile, JSON.stringify({
+      zlib.gzip(JSON.stringify({
         traceEvents: events,
-      }));
+      }), function(_, buffer) {
+        fs.writeFileSync(options.traceFile, buffer, 0, buffer.length);
+      });
     },
   };
 } else {
