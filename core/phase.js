@@ -112,24 +112,40 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
     items.push(item);
   });
 
-  var flow = trace.flow({cat: 'phase', name: this.name});
-  var runtime = this.runtime;
-  var process = trace.wrap({cat: 'phase', name: this.name}, function() {
-    if (!items.length) {
-      flow.end();
-      return Promise.resolve(stream);
-    }
-    flow.step();
-    var item = items.pop();
+
+  var phase = this;
+  return Promise.all(items.map(function(item) {
+    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl);
+    runtime.stream = stream;
     runtime.setTags(item.tags);
-    var result = runtime.impl(item.data, runtime.tags).then(function(result) {
+    var result = runtime.impl(item.data, runtime.tags);
+    var flow = trace.flow({cat: 'phase', name: phase.name}).start();
+    return result.then(function(result) {
+      flow.end();
       runtime.put(result);
-      return process();
     });
-    flow.start();
-    return result;
+  })).then(function() {
+    return stream;
   });
-  return process();
+
+  //var flow = trace.flow({cat: 'phase', name: this.name});
+  //var runtime = this.runtime;
+  //var process = trace.wrap({cat: 'phase', name: this.name}, function() {
+  //  if (!items.length) {
+  //    flow.end();
+  //    return Promise.resolve(stream);
+  //  }
+  //  flow.step();
+  //  var item = items.pop();
+  //  runtime.setTags(item.tags);
+  //  var result = runtime.impl(item.data, runtime.tags).then(function(result) {
+  //    runtime.put(result);
+  //    return process();
+  //  });
+  //  flow.start();
+  //  return result;
+  //});
+  //return process();
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
@@ -197,11 +213,45 @@ PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.tags = this.baseTags;
 }
 
-PhaseBaseRuntime.prototype.put = function(data) {
-  this.tags = this.baseTags.clone();
+PhaseBaseRuntime.prototype.put = function(data, tags) {
+  if (tags) {
+    this.tags = new Tags(tags);
+  } else {
+    this.tags = this.baseTags.clone();
+  }
   this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
   this.stream.put(data, this.tags.tags);
   return this.tags;
+}
+
+function pipeline(phases) {
+  return new PhaseBase({
+    name: 'pipeline',
+    input: phases[0].input,
+    output: phases[phases.length - 1].output,
+    arity: '1:N',
+    async: true,
+  }, function(data, tags) {
+    var runtime = this;
+    return new Promise(function(resolve, reject) {
+      var stream = new Stream();
+      stream.put(data, tags);
+      var pending = phases.concat().reverse();
+      function process() {
+        if (!pending.length) {
+          for (var i = 0; i < stream.data.length; i++) {
+            runtime.put(stream.data[i].data, stream.data[i].tags);
+          }
+          resolve();
+          return;
+        }
+        var phase = pending.pop();
+        work.impl(stream).then(process, reject);
+      }
+      process();
+    });
+  },
+  {});
 }
 
 module.exports.PhaseBase = PhaseBase;

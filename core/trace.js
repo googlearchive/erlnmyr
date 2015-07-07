@@ -95,6 +95,7 @@ if (options.traceFile) {
             args: info.args,
             id: id,
           });
+          return this;
         },
         end: function(endInfo) {
           if (!started) return;
@@ -107,6 +108,7 @@ if (options.traceFile) {
             args: endInfo && endInfo.args,
             id: id,
           });
+          return this;
         },
         step: function(stepInfo) {
           if (!started) return;
@@ -119,6 +121,7 @@ if (options.traceFile) {
             args: stepInfo && stepInfo.args,
             id: id,
           });
+          return this;
         },
         endWrap: function(fn) {
           var self = this;
@@ -126,6 +129,7 @@ if (options.traceFile) {
             self.end();
             fn.apply(this, arguments);
           }
+          return this;
         },
         stepWrap: function(fn) {
           var self = this;
@@ -133,6 +137,7 @@ if (options.traceFile) {
             self.step();
             fn.apply(this, arguments);
           }
+          return this;
         }
       };
     },
