@@ -5,6 +5,8 @@ var types = require('./types.js');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
+var TraceTreeSplitter = require('../lib/trace-tree-splitter');
+var ChromeBinary = require('../lib/chrome-binary');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
