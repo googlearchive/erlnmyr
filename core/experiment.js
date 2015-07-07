@@ -7,19 +7,40 @@ var phase = require('./phase');
 var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 
-function mkPipe(nodeName, inGraph) {
-  var options = inGraph.node(nodeName);
+function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
-  if (options !== undefined) {
-    if (options.stage) {
+  var splits = phaseName.split('_');
+  if (options.stage) {
       phaseName = options.stage;
-    } else if (options.label) {
+  } else if (options.label) {
       phaseName = options.label;
-    }
+  } else if (splits.length > 1) {
+      phaseName = splits[0];
   }
+  return phaseName;
+}
+
+function mkPhase(nodeName, inGraph) {
+  var options = inGraph.node(nodeName) || {};
+  options.id = nodeName;
+  var phaseName = getPhaseName(nodeName, options);
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;
+}
+
+function linearConnectEdges(inGraph) {
+  var edges = inGraph.edges();
+  var pipes = {};
+  for (var i = 0; i < edges.length; i++) {
+    var edge = edges[i];
+    if (!pipes[edge.v])
+      pipes[edge.v] = mkPhase(edge.v, inGraph);
+    if (!pipes[edge.w])
+      pipes[edge.w] = mkPhase(edge.w, inGraph);
+    graph.connect(pipes[edge.v], pipes[edge.w]);
+  }
+  return linearize(pipes[edges[0].v].graph);
 }
 
 function doExperiment() {
@@ -35,17 +56,7 @@ function doExperiment() {
           require('../' + lib);
         });
       }
-      var edges = inGraph.edges();
-      var pipes = {};
-      for (var i = 0; i < edges.length; i++) {
-        var edge = edges[i];
-        if (!pipes[edge.v])
-          pipes[edge.v] = mkPipe(edge.v, inGraph);
-        if (!pipes[edge.w])
-          pipes[edge.w] = mkPipe(edge.w, inGraph);
-        graph.connect(pipes[edge.v], pipes[edge.w]);
-      }
-      var linear = linearize(pipes[edges[0].v].graph);
+      var linear = linearConnectEdges(inGraph);
       var linearNames = linear.map(function(x) { return x.map(function(a) { return a.nodeName; })});
 
       // Find the {strategy:pipeline} groups that each phase participates in.
@@ -129,3 +140,4 @@ function doExperiment() {
 }
 
 module.exports.doExperiment = doExperiment;
+module.exports.getPhaseName = getPhaseName;
