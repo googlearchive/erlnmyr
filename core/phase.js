@@ -98,6 +98,7 @@ PhaseBase.prototype.impl0To1 = function(stream) {
 };
 
 function flowItemGet(runtime, tags) {
+  if (!trace.enabled) return;
   var args = {tags: {}};
   for (var k in tags) {
     if (k != 'flow')
@@ -111,6 +112,7 @@ function flowItemGet(runtime, tags) {
 }
 
 function flowItemPut(runtime, tags) {
+  if (!trace.enabled) return;
   var args = {tags: {}};
   for (var k in tags) {
     if (k != 'flow')
@@ -235,7 +237,7 @@ PhaseBaseRuntime.prototype.put = function(data, tags) {
     this.tags = this.baseTags.clone();
   }
   // TODO: This misses tags when they are set after calling put().
-  trace.enabled && flowItemPut(this, this.tags.tags);
+  flowItemPut(this, this.tags.tags);
   this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
   this.stream.put(data, this.tags.tags);
   return this.tags;
