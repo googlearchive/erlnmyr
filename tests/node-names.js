@@ -25,8 +25,4 @@ describe('PhaseName', function() {
   it('should be the first part of the node name if it contains an "_"', function() {
     assert.equal('nodeName', experiment.getPhaseName('nodeName_1', {}));
   });
-
-  it('should be the first part of the node name if no options are supplied', function() {
-    assert.equal('nodeName', experiment.getPhaseName('nodeName_1', undefined));
-  });
 });
