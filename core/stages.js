@@ -218,12 +218,12 @@ module.exports.filenames = function(options) {
   }
 }
 
-module.exports.versionSync = function(options) {
+module.exports.chromeBinary = function(options) {
   return {
     impl: function(data, cb) {
-      new VersionSync(options, data, cb);
+      new ChromeBinary(options, data, cb);
     },
-    name: 'versionSync',
+    name: 'chromeBinary',
     input: types.string,
     output: types.string
   }

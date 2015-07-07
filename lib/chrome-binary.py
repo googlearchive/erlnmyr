@@ -59,7 +59,7 @@ def main():
         return 1
 
     try:
-        temp_dir = tempfile.mkdtemp(prefix='version_sync_')
+        temp_dir = tempfile.mkdtemp(prefix='chrome_binary_')
         build.UnzipFilenameToDir(zip_file, temp_dir)
     except:
         sys.stderr.write('Bad Zip file at %s\n' % (zip_file))
