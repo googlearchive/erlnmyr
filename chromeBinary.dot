@@ -2,8 +2,8 @@ digraph chromeBinaryTest {
 
   imports="['./lib/chrome-binary-phases.js', './lib/trace-phases.js']"
 
-  input [data="/usr/local/google/home/soonm/tree-builder-builder/example.ejs"]
-  chromeBinary [version="323860", chromium="/usr/local/google/home/soonm/chromium/src", platform="linux"]
+  input [data="./example.ejs"]
+  chromeBinary [version="323860", chromium="<path-to-chromium>", platform="linux"]
 
   input -> ejsFabricator -> chromeBinary -> consoleOutput;
 
