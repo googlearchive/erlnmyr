@@ -43,8 +43,7 @@ def main():
 
     context = build.PathContext(base_url, opts.archive, opts.version, opts.version,
                                  False, False, True)
-    _GetDownloadPath = lambda rev: os.path.join(os.getcwd(), '%s-%s' % (str(rev), context.archive_name))
-    zip_file = _GetDownloadPath(opts.version)
+    zip_file = os.path.join(os.getcwd(), '%s-%s' % (str(opts.version), context.archive_name))
     fetch = build.DownloadJob(context, 'fetch', opts.version, zip_file)
 
     try:
