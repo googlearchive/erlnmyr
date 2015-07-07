@@ -10,8 +10,6 @@ var register = require('./phase-register.js');
 var StringDecoder = require('string_decoder').StringDecoder;
 var TreeBuilder = require('../lib/tree-builder');
 var EjsFabricator = require('../lib/ejs-fabricator');
-var TraceTree = require('../lib/trace-tree');
-var TraceTreeSplitter = require('../lib/trace-tree-splitter');
 
 register({name: 'readDir', input: types.string, output: types.string, arity: '1:N'},
   function(dirName, tags) {
@@ -88,21 +86,6 @@ register({name: 'ejsFabricator', input: types.string, output: types.string, arit
         this.tags.tag('ejsFabricator', key);
       }
     });
-
-register({name: 'traceTree', input: types.JSON, output: types.JSON, arity: '1:1'},
-  function(data) {
-    return new TraceTree(data).filter();
-  });
-
-register({name: 'traceTreeSplitter', input: types.JSON, output: types.JSON, arity: '1:N'},
-  function(data) {
-    var result = new TraceTreeSplitter(data, this.options).filter();
-    for (key in result) {
-      this.put(result[key]);
-      this.tags.tag('traceTreeSplitter', key);
-    }
-  },
-  TraceTreeSplitter.defaults);
 
 register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {
