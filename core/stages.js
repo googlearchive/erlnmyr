@@ -217,14 +217,3 @@ module.exports.filenames = function(options) {
     output: types.List(types.string)
   }
 }
-
-module.exports.chromeBinary = function(options) {
-  return {
-    impl: function(data, cb) {
-      new ChromeBinary(options, data, cb);
-    },
-    name: 'chromeBinary',
-    input: types.string,
-    output: types.string
-  }
-}
