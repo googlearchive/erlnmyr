@@ -68,10 +68,15 @@ function stopServing(server) {
 }
 
 // perform perf testing of the provided url
-function telemetryPerfStep(pythonScript, extraOptions) {
+function telemetryPerfStep(pythonScript, extraOptions, specificBrowser) {
   return {
     impl: function(url, cb) {
-      telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
+      console.log('Specific Browser ' + specificBrowser);
+      if (specificBrowser) {
+        telemetryTask(pythonScript, ['--browser=exact --executable='+specificBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
+      } else {
+        telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
+      }
     },
     name: 'telemetryPerf',
     input: types.string,
