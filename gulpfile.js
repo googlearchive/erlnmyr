@@ -39,7 +39,7 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
 }
 
 buildTestTask('test', 'nyan', ['html', 'text-summary']);
-buildTestTask('travis-test', 'spec', ['text-summary']);
+buildTestTask('travis-test', 'spec', ['text', 'text-summary']);
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;
