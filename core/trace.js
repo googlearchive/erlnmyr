@@ -9,6 +9,7 @@ var now = function() {
 }
 
 var asyncId = 0;
+var flowId = 0;
 
 if (options.traceFile) {
   module.exports = {
@@ -79,6 +80,62 @@ if (options.traceFile) {
         }
       };
     },
+    flow: function(info) {
+      var id = flowId++;
+      var started = false;
+      return {
+        start: function() {
+          var begin = now();
+          started = true;
+          events.push({
+            ph: 's',
+            ts: begin,
+            cat: info.cat,
+            name: info.name,
+            args: info.args,
+            id: id,
+          });
+        },
+        end: function(endInfo) {
+          if (!started) return;
+          var end = now();
+          events.push({
+            ph: 'f',
+            ts: end,
+            cat: info.cat,
+            name: info.name,
+            args: endInfo && endInfo.args,
+            id: id,
+          });
+        },
+        step: function(stepInfo) {
+          if (!started) return;
+          var step = now();
+          events.push({
+            ph: 't',
+            ts: step,
+            cat: info.cat,
+            name: info.name,
+            args: stepInfo && stepInfo.args,
+            id: id,
+          });
+        },
+        endWrap: function(fn) {
+          var self = this;
+          return function() {
+            self.end();
+            fn.apply(this, arguments);
+          }
+        },
+        stepWrap: function(fn) {
+          var self = this;
+          return function() {
+            self.step();
+            fn.apply(this, arguments);
+          }
+        }
+      };
+    },
     dump: function() {
       events.forEach(function(event) {
         event.pid = 0;
@@ -113,6 +170,19 @@ if (options.traceFile) {
         end: function() {
         },
         endWrap: function(fn) {
+          return fn;
+        },
+      };
+    },
+    step: function(info, fn) {
+      return {
+        start: function() {
+        },
+        end: function() {
+        },
+        step: function() {
+        },
+        stepWrap: function(fn) {
           return fn;
         },
       };

@@ -112,18 +112,23 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
     items.push(item);
   });
 
+  var flow = trace.flow({cat: 'phase', name: this.name});
   var runtime = this.runtime;
-  function process() {
+  var process = trace.wrap({cat: 'phase', name: this.name}, function() {
     if (!items.length) {
+      flow.end();
       return Promise.resolve(stream);
     }
+    flow.step();
     var item = items.pop();
     runtime.setTags(item.tags);
-    return runtime.impl(item.data, runtime.tags).then(function(result) {
+    var result = runtime.impl(item.data, runtime.tags).then(function(result) {
       runtime.put(result);
       return process();
     });
-  }
+    flow.start();
+    return result;
+  });
   return process();
 }
 
@@ -183,7 +188,7 @@ function PhaseBaseRuntime(base, impl) {
         args.tags[k] = this.tags.tags[k];
       }
     }
-    return {cat: 'core', name: base.name, args: args};
+    return {cat: 'phase', name: base.name + '.impl', args: args};
   }, impl.bind(this));
 }
 
