@@ -71,8 +71,7 @@ function stopServing(server) {
 function telemetryPerfStep(pythonScript, extraOptions, specificBrowser) {
   return {
     impl: function(url, cb) {
-      console.log('Specific Browser ' + specificBrowser);
-      if (specificBrowser) {
+      if (specificBrowser !== undefined) {
         telemetryTask(pythonScript, ['--browser=exact --executable='+specificBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
       } else {
         telemetryTask(pythonScript, ['--browser='+options.perfBrowser, '--', url].concat(extraOptions))(undefined, function(data) { cb(JSON.parse(data)); });
