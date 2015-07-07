@@ -1,5 +1,6 @@
 var assert = require('chai').assert;
 
+require('../core/phase-lib'); // Ensure phases are registered in an instrumented environment.
 var tasks = require('../gulpfile').tasks;
 var stageLoader = require('../core/stage-loader');
 var fancyStages = require('../core/fancy-stages');
