@@ -1,5 +1,7 @@
 var gulp = require('gulp');
 var fs = require('fs');
+var coveralls = require('gulp-coveralls');
+var istanbul = require('gulp-istanbul');
 var mocha = require('gulp-mocha');
 
 var stageLoader = require('./core/stage-loader');
@@ -12,19 +14,42 @@ var trace = require('./core/trace');
 
 var tasks = {};
 
-function buildTestTask(name, reporter) {
-  gulp.task(name, function() {
-    return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
-        .pipe(mocha({
-          ui: 'bdd',
-          ignoreLeaks: true,
-          reporter: reporter
-      }));
+function buildTestTask(name, mochaReporter, istanbulReporters) {
+  gulp.task(name, function(cb) {
+    gulp.src(['core/*.js', 'lib/*.js'])
+    .pipe(istanbul())
+    .pipe(istanbul.hookRequire())
+    .on('finish', function() {
+      gulp.src(['tests/*.js', 'tests/pipeline/*.js'])
+      .pipe(mocha({
+        ui: 'bdd',
+        ignoreLeaks: true,
+        reporter: mochaReporter,
+      }))
+      .pipe(istanbul.writeReports({
+        reporters: istanbulReporters,
+      }))
+      .on('end', function() {
+        if (istanbulReporters.indexOf('html') !== -1) {
+          process.stdout.write('Detailed coverage report at file://' + fs.realpathSync('coverage/index.html') + '\n');
+        }
+        if (istanbulReporters.indexOf('lcov') !== -1) {
+          gulp.src('coverage/lcov.info')
+          .pipe(coveralls())
+          .on('error', function(err) {
+            console.warn(err);
+            console.warn('Failed to upload LCOV data to Coveralls.')
+            console.warn('Has this repository been enabled for Coveralls tracking? https://coveralls.io/repos/new');
+          });
+        }
+        cb();
+      });
+    });
   });
 }
 
-buildTestTask('test', 'nyan');
-buildTestTask('travis-test', 'spec');
+buildTestTask('test', 'nyan', ['html', 'text-summary']);
+buildTestTask('travis-test', 'spec', ['lcov', 'text', 'text-summary']);
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;

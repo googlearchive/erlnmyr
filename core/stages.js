@@ -1,10 +1,7 @@
 var fs = require('fs');
-var zlib = require('zlib');
-var StringDecoder = require('string_decoder').StringDecoder;
 
 var types = require('./types.js');
 
-var TraceTree = require('../lib/trace-tree');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
@@ -26,16 +23,6 @@ function writeFile(output, data, cb) {
 }
 
 module.exports.writeFile = writeFile;
-
-function gunzip(buffer, cb) {
-  zlib.gunzip(buffer, function(err, data) {
-    if (err) {
-      cb(buffer);
-      return;
-    }
-    gunzip(data, cb);
-  });
-}
 
 function readJSONFile(filename, cb) {
   console.log('reading', filename, 'as JSON');
@@ -102,19 +89,6 @@ module.exports.fileToJSON = function() {
   };
 }
 
-module.exports.gunzipAndDecode = function() {
-  return {
-    impl: function(data, cb) {
-      gunzip(data, function(data) {
-        cb(new StringDecoder('utf8').write(data));
-      });
-    },
-    name: 'gunzipAndDecode',
-    input: types.buffer,
-    output: types.string
-  };
-}
-
 module.exports.fileReader = function(filename) {
   return {
     impl: function(_, cb) { readFile(filename, cb); },
@@ -131,29 +105,6 @@ module.exports.fileToString = function() {
     input: types.string,
     output: types.string
   };
-}
-
-module.exports.traceTree = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new TraceTree(data).filter());
-    },
-    name: 'traceTree',
-    input: types.JSON,
-    output: types.JSON
-  }
-}
-
-module.exports.traceTreeSplitter = function(options) {
-  options = override(TraceTreeSplitter.defaults, options);
-  return {
-    impl: function(data, cb) {
-      cb(new TraceTreeSplitter(data, options).filter());
-    },
-    name: 'traceTreeSplitter',
-    input: types.JSON,
-    output: types.Map(types.JSON)
-  }
 }
 
 function override(defaults, options) {

@@ -1,11 +1,13 @@
 var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
+var zlib = Promise.promisifyAll(require('zlib'));
 var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
 var phase = require('./phase');
 var register = require('./phase-register.js');
 
+var StringDecoder = require('string_decoder').StringDecoder;
 var TreeBuilder = require('../lib/tree-builder');
 var EjsFabricator = require('../lib/ejs-fabricator');
 
@@ -77,7 +79,13 @@ for (FabType in fabricators) {
 }
 
 register({name: 'ejsFabricator', input: types.string, output: types.string, arity: '1:N'},
-    function(data) { return new EjsFabricator(data, '').fabricate(); });
+    function(data) {
+      var result = new EjsFabricator(data, '').fabricate();
+      for (key in result) {
+        this.put(result[key]);
+        this.tags.tag('ejsFabricator', key);
+      }
+    });
 
 register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {
@@ -131,3 +139,19 @@ register({name: 'fileToBuffer', input: types.string, output: types.buffer, arity
     return fs.readFileAsync(filename);
   });
 
+register({
+  name: 'gunzipAndDecode',
+  input: types.buffer,
+  output: types.string,
+  arity: '1:1',
+  async: true,
+}, function(buffer) {
+  var data;
+  function unzipRecursive(buffer) {
+    data = buffer;
+    return zlib.gunzipAsync(buffer).then(unzipRecursive);
+  }
+  return unzipRecursive(buffer).catch(function(e) {
+    return new StringDecoder('utf8').write(data);
+  });
+});

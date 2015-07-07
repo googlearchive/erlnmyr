@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<% permutation([
+  function() { x = 100; }, function() { x = 200; }, function() { x = 300; }, function() { x = 400; }, function() { x = 500; },
+  function() { x = 600; }, function() { x = 700; }, function() { x = 800; }, function() { x = 900; }, function() { x = 1000; },
+  function() { x = 1200; }, function() { x = 1400; }, function() { x = 1600; }, function() { x = 1800; }, function() { x = 2000; },
+  function() { x = 2200; }, function() { x = 2400; }, function() { x = 2600; }, function() { x = 2800; }, function() { x = 3000; }])
+%>
+  
+<% repeat(x, function() { %>
+  <div style='width: <%= random(100,500) %>px'><%= randomText(500, 500) %></div>
+<% }) %>
