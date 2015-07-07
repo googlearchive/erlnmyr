@@ -1,5 +1,6 @@
 var gulp = require('gulp');
 var fs = require('fs');
+var istanbul = require('gulp-istanbul');
 var mocha = require('gulp-mocha');
 
 var stageLoader = require('./core/stage-loader');
@@ -12,19 +13,33 @@ var trace = require('./core/trace');
 
 var tasks = {};
 
-function buildTestTask(name, reporter) {
-  gulp.task(name, function() {
-    return gulp.src(['tests/*.js', 'tests/pipeline/*.js'], {read: false})
-        .pipe(mocha({
-          ui: 'bdd',
-          ignoreLeaks: true,
-          reporter: reporter
-      }));
+function buildTestTask(name, mochaReporter, istanbulReporters) {
+  gulp.task(name, function(cb) {
+    gulp.src(['core/*.js', 'lib/*.js'])
+    .pipe(istanbul())
+    .pipe(istanbul.hookRequire())
+    .on('finish', function() {
+      gulp.src(['tests/*.js', 'tests/pipeline/*.js'])
+      .pipe(mocha({
+        ui: 'bdd',
+        ignoreLeaks: true,
+        reporter: mochaReporter,
+      }))
+      .pipe(istanbul.writeReports({
+        reporters: istanbulReporters,
+      }))
+      .on('end', function() {
+        if (istanbulReporters.indexOf('html') !== -1) {
+          process.stdout.write('Detailed coverage report at file://' + fs.realpathSync('coverage/index.html') + '\n');
+        }
+        cb();
+      });
+    });
   });
 }
 
-buildTestTask('test', 'nyan');
-buildTestTask('travis-test', 'spec');
+buildTestTask('test', 'nyan', ['html', 'text-summary']);
+buildTestTask('travis-test', 'spec', ['text-summary']);
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;
