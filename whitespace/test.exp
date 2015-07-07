@@ -1,0 +1,16 @@
+digraph experiment {
+  imports="['./lib/trace-phases.js']";
+
+  input_nw -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> simplePerfer;
+  simplePerfer -> traceFilter -> traceTree -> tracePrettyPrint -> log;
+  input_w -> fileToBuffer;
+  input_steps -> fileToBuffer;
+
+  input_w [label="input", data="whitespace/example.ejs"];
+  input_nw [label="input", data="whitespace/exampleNoText.ejs"];
+  input_steps [label="input", data="whitespace/steps.ejs"];
+  traceFilter [traceEvents="['Document::updateStyle']"];
+  tracePrettyPrint [showTrace="false"];
+  log [tags="['data','ejsFabricator']"];
+}
+
