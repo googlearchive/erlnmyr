@@ -136,6 +136,27 @@ PhaseBase.prototype.impl1ToN = function(stream) {
   return Promise.resolve(stream);
 }
 
+PhaseBase.prototype.impl1ToNAsync = function(stream) {
+  this.runtime.stream = stream;
+  var items = [];
+  stream.get(this.inputKey, this.inputValue, function(item) {
+    items.push(item);
+  });
+
+  var runtime = this.runtime;
+  function process() {
+    if (!items.length) {
+      return Promise.resolve(stream);
+    }
+    var item = items.pop();
+    runtime.setTags(item.tags);
+    runtime.impl(item.data, runtime.tags).then(function() {
+      return process();
+    });
+  }
+  return process();
+}
+
 Tags.prototype.clone = function() {
   var result = {};
   for (var key in this.tags)
