@@ -21,8 +21,8 @@ function getPhaseName(nodeName, options) {
 
 function mkPhase(nodeName, inGraph) {
   var options = inGraph.node(nodeName);
-  var phaseName = options ? getPhaseName(nodeName, options) : nodeName;
   options.id = nodeName;
+  var phaseName = options ? getPhaseName(nodeName, options) : nodeName;
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;
