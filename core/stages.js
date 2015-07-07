@@ -272,7 +272,7 @@ module.exports.filenames = function(options) {
 module.exports.versionSync = function(options) {
   return {
     impl: function(data, cb) {
-      new VersionSync(options, cb);
+      new VersionSync(options, data, cb);
     },
     name: 'versionSync',
     input: types.string,
