@@ -1,6 +1,8 @@
 digraph trace {
 
-  input [data="/usr/local/google/home/dstockwell/local/traces"]
+  imports="['./lib/trace-phases.js']"
+
+  input [data="traces"]
   input -> readDir -> fileToBuffer;
 
   subgraph cluster0 {
@@ -12,9 +14,7 @@ digraph trace {
     strategy=pipeline;
   }
 
-  log -> dummy;
-
-  log [tags="filename"]
+  log [tags="['filename']"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
   tracePrettyPrint [showTrace="false"];
 }

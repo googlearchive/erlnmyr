@@ -59,6 +59,8 @@ module.exports.map = function(stage) {
   };
 }
 
+// TODO: Remove me, this should be replaced with a suitably generic stream
+// routing component.
 module.exports.tee = function() {
   var typeVar = types.newTypeVar();
   return {

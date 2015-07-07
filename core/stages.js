@@ -2,11 +2,8 @@ var fs = require('fs');
 var zlib = require('zlib');
 var StringDecoder = require('string_decoder').StringDecoder;
 
-var TreeBuilder = require('../lib/tree-builder');
 var types = require('./types.js');
 
-var EjsFabricator = require('../lib/ejs-fabricator');
-var TraceFilter = require('../lib/trace-filter');
 var TraceTree = require('../lib/trace-tree');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
@@ -104,15 +101,6 @@ module.exports.fileToJSON = function() {
   };
 }
 
-module.exports.fileToBuffer = function() {
-  return {
-    impl: readFileRaw,
-    name: 'fileToBuffer',
-    input: types.string,
-    output: types.buffer
-  };
-}
-
 module.exports.gunzipAndDecode = function() {
   return {
     impl: function(data, cb) {
@@ -142,51 +130,6 @@ module.exports.fileToString = function() {
     input: types.string,
     output: types.string
   };
-}
-
-module.exports.filter = function(FilterType) {
-  return {
-    impl: treeBuilder(FilterType),
-    name: 'filter: ' + FilterType.name,
-    input: types.JSON,
-    output: types.JSON,
-  };
-}
-
-module.exports.fabricator = function(FabType, input) {
-  input = input || types.JSON;
-  return {
-    impl: function(data, cb) {
-      var fab = new FabType(data);
-      cb(fab.fabricate());
-    },
-    name: 'fabricator: ' + FabType,
-    input: input,
-    output: types.JSON
-  };
-}
-
-module.exports.ejsFabricator = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new EjsFabricator(data, '').fabricate());
-    },
-    name: 'ejsFabricator',
-    input: types.string,
-    output: types.Map(types.string)
-  }
-}
-
-module.exports.traceFilter = function(options) {
-  options = override(TraceFilter.defaults, options);
-  return {
-    impl: function(data, cb) {
-      cb(new TraceFilter(data, options).filter());
-    },
-    name: 'traceFilter',
-    input: types.JSON,
-    output: types.JSON
-  }
 }
 
 module.exports.traceTree = function() {
@@ -257,25 +200,6 @@ module.exports.traceTIDSplitter = function() {
   };
 }
 
-var treeBuilder = function(WriterType) {
-  return function(data, cb) {
-    var writer = new WriterType();
-    var builder = new TreeBuilder();
-    builder.build(data);
-    builder.write(writer);
-    cb(writer.getHTML());
-  };
-};
-
-module.exports.treeBuilderWriter = function(WriterType) {
-  return {
-    impl: treeBuilder(WriterType),
-    name: 'treeBuilderWriter: ' + WriterType.name,
-    input: types.JSON,
-    output: types.string
-  };
-}
-
 module.exports.fileOutput = function(filename) {
   var typeVar = types.newTypeVar();
   return {
@@ -343,16 +267,3 @@ module.exports.filenames = function(options) {
     output: types.List(types.string)
   }
 }
-
-module.exports.input = function(options) {
-  options = override({data: ''}, options);
-  return {
-    impl: function(unused, cb) {
-      cb(options.data);
-    },
-    name: 'input',
-    input: types.unit,
-    output: types.string
-  }
-}
-

@@ -1,25 +1,8 @@
 var assert = require('chai').assert;
 var stream = require('./stream');
+var trace = require('./trace');
 
-var writers = {
-  HTMLWriter: require('../lib/html-writer'),
-  JSWriter: require('../lib/js-writer'),
-  StatsWriter: require('../lib/stats-writer')
-};
-
-var filters = {
-  StyleFilter: require('../lib/style-filter'),
-  StyleMinimizationFilter: require('../lib/style-minimization-filter'),
-  StyleTokenizerFilter: require('../lib/style-tokenizer-filter'),
-  NukeIFrameFilter: require('../lib/nuke-iframe-filter'),
-  StyleDetokenizerFilter: require('../lib/style-detokenizer-filter')
-};
-
-var fabricators = {
-  SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
-};
-
-var phaseLib = require('./phase-lib');
+var register = require('./phase-register');
 var stages = require('./stages');
 var fancyStages = require('./fancy-stages');
 var types = require('./types');
@@ -34,23 +17,13 @@ var argInputs = {
   'immediate': fancyStages.immediate,
 }
 
-var byConstruction = [
-  {list: writers, constructor: stages.treeBuilderWriter},
-  {list: filters, constructor: stages.filter},
-  {list: fabricators, constructor: stages.fabricator}
-];
-var byName = [device, experiment, phaseLib, stages];
+var byName = [device, experiment, register.phases, stages];
 
 function _stageSpecificationToStage(stage, options) {
   options = options || {};
   var spec = stage.split(':');
   if (spec.length > 1 && spec[0] in argInputs)
     return argInputs[spec[0]](spec.slice(1, spec.length).join(':'));
-
-  for (var i = 0; i < byConstruction.length; i++) {
-    if (stage in byConstruction[i].list)
-      return byConstruction[i].constructor(byConstruction[i].list[stage]);
-  }
 
   for (var i = 0; i < byName.length; i++) {
     if (stage in byName[i])
@@ -63,8 +36,15 @@ function _stageSpecificationToStage(stage, options) {
 // TODO once everything is a phase, this can be removed.
 function stageSpecificationToStage(stage, options) {
   var stage = _stageSpecificationToStage(stage, options);
-  if (!stage.isStream)
+  if (!stage.isStream) {
     stage = stream.streamedStage(stage);
+    var impl = stage.impl;
+    stage.impl = function(data, cb) {
+      var t = trace.async({cat: 'core', name: stage.name});
+      cb = t.endWrap(cb);
+      return impl.call(this, data, cb);
+    };
+  }
   return stage;
 }
 
@@ -78,8 +58,8 @@ function typeCheck(stages) {
   var coersion = {};
   for (var i = 0; i < stages.length - 1; i++) {
     var inputCoersion = coersion;
-    // console.log('checking ' + JSON.stringify(stages[i].output) + ' : ' + JSON.stringify(stages[i + 1].input));
-    // console.log(' --> ' + JSON.stringify(coersion));
+    //console.log('checking ' + stages[i].name + ' ' + JSON.stringify(stages[i].output) + ' : ' + stages[i + 1].name + ' ' + JSON.stringify(stages[i + 1].input));
+    //console.log(' --> ' + JSON.stringify(coersion));
     coersion = types.coerce(stages[i].output, stages[i + 1].input, coersion);
     assert.isDefined(coersion, "Type checking failed for\n  " + stages[i].name + ': ' + JSON.stringify(stages[i].output) + 
       "\n  ->\n  " + stages[i + 1].name + ': ' + JSON.stringify(stages[i + 1].input) + "\n    " + JSON.stringify(inputCoersion));
@@ -92,17 +72,22 @@ function typeCheck(stages) {
  * Sorry for potato quality.
  */
 function processStagesWithInput(input, stages, cb, fail) {
+  var t = trace.async({cat: 'core', name: 'processStages'});
+  cb = t.endWrap(cb);
+  fail = t.endWrap(fail);
   typeCheck(stages);
-  for (var i = stages.length - 1; i >= 0; i--) {
-    cb = (function(i, cb) { return function(data) {
-      try {
-        stages[i].impl(data, cb);
-      } catch (e) {
-        fail(e);
-      }
-    } })(i, cb);
+  stages = stages.concat().reverse();
+  function process(data) {
+    if (!stages.length) {
+      cb(data);
+      return;
+    }
+    var stage = stages.pop();
+    var result = stage.impl(data, process);
+    // TODO: Cleanup and propagate promises once all phases return them.
+    result && result.then(process);
   }
-  cb(input);
+  process(input);
 };
 
 // TODO: This doesn't currently fail if the internal type is consistent and the external type is consistent

@@ -1,19 +1,14 @@
 var gulp = require('gulp');
-var parseArgs = require('minimist');
 var fs = require('fs');
 var mocha = require('gulp-mocha');
 
-// TODO: device and experiment are only loaded so that they can be initialized with options.
-// There must be a nicer way to set options across a project.
-var device = require('./core/device');
-var experiment = require('./core/experiment');
 var stageLoader = require('./core/stage-loader');
-
 var fancyStages = require('./core/fancy-stages');
+// TODO: Where is the correct place to trigger loading of core phases?
+var phaseLib = require('./core/phase-lib');
 var stream = require('./core/stream');
-
-var options = parseArgs(process.argv.slice(2));
-device.init(options);
+var options = require('./core/options');
+var trace = require('./core/trace');
 
 var tasks = {};
 
@@ -34,7 +29,10 @@ buildTestTask('travis-test', 'spec');
 function buildTask(name, stageList) {
   tasks[name] = stageList;
   gulp.task(name, function(incb) {
-    var cb = function(data) { incb(); };
+    var cb = function(data) {
+      trace.dump();
+      incb();
+    };
     stageList = stageList.map(stageLoader.stageSpecificationToStage);
     stageLoader.processStages(stageList, cb, function(e) { throw e; });
   });

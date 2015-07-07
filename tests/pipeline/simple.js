@@ -4,6 +4,7 @@ var stages = require('../../core/stages');
 var fancyStages = require('../../core/fancy-stages');
 var types = require('../../core/types');
 var experiment = require('../../core/experiment');
+var stream = require('../../core/stream');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
@@ -13,7 +14,7 @@ function testPipeline(stageList, incb) {
 function testOutput(expectedResult) {
   return {
     impl: function(data, cb) {
-      assert.deepEqual(expectedResult, data);
+      assert.deepEqual(expectedResult, data.data[0].data);
       cb();
     },
     name: 'testOutput',
@@ -22,37 +23,22 @@ function testOutput(expectedResult) {
   }
 }
 
-function testMatch() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) {
-      assert.deepEqual(data.right, data.left);
-      cb();
-    },
-    name: 'testMatch',
-    input: types.Tuple(typeVar, typeVar),
-    output: types.unit
-  }
-}
-
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
-    fancyStages.immediate(undefined, types.unit),
-    fancyStages.tee(),
-    fancyStages.left(stageLoader.stageSpecificationToStage("JSON:" + jsonFile)),
-    fancyStages.right(stageLoader.stageSpecificationToStage("file:" + htmlFile)),
-    fancyStages.left(stageLoader.stageSpecificationToStage("HTMLWriter")),
-    testMatch(),
+    stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
+    stageLoader.stageSpecificationToStage("HTMLWriter"),
+    stream.tag(function(data, tags) { return {key: 'data', value: htmlFile}; }),
+    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
   ];
 }
 
 function tokenizeDetokenizePipeline(jsonFile) {
   return [
     stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
-    fancyStages.tee(),
-    fancyStages.left(stageLoader.stageSpecificationToStage("StyleTokenizerFilter")),
-    fancyStages.left(stageLoader.stageSpecificationToStage("StyleDetokenizerFilter")),
-    testMatch()
+    stageLoader.stageSpecificationToStage("StyleTokenizerFilter"),
+    stageLoader.stageSpecificationToStage("StyleDetokenizerFilter"),
+    stream.tag(function(data, tags) { return {key: 'data', value: jsonFile}; }),
+    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
   ]
 }
 
@@ -99,15 +85,10 @@ function compare(name) {
     output: types.string
   };
 }
- 
 
 describe('experiment', function() {
   it('should be able to run', function(done) {
-    experiment.outputFor = function(unused, name) {
-      return [fancyStages.valueMap(compare(name))];
-    }
-
-    testPipeline(['file:tests/pipeline/simple.exp', 'parseExperiment', 'experimentPhase'].map(stageLoader.stageSpecificationToStage), done);
+    testPipeline(['file:tests/pipeline/simple.exp', 'doExperiment'].map(stageLoader.stageSpecificationToStage), done);
   });
 });
-    
+

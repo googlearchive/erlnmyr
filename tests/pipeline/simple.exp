@@ -1,13 +1,12 @@
-trace -traceFilter-> -traceTree-> -tracePrettyPrint-> output
-trace-nostyle -traceFilter-> -traceTree-> -tracePrettyPrint-> output-nostyle
-trace-reduced -traceFilter-> -traceTree-> -tracePrettyPrint-> output-reduced
-trace-minimized -traceFilter-> -traceTree-> -tracePrettyPrint-> output-minimized
+digraph experiment {
+  imports="['./lib/trace-phases.js']"
 
-trace: tests/pipeline/simple.trace
-trace-nostyle: tests/pipeline/simple-nostyle.trace
-trace-reduced: tests/pipeline/simple-reduced.trace
-trace-minimized: tests/pipeline/simple-minimized.trace
-output: tests/pipeline/simple.dump
-output-nostyle: tests/pipeline/simple-nostyle.dump
-output-reduced: tests/pipeline/simple-reduced.dump
-output-minimized: tests/pipeline/simple-minimized.dump
+  input_normal [label="input", data="tests/pipeline/simple.trace"];
+  input_nostyle [label="input", data="tests/pipeline/simple-nostyle.trace"];
+  input_reduced [label="input", data="tests/pipeline/simple-reduced.trace"];
+  input_minimized [label="input", data="tests/pipeline/simple-minimized.trace"];
+  compare [tag="data"];
+  retag [tag="data", in="(.*).trace", out="$1.dump"];
+
+  {input_normal; input_nostyle; input_reduced; input_minimized} -> fileToJSON -> traceFilter -> traceTree -> tracePrettyPrint -> retag -> compare;
+}
