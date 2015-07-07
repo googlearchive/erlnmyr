@@ -1,5 +1,6 @@
 var gulp = require('gulp');
 var fs = require('fs');
+var coveralls = require('gulp-coveralls');
 var istanbul = require('gulp-istanbul');
 var mocha = require('gulp-mocha');
 
@@ -32,6 +33,10 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
         if (istanbulReporters.indexOf('html') !== -1) {
           process.stdout.write('Detailed coverage report at file://' + fs.realpathSync('coverage/index.html') + '\n');
         }
+        if (istanbulReporters.indexOf('lcov') !== -1) {
+          gulp.src('coverage/lcov.info')
+          .pipe(coveralls());
+        }
         cb();
       });
     });
@@ -39,7 +44,7 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
 }
 
 buildTestTask('test', 'nyan', ['html', 'text-summary']);
-buildTestTask('travis-test', 'spec', ['text', 'text-summary']);
+buildTestTask('travis-test', 'spec', ['lcov', 'text', 'text-summary']);
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;
