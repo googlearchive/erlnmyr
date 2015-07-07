@@ -2,7 +2,7 @@
 Builder of Tree Builders
 
 [![Build Status](https://travis-ci.org/dglazkov/tree-builder-builder.svg?branch=master)](https://travis-ci.org/dglazkov/tree-builder-builder)
-[![Coverage Status](https://coveralls.io/repos/dglazkov/tree-builder-builder/badge.svg)](https://coveralls.io/r/dglazkov/tree-builder-builder)
+[![Coverage Status](https://coveralls.io/repos/github/dglazkov/tree-builder-builder/badge.svg?branch=master)](https://coveralls.io/github/dglazkov/tree-builder-builder?branch=master)
 
 ## Quick Start Guide
 
