@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<% permutation([ function() { style=function() { return 'width: ' + random(100, 500) + 'px;' }; }, 
+	         function() { style=function() { return "" }; }, 
+		 function() { style=function() { return 'background-color: rgb(' + random(0,255) + ',' + random(0,255) + ',' + random(0,255) + ');';} }])%>
+<% permutation([ function() { %>
+  <% repeat(1000, function() { %>
+    <div style='<%= style() %>'><%= randomText(500, 500) %></div>
+  <% }) %>
+<%}, function() { %>
+  <% repeat(10, function() { %>
+    <div>
+      <% repeat(100, function() { %>
+	<div style='<%= style() %>'><%= randomText(500, 500) %></div>
+      <% }) %>
+    </div>
+  <% }) %>
+<%}, function() {%>
+  <% repeat(10, function() { %>
+    <div>
+      <% repeat(10, function() { %>
+	<div>
+	  <% repeat(10, function() { %>
+	    <div style='<%= style() %>'><%= randomText(500, 500) %></div>
+	  <% }) %>
+	</div>
+    <% }) %>
+    </div>
+  <% }) %>
+<%}]) %>

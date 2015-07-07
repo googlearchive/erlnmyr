@@ -79,7 +79,13 @@ for (FabType in fabricators) {
 }
 
 register({name: 'ejsFabricator', input: types.string, output: types.string, arity: '1:N'},
-    function(data) { return new EjsFabricator(data, '').fabricate(); });
+    function(data) {
+      var result = new EjsFabricator(data, '').fabricate();
+      for (key in result) {
+        this.put(result[key]);
+        this.tags.tag('ejsFabricator', key);
+      }
+    });
 
 register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {
