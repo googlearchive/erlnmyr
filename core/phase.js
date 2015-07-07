@@ -1,6 +1,7 @@
 var types = require('./types');
 var streamLib = require('./stream');
 var trace = require('./trace');
+var stageLoader = require('./stage-loader');
 var Promise = require('bluebird');
 
 var _instanceID = 0;
@@ -112,19 +113,24 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
     items.push(item);
   });
 
-  var runtime = this.runtime;
-  function process() {
-    if (!items.length) {
-      return Promise.resolve(stream);
-    }
-    var item = items.pop();
+  // TODO: Consider a way to specify batching to avoid starting all tasks
+  //       at the same time.
+  var phase = this;
+  return Promise.all(items.map(function(item) {
+    // TODO: Simplify runtime so that we can share it across invocations.
+    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl);
+    runtime.stream = stream;
     runtime.setTags(item.tags);
-    return runtime.impl(item.data, runtime.tags).then(function(result) {
+    // TODO: Trace impl here to nest flow.
+    var result = runtime.impl(item.data, runtime.tags);
+    var flow = trace.flow({cat: 'phase', name: phase.name}).start();
+    return result.then(function(result) {
+      flow.end();
       runtime.put(result);
-      return process();
     });
-  }
-  return process();
+  })).then(function() {
+    return stream;
+  });
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
@@ -134,6 +140,29 @@ PhaseBase.prototype.impl1ToN = function(stream) {
     this.runtime.impl(item.data, this.runtime.tags);
   }.bind(this));
   return Promise.resolve(stream);
+}
+
+PhaseBase.prototype.impl1ToNAsync = function(stream) {
+  this.runtime.stream = stream;
+  var items = [];
+  stream.get(this.inputKey, this.inputValue, function(item) {
+    items.push(item);
+  });
+
+  var phase = this;
+  return Promise.all(items.map(function(item) {
+    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl);
+    runtime.stream = stream;
+    runtime.setTags(item.tags);
+    // TODO: Trace impl here to nest flow.
+    var result = runtime.impl(item.data, runtime.tags);
+    var flow = trace.flow({cat: 'phase', name: phase.name}).start();
+    return result.then(function(result) {
+      flow.end();
+    });
+  })).then(function() {
+    return stream;
+  });
 }
 
 Tags.prototype.clone = function() {
@@ -162,7 +191,7 @@ function PhaseBaseRuntime(base, impl) {
         args.tags[k] = this.tags.tags[k];
       }
     }
-    return {cat: 'core', name: base.name, args: args};
+    return {cat: 'phase', name: base.name + '.impl', args: args};
   }, impl.bind(this));
 }
 
@@ -171,11 +200,40 @@ PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.tags = this.baseTags;
 }
 
-PhaseBaseRuntime.prototype.put = function(data) {
-  this.tags = this.baseTags.clone();
+PhaseBaseRuntime.prototype.put = function(data, tags) {
+  if (tags) {
+    this.tags = new Tags(tags);
+  } else {
+    this.tags = this.baseTags.clone();
+  }
   this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
   this.stream.put(data, this.tags.tags);
   return this.tags;
 }
 
+function pipeline(phases) {
+  return new PhaseBase({
+    name: 'pipeline',
+    // TODO: OMG FIX THIS
+    input: phases[0].inputType, //.tags[0].type,
+    output: phases[phases.length - 1].outputType, //.tags[0].type,
+    arity: '1:N',
+    async: true,
+  }, function(data, tags) {
+    var runtime = this;
+    return new Promise(function(resolve, reject) {
+      var stream = new streamLib.Stream();
+      stream.put(data, tags.tags);
+      stageLoader.processStagesWithInput(stream, phases, function(stream) {
+        for (var i = 0; i < stream.data.length; i++) {
+          runtime.put(stream.data[i].data, stream.data[i].tags);
+        }
+        resolve();
+      }, reject);
+    });
+  },
+  {});
+}
+
 module.exports.PhaseBase = PhaseBase;
+module.exports.pipeline = pipeline;

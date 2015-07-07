@@ -2,12 +2,6 @@ var fs = require('fs');
 
 var types = require('./types.js');
 
-var TracePrettyPrint = require('../lib/trace-pretty-print');
-var TracePIDSplitter = require('../lib/trace-pid-splitter');
-var TraceTIDSplitter = require('../lib/trace-tid-splitter');
-var TraceTreeSplitter = require('../lib/trace-tree-splitter');
-var ChromeBinary = require('../lib/chrome-binary');
-
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
     stringData = JSON.stringify(data);
@@ -116,40 +110,6 @@ function override(defaults, options) {
       result[key] = defaults[key];
   }
   return result;
-}
-
-module.exports.tracePrettyPrint = function(options) {
-  options = override(TracePrettyPrint.defaults, options);
-  return {
-    impl: function(data, cb) {
-      cb(new TracePrettyPrint(data, options).filter());
-    },
-    name: 'tracePrettyPrint',
-    input: types.JSON,
-    output: types.string
-  }
-}
-
-module.exports.tracePIDSplitter = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new TracePIDSplitter(data).split());
-    },
-    name: 'tracePIDSplitter',
-    input: types.JSON,
-    output: types.Map(types.JSON)
-  };
-}
-
-module.exports.traceTIDSplitter = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new TraceTIDSplitter(data).split());
-    },
-    name: 'traceTIDSplitter',
-    input: types.JSON,
-    output: types.Map(types.JSON)
-  };
 }
 
 module.exports.fileOutput = function(filename) {

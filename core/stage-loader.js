@@ -4,7 +4,6 @@ var trace = require('./trace');
 
 var register = require('./phase-register');
 var stages = require('./stages');
-var fancyStages = require('./fancy-stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
@@ -14,7 +13,6 @@ var argInputs = {
   'file': stages.fileReader,
   'output': stages.fileOutput,
   'ejs': stages.ejsFabricator,
-  'immediate': fancyStages.immediate,
 }
 
 var byName = [device, experiment, register.phases, stages];
@@ -72,21 +70,22 @@ function typeCheck(stages) {
  * Sorry for potato quality.
  */
 function processStagesWithInput(input, stages, cb, fail) {
-  var t = trace.async({cat: 'core', name: 'processStages'});
-  cb = t.endWrap(cb);
-  fail = t.endWrap(fail);
   typeCheck(stages);
   stages = stages.concat().reverse();
-  function process(data) {
+  var flow = trace.flow({cat: 'core', name: 'process'});
+  var process = trace.wrap({cat: 'core', name: 'process'}, function(data) {
     if (!stages.length) {
+      flow.end();
       cb(data);
       return;
     }
+    flow.step();
     var stage = stages.pop();
     var result = stage.impl(data, process);
     // TODO: Cleanup and propagate promises once all phases return them.
     result && result.then(process);
-  }
+    flow.start();
+  });
   process(input);
 };
 

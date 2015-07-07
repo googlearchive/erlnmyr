@@ -5,7 +5,6 @@ var istanbul = require('gulp-istanbul');
 var mocha = require('gulp-mocha');
 
 var stageLoader = require('./core/stage-loader');
-var fancyStages = require('./core/fancy-stages');
 // TODO: Where is the correct place to trigger loading of core phases?
 var phaseLib = require('./core/phase-lib');
 var stream = require('./core/stream');
@@ -58,7 +57,11 @@ function buildTask(name, stageList) {
       trace.dump();
       incb();
     };
-    stageList = stageList.map(stageLoader.stageSpecificationToStage);
+    stageList = stageList.map(function(stage) {
+      if (typeof stage == 'string')
+        return stageLoader.stageSpecificationToStage(stage);
+      return stageLoader.stageSpecificationToStage(stage.name, stage.options);
+    });
     stageLoader.processStages(stageList, cb, function(e) { throw e; });
   });
 };
@@ -86,9 +89,9 @@ buildTask('generate', ['JSON:' + options.file, 'SchemaBasedFabricator', 'output:
 /*
  * examples using device telemetry
  */
-buildTask('get', ['immediate:' + options.url, 'telemetrySave', 'output:result.json']);
-buildTask('perf', ['immediate:' + options.url, 'telemetryPerf', 'output:trace.json']);
-buildTask('endToEnd', ['immediate:' + options.url, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
+buildTask('get', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'output:result.json']);
+buildTask('perf', [{name: 'input', options: {data: options.url}}, 'telemetryPerf', 'output:trace.json']);
+buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
 
 /*
  * running an experiment
@@ -128,7 +131,9 @@ gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stream.streamedStage(fancyStages.fileInputs(options.inputSpec)),
+        stageLoader.stageSpecificationToStage('input', {data: '.'}),
+        stageLoader.stageSpecificationToStage('readDir'),
+        stageLoader.stageSpecificationToStage('filter', {regExp: new RegExp(options.inputSpec)}),
         tagFilename(),
         stageLoader.stageSpecificationToStage('fileToJSON'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
@@ -138,19 +143,22 @@ gulp.task('mhtml', function(incb) {
 });
 
 gulp.task('processLogs', function(incb) {
+  require('./lib/trace-phases');
+  var phase = require('./core/phase');
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stream.streamedStage(fancyStages.fileInputs(options.inputSpec)),
-        stream.streamedStage(stageLoader.stage(
+        stageLoader.stageSpecificationToStage('input', {data: options.dir}),
+        stageLoader.stageSpecificationToStage('readDir'),
+        phase.pipeline(
             [
               stageLoader.stageSpecificationToStage('fileToJSON'),
               stageLoader.stageSpecificationToStage('traceFilter'),
               stageLoader.stageSpecificationToStage('tracePIDSplitter'),
-              fancyStages.valueMap(stageLoader.stageSpecificationToStage('traceTree')),
-              fancyStages.valueMap(stageLoader.stageSpecificationToStage('tracePrettyPrint')),
-            ])),
-        stream.streamedStage(fancyStages.valueMap(stageLoader.stageSpecificationToStage('consoleOutput')))
+              stageLoader.stageSpecificationToStage('traceTree'),
+              stageLoader.stageSpecificationToStage('tracePrettyPrint', {showTrace: 'false'}),
+            ]),
+        stageLoader.stageSpecificationToStage('log', {tags: ['filename']})
       ], cb, function(e) { throw e; });
 });
 

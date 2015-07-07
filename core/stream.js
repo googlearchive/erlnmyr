@@ -38,17 +38,17 @@ function stageSpec(stage) {
   return {name: stage.name, id: stage.id};
 }
 
-function CoreStreamBase(name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
+function CoreStreamBase(name, id, inputType, outputType, fromKey, fromValue, inputList, outputList) {
   this.name = name;
   this.id = id || newInstanceID();
-  this.fromType = fromType;
-  this.toType = toType;
+  this.inputType = inputType;
+  this.outputType = outputType;
   this.fromKey = fromKey || 'from';
   this.fromValue = fromValue;
   this.inputList = inputList || [];
-  this.inputList.push({key: this.fromKey, value: this.fromValue, type: this.fromType});
+  this.inputList.push({key: this.fromKey, value: this.fromValue, type: this.inputType});
   this.outputList = outputList || [];
-  this.outputList.push({key: 'from', value: stageSpec(this), type: this.toType});
+  this.outputList.push({key: 'from', value: stageSpec(this), type: this.outputType});
   this.input = types.Stream(this.inputList);
   this.output = types.Stream(this.outputList);
 }
@@ -69,7 +69,7 @@ CoreStreamBase.prototype.setInput = function(name, value) {
   this.fromKey = name;
   this.fromValue = value;
   // TODO: this wont work for stages with multiple inputs
-  this.inputList = [{key: this.fromKey, value: this.fromValue, type: this.fromType}];
+  this.inputList = [{key: this.fromKey, value: this.fromValue, type: this.inputType}];
   this.input = types.Stream(this.inputList);
 }
 CoreStreamBase.prototype.setOutput = function(name, value) {
@@ -77,7 +77,7 @@ CoreStreamBase.prototype.setOutput = function(name, value) {
   assert(this.outputName == undefined);
   this.outputName = name;
   this.outputValue = value;
-  this.outputList.push({key: name, value: value, type: this.toType});
+  this.outputList.push({key: name, value: value, type: this.outputType});
   this.output = types.Stream(this.outputList);
 }
 
@@ -114,51 +114,13 @@ function RoutingStage(inRoutes, outRoutes) {
   this.output = types.Stream(outputs);
 }
 
-function stageWrapper(stageList, id) {
-  var first = stageList[0];
-  var last = stageList[stageList.length - 1];
-  var name = '<<[' + stageList.map(function(stage) { return stage.name; }).join() + ']>>';
-
-  var streamStage = new CoreStreamBase(name, id, first.fromType, last.toType, first.fromKey, first.fromValue);
-
-  streamStage.impl = function(stream, incb) {
-    var inputs = [];
-    stream.get(this.fromKey, this.fromValue, function(result) {
-      inputs.push(result);
-    });
-    var cb = function(outStream) { incb(outStream); };
-    if (inputs.length > 0)
-      stream.put(inputs[0].data, inputs[0].tags);
-    stageLoader.processStagesWithInput(stream, stageList, function(outStream) {
-      for (var i = inputs.length - 1; i >= 1; i--) {
-        cb = (function(cb, i) {
-          return function() {
-            var smallStream = new Stream();
-            smallStream.put(inputs[i].data, inputs[i].tags);
-            stageLoader.processStagesWithInput(smallStream, stageList, function(result) {
-              outStream.data = outStream.data.concat(result.data);
-              cb(outStream);
-            }, function(e) { throw e; });
-          }
-        })(cb, i);
-      }
-      cb();
-    }, function(e) { throw e; });
-  };
-  // TODO: inputList/outputList??
-  if (last.outputName !== undefined) {
-    streamStage.setOutput(last.outputName, last.outputValue);
-  }
-  return streamStage;
-}
-
 
 /**
  * CoreStream's implementation function takes lists of tagged data and returns
  * lists of tagged data.
  */
-function CoreStream(fn, name, id, fromType, toType, fromKey, fromValue, inputList, outputList) {
-  CoreStreamBase.call(this, name, id, fromType, toType, fromKey, fromValue, inputList, outputList);
+function CoreStream(fn, name, id, inputType, outputType, fromKey, fromValue, inputList, outputList) {
+  CoreStreamBase.call(this, name, id, inputType, outputType, fromKey, fromValue, inputList, outputList);
   this.fn = fn;
 };
 
@@ -306,6 +268,5 @@ module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
 module.exports.RoutingStage = RoutingStage;
-module.exports.stageWrapper = stageWrapper;
 module.exports.CoreStream = CoreStream;
 module.exports.Stream = Stream;
