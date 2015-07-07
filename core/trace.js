@@ -123,22 +123,6 @@ if (options.traceFile) {
           });
           return this;
         },
-        endWrap: function(fn) {
-          var self = this;
-          return function() {
-            self.end();
-            fn.apply(this, arguments);
-          }
-          return this;
-        },
-        stepWrap: function(fn) {
-          var self = this;
-          return function() {
-            self.step();
-            fn.apply(this, arguments);
-          }
-          return this;
-        }
       };
     },
     dump: function() {
@@ -179,16 +163,16 @@ if (options.traceFile) {
         },
       };
     },
-    step: function(info, fn) {
+    flow: function(info, fn) {
       return {
         start: function() {
+          return this;
         },
         end: function() {
+          return this;
         },
         step: function() {
-        },
-        stepWrap: function(fn) {
-          return fn;
+          return this;
         },
       };
     },

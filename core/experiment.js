@@ -3,6 +3,7 @@ var types = require('./types');
 var graph = require('./graph');
 var linearize = require('./linearize');
 var stream = require('./stream');
+var phase = require('./phase');
 var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 
@@ -100,7 +101,7 @@ function doExperiment() {
           // we've reached the end of this group stack
           groupStack.pop();
           var phases = phaseStack.pop(); // do wrapping here
-          var consolidated = stream.stageWrapper(phases);
+          var consolidated = phase.pipeline(phases);
           phaseStack[phaseStack.length - 1].push(consolidated);
         }
 
