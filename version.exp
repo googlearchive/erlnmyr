@@ -1,6 +1,0 @@
-input -versionSync-> case-1
-
-input: example.ejs
-saveBrowser: system
-perfBrowser: android-jb-system-chrome
-version: 45.0.2438.3
