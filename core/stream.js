@@ -114,44 +114,6 @@ function RoutingStage(inRoutes, outRoutes) {
   this.output = types.Stream(outputs);
 }
 
-function stageWrapper(stageList, id) {
-  var first = stageList[0];
-  var last = stageList[stageList.length - 1];
-  var name = '<<[' + stageList.map(function(stage) { return stage.name; }).join() + ']>>';
-
-  var streamStage = new CoreStreamBase(name, id, first.fromType, last.toType, first.fromKey, first.fromValue);
-
-  streamStage.impl = function(stream, incb) {
-    var inputs = [];
-    stream.get(this.fromKey, this.fromValue, function(result) {
-      inputs.push(result);
-    });
-    var cb = function(outStream) { incb(outStream); };
-    if (inputs.length > 0)
-      stream.put(inputs[0].data, inputs[0].tags);
-    stageLoader.processStagesWithInput(stream, stageList, function(outStream) {
-      for (var i = inputs.length - 1; i >= 1; i--) {
-        cb = (function(cb, i) {
-          return function() {
-            var smallStream = new Stream();
-            smallStream.put(inputs[i].data, inputs[i].tags);
-            stageLoader.processStagesWithInput(smallStream, stageList, function(result) {
-              outStream.data = outStream.data.concat(result.data);
-              cb(outStream);
-            }, function(e) { throw e; });
-          }
-        })(cb, i);
-      }
-      cb();
-    }, function(e) { throw e; });
-  };
-  // TODO: inputList/outputList??
-  if (last.outputName !== undefined) {
-    streamStage.setOutput(last.outputName, last.outputValue);
-  }
-  return streamStage;
-}
-
 
 /**
  * CoreStream's implementation function takes lists of tagged data and returns
@@ -306,6 +268,5 @@ module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
 module.exports.RoutingStage = RoutingStage;
-module.exports.stageWrapper = stageWrapper;
 module.exports.CoreStream = CoreStream;
 module.exports.Stream = Stream;
