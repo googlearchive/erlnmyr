@@ -35,7 +35,12 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
         }
         if (istanbulReporters.indexOf('lcov') !== -1) {
           gulp.src('coverage/lcov.info')
-          .pipe(coveralls());
+          .pipe(coveralls())
+          .on('error', function(err) {
+            console.warn(err);
+            console.warn('Failed to upload LCOV data to Coveralls.')
+            console.warn('Has this repository been enabled for Coveralls tracking? https://coveralls.io/repos/new');
+          });
         }
         cb();
       });
