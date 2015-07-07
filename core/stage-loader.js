@@ -4,7 +4,6 @@ var trace = require('./trace');
 
 var register = require('./phase-register');
 var stages = require('./stages');
-var fancyStages = require('./fancy-stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
@@ -14,7 +13,6 @@ var argInputs = {
   'file': stages.fileReader,
   'output': stages.fileOutput,
   'ejs': stages.ejsFabricator,
-  'immediate': fancyStages.immediate,
 }
 
 var byName = [device, experiment, register.phases, stages];

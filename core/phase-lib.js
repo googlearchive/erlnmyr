@@ -25,6 +25,14 @@ function typeVar(s) { return (function(v) {
   return v[s];
 }); }
 
+register({name: 'filter', input: types.string, output: types.string, arity: '1:N'},
+  function(value) {
+    if (this.options.regExp.test(value)) {
+      this.put(value);
+    }
+  },
+  { regExp: /.?/ });
+
 register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     this.options.tags.forEach(function(tag) {

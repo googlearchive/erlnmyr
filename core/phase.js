@@ -214,8 +214,9 @@ PhaseBaseRuntime.prototype.put = function(data, tags) {
 function pipeline(phases) {
   return new PhaseBase({
     name: 'pipeline',
-    input: phases[0].input,
-    output: phases[phases.length - 1].output,
+    // TODO: OMG FIX THIS
+    input: phases[0].inputType, //.tags[0].type,
+    output: phases[phases.length - 1].outputType, //.tags[0].type,
     arity: '1:N',
     async: true,
   }, function(data, tags) {
