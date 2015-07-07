@@ -27,7 +27,7 @@ function typeVar(s) { return (function(v) {
 
 register({name: 'filter', input: types.string, output: types.string, arity: '1:N'},
   function(value) {
-    if (options.regExp.test(value)) {
+    if (this.options.regExp.test(value)) {
       this.put(value);
     }
   },

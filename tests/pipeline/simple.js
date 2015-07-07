@@ -1,7 +1,6 @@
 var assert = require('chai').assert;
 var stageLoader = require('../../core/stage-loader');
 var stages = require('../../core/stages');
-var fancyStages = require('../../core/fancy-stages');
 var types = require('../../core/types');
 var experiment = require('../../core/experiment');
 var stream = require('../../core/stream');
