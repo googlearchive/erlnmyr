@@ -19,7 +19,7 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
     .pipe(istanbul())
     .pipe(istanbul.hookRequire())
     .on('finish', function() {
-      gulp.src(['tests/*.js', 'tests/pipeline/*.js'])
+      gulp.src(['tests/*.js', 'tests/pipeline/*.js', 'lib/*/tests/*.js'])
       .pipe(mocha({
         ui: 'bdd',
         ignoreLeaks: true,
