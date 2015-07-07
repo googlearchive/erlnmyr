@@ -9,9 +9,9 @@ var assert = require('chai').assert;
 function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
   var splits = phaseName.split('_');
-  if (options && options.stage) {
+  if (options.stage) {
       phaseName = options.stage;
-  } else if (options && options.label) {
+  } else if (options.label) {
       phaseName = options.label;
   } else if (splits.length > 1) {
       phaseName = splits[0];
@@ -20,7 +20,7 @@ function getPhaseName(nodeName, options) {
 }
 
 function mkPhase(nodeName, inGraph) {
-  var options = inGraph.node(nodeName);
+  var options = inGraph.node(nodeName) || {};
   options.id = nodeName;
   var phaseName = getPhaseName(nodeName, options);
   var result = new graph.Pipe(phaseName, options);
