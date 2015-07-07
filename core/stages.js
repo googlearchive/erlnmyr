@@ -2,11 +2,9 @@ var fs = require('fs');
 
 var types = require('./types.js');
 
-var TraceTree = require('../lib/trace-tree');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
-var TraceTreeSplitter = require('../lib/trace-tree-splitter');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -105,29 +103,6 @@ module.exports.fileToString = function() {
     input: types.string,
     output: types.string
   };
-}
-
-module.exports.traceTree = function() {
-  return {
-    impl: function(data, cb) {
-      cb(new TraceTree(data).filter());
-    },
-    name: 'traceTree',
-    input: types.JSON,
-    output: types.JSON
-  }
-}
-
-module.exports.traceTreeSplitter = function(options) {
-  options = override(TraceTreeSplitter.defaults, options);
-  return {
-    impl: function(data, cb) {
-      cb(new TraceTreeSplitter(data, options).filter());
-    },
-    name: 'traceTreeSplitter',
-    input: types.JSON,
-    output: types.Map(types.JSON)
-  }
 }
 
 function override(defaults, options) {
