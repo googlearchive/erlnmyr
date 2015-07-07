@@ -1,9 +1,9 @@
 digraph versiontest {
 
   input [data="/usr/local/google/home/soonm/tree-builder-builder/example.ejs"]
-  versionSync [version="323860", chromium="/usr/local/google/home/soonm/chromium/src", platform="linux"]
+  chromeBinary [version="323860", chromium="/usr/local/google/home/soonm/chromium/src", platform="linux"]
   telemetryPerf [chromium="/usr/local/google/home/soonm/chromium/src", browser="system", perfBrowser="system"]
 
-  input -> ejsFabricator -> telemetryPerf -> traceTree -> tracePrettyPrint -> consoleOutput;
+  input -> ejsFabricator -> chromeBinary -> telemetryPerf -> traceTree -> tracePrettyPrint -> consoleOutput;
 
 }

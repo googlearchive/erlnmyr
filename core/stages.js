@@ -9,7 +9,7 @@ var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
 var TraceTreeSplitter = require('../lib/trace-tree-splitter');
-var VersionSync = require('../lib/version-sync');
+var ChromeBinary = require('../lib/chrome-binary');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -269,12 +269,12 @@ module.exports.filenames = function(options) {
   }
 }
 
-module.exports.versionSync = function(options) {
+module.exports.chromeBinary = function(options) {
   return {
     impl: function(data, cb) {
-      new VersionSync(options, data, cb);
+      new ChromeBinary(options, data, cb);
     },
-    name: 'versionSync',
+    name: 'chromeBinary',
     input: types.string,
     output: types.string
   }
