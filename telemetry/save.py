@@ -17,10 +17,6 @@ with browserFactory.Create(options) as browser:
     if i == tab:
       continue
     i.Close()
-    try:
-      browser.tabs.GetTabById(i).Close()
-    except:
-      pass
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
   json = tab.EvaluateJavaScript(
