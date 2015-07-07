@@ -1,6 +1,4 @@
 var fs = require('fs');
-var zlib = require('zlib');
-var StringDecoder = require('string_decoder').StringDecoder;
 
 var types = require('./types.js');
 
@@ -25,16 +23,6 @@ function writeFile(output, data, cb) {
 }
 
 module.exports.writeFile = writeFile;
-
-function gunzip(buffer, cb) {
-  zlib.gunzip(buffer, function(err, data) {
-    if (err) {
-      cb(buffer);
-      return;
-    }
-    gunzip(data, cb);
-  });
-}
 
 function readJSONFile(filename, cb) {
   console.log('reading', filename, 'as JSON');
@@ -98,19 +86,6 @@ module.exports.fileToJSON = function() {
     name: 'fileToJSON',
     input: types.string,
     output: types.JSON
-  };
-}
-
-module.exports.gunzipAndDecode = function() {
-  return {
-    impl: function(data, cb) {
-      gunzip(data, function(data) {
-        cb(new StringDecoder('utf8').write(data));
-      });
-    },
-    name: 'gunzipAndDecode',
-    input: types.buffer,
-    output: types.string
   };
 }
 
