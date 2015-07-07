@@ -9,7 +9,11 @@ var stream = require('../core/stream');
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
     for (name in tasks) {
-      stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
+      stageList = tasks[name].map(function(stage) {
+        if (typeof stage == 'string')
+          return stageLoader.stageSpecificationToStage(stage);
+        return stageLoader.stageSpecificationToStage(stage.name, stage.options);
+      });
       stageLoader.typeCheck(stageList);
     }
   });

@@ -58,7 +58,11 @@ function buildTask(name, stageList) {
       trace.dump();
       incb();
     };
-    stageList = stageList.map(stageLoader.stageSpecificationToStage);
+    stageList = stageList.map(function(stage) {
+      if (typeof stage == 'string')
+        return stageLoader.stageSpecificationToStage(stage);
+      return stageLoader.stageSpecificationToStage(stage.name, stage.options);
+    });
     stageLoader.processStages(stageList, cb, function(e) { throw e; });
   });
 };
@@ -86,9 +90,9 @@ buildTask('generate', ['JSON:' + options.file, 'SchemaBasedFabricator', 'output:
 /*
  * examples using device telemetry
  */
-buildTask('get', ['immediate:' + options.url, 'telemetrySave', 'output:result.json']);
-buildTask('perf', ['immediate:' + options.url, 'telemetryPerf', 'output:trace.json']);
-buildTask('endToEnd', ['immediate:' + options.url, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
+buildTask('get', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'output:result.json']);
+buildTask('perf', [{name: 'input', options: {data: options.url}}, 'telemetryPerf', 'output:trace.json']);
+buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
 
 /*
  * running an experiment
@@ -138,6 +142,7 @@ gulp.task('mhtml', function(incb) {
 });
 
 gulp.task('processLogs', function(incb) {
+  require('./lib/trace-phases');
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
@@ -147,8 +152,8 @@ gulp.task('processLogs', function(incb) {
               stageLoader.stageSpecificationToStage('fileToJSON'),
               stageLoader.stageSpecificationToStage('traceFilter'),
               stageLoader.stageSpecificationToStage('tracePIDSplitter'),
-              fancyStages.valueMap(stageLoader.stageSpecificationToStage('traceTree')),
-              fancyStages.valueMap(stageLoader.stageSpecificationToStage('tracePrettyPrint')),
+              stageLoader.stageSpecificationToStage('traceTree'),
+              stageLoader.stageSpecificationToStage('tracePrettyPrint'),
             ])),
         stream.streamedStage(fancyStages.valueMap(stageLoader.stageSpecificationToStage('consoleOutput')))
       ], cb, function(e) { throw e; });

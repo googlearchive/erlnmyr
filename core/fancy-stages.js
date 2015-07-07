@@ -23,16 +23,6 @@ module.exports.fileInputs = function(inputSpec) {
   }
 }
 
-module.exports.immediate = function(x, type) {
-  type = type || types.string;
-  return {
-    impl: function(unused, cb) { cb(x); },
-    name: 'immediate',
-    input: types.unit,
-    output: type
-  };
-}
-
 module.exports.valueMap = function(stage) {
   return {
     impl: function(input, incb) {
