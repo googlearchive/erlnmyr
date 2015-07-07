@@ -5,6 +5,8 @@ var types = require('./types.js');
 var TracePrettyPrint = require('../lib/trace-pretty-print');
 var TracePIDSplitter = require('../lib/trace-pid-splitter');
 var TraceTIDSplitter = require('../lib/trace-tid-splitter');
+var TraceTreeSplitter = require('../lib/trace-tree-splitter');
+var ChromeBinary = require('../lib/chrome-binary');
 
 function writeFile(output, data, cb) {
   if (typeof data !== types.string)
@@ -215,5 +217,16 @@ module.exports.filenames = function(options) {
     name: 'filenames',
     input: types.unit,
     output: types.List(types.string)
+  }
+}
+
+module.exports.chromeBinary = function(options) {
+  return {
+    impl: function(data, cb) {
+      new ChromeBinary(options, data, cb);
+    },
+    name: 'chromeBinary',
+    input: types.string,
+    output: types.string
   }
 }
