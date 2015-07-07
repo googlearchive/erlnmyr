@@ -72,19 +72,15 @@ function typeCheck(stages) {
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
   stages = stages.concat().reverse();
-  var flow = trace.flow({cat: 'core', name: 'process'});
   var process = trace.wrap({cat: 'core', name: 'process'}, function(data) {
     if (!stages.length) {
-      flow.end();
       cb(data);
       return;
     }
-    flow.step();
     var stage = stages.pop();
     var result = stage.impl(data, process);
     // TODO: Cleanup and propagate promises once all phases return them.
     result && result.then(process);
-    flow.start();
   });
   process(input);
 };
