@@ -11,15 +11,22 @@ var now = function() {
 var asyncId = 0;
 var flowId = 0;
 
+function parseInfo(info) {
+  if (!info)
+    return info;
+  if (typeof info == 'function')
+    return info();
+  if (info.toTraceInfo)
+    return info.toTraceInfo();
+  return info;
+}
+
 if (options.traceFile) {
   module.exports = {
+    enabled: true,
     wrap: function(info, fn) {
       return function() {
-        var localInfo = info;
-        if (typeof info == 'function') {
-          localInfo = info.call(this);
-        }
-        var t = module.exports.start(localInfo);
+        var t = module.exports.start(info);
         try {
           return fn.apply(this, arguments);
         } finally {
@@ -28,6 +35,7 @@ if (options.traceFile) {
       };
     },
     start: function(info) {
+      info = parseInfo(info);
       var begin = now();
       return {
         end: function(endInfo) {
@@ -49,6 +57,7 @@ if (options.traceFile) {
       };
     },
     async: function(info) {
+      info = parseInfo(info);
       var id = asyncId++;
       var begin = now();
       events.push({
@@ -62,6 +71,7 @@ if (options.traceFile) {
       return {
         end: function(endInfo) {
           var end = now();
+          endInfo = parseInfo(endInfo);
           events.push({
             ph: 'e',
             ts: end,
@@ -81,6 +91,7 @@ if (options.traceFile) {
       };
     },
     flow: function(info) {
+      info = parseInfo(info);
       var id = flowId++;
       var started = false;
       return {
@@ -100,6 +111,7 @@ if (options.traceFile) {
         end: function(endInfo) {
           if (!started) return;
           var end = now();
+          endInfo = parseInfo(endInfo);
           events.push({
             ph: 'f',
             ts: end,
@@ -113,6 +125,7 @@ if (options.traceFile) {
         step: function(stepInfo) {
           if (!started) return;
           var step = now();
+          stepInfo = parseInfo(stepInfo);
           events.push({
             ph: 't',
             ts: step,
@@ -144,37 +157,33 @@ if (options.traceFile) {
     },
   };
 } else {
+  var result = {
+    start: function() {
+      return this;
+    },
+    end: function() {
+      return this;
+    },
+    step: function() {
+      return this;
+    },
+    endWrap: function(fn) {
+      return fn;
+    },
+  };
   module.exports = {
+    enabled: false,
     wrap: function(info, fn) {
       return fn;
     },
     start: function(info, fn) {
-      return {
-        end: function() {
-        },
-      };
+      return result;
     },
     async: function(info, fn) {
-      return {
-        end: function() {
-        },
-        endWrap: function(fn) {
-          return fn;
-        },
-      };
+      return result;
     },
     flow: function(info, fn) {
-      return {
-        start: function() {
-          return this;
-        },
-        end: function() {
-          return this;
-        },
-        step: function() {
-          return this;
-        },
-      };
+      return result;
     },
     dump: function() {
     },

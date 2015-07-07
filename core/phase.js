@@ -90,18 +90,51 @@ function Tags(tags) {
 PhaseBase.prototype.impl0To1 = function(stream) {
   this.runtime.stream = stream || new streamLib.Stream();
   this.runtime.setTags({});
+  var t = trace.start(this.runtime);
   var result = this.runtime.impl(this.runtime.tags);
   this.runtime.put(result);
+  t.end();
   return Promise.resolve(this.runtime.stream);
 };
+
+function flowItemGet(runtime, tags) {
+  if (!trace.enabled) return;
+  var args = {tags: {}};
+  for (var k in tags) {
+    if (k != 'flow')
+      args.tags[k] = tags[k];
+  }
+  var t = trace.start({cat: 'phase', name: 'get:' + runtime.phaseBase.name, args: args});
+  if (tags.flow) {
+    tags.flow.step();
+  }
+  t.end();
+}
+
+function flowItemPut(runtime, tags) {
+  if (!trace.enabled) return;
+  var args = {tags: {}};
+  for (var k in tags) {
+    if (k != 'flow')
+      args.tags[k] = tags[k];
+  }
+  var t = trace.start({cat: 'phase', name: 'put:' + runtime.phaseBase.name, args: args});
+  if (tags.flow) {
+    tags.flow.step();
+  }
+  tags.flow = trace.flow(runtime).start();
+  t.end();
+}
 
 PhaseBase.prototype.impl1To1 = function(stream) {
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue, function(item) {
+    var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     var result = this.runtime.impl(item.data, this.runtime.tags);
     this.runtime.tags.tag(this.outputKey, this.outputValue);
-    return {data: result, tags: this.runtime.tags.tags};
+    this.runtime.put(result);
+    t.end();
   }.bind(this));
   return Promise.resolve(stream);
 }
@@ -121,13 +154,12 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
     var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl);
     runtime.stream = stream;
     runtime.setTags(item.tags);
-    // TODO: Trace impl here to nest flow.
+    var t = trace.start(runtime); flowItemGet(runtime, item.tags);
     var result = runtime.impl(item.data, runtime.tags);
-    var flow = trace.flow({cat: 'phase', name: phase.name}).start();
-    return result.then(function(result) {
-      flow.end();
+    t.end();
+    return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
       runtime.put(result);
-    });
+    }));
   })).then(function() {
     return stream;
   });
@@ -136,8 +168,10 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
 PhaseBase.prototype.impl1ToN = function(stream) {
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue, function(item) {
+    var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     this.runtime.impl(item.data, this.runtime.tags);
+    t.end();
   }.bind(this));
   return Promise.resolve(stream);
 }
@@ -154,9 +188,10 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
     var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl);
     runtime.stream = stream;
     runtime.setTags(item.tags);
-    // TODO: Trace impl here to nest flow.
+    var t = trace.start(runtime); flowItemGet(runtime, item.tags);
     var result = runtime.impl(item.data, runtime.tags);
     var flow = trace.flow({cat: 'phase', name: phase.name}).start();
+    t.end();
     return result.then(function(result) {
       flow.end();
     });
@@ -183,17 +218,12 @@ Tags.prototype.read = function(key) {
 
 function PhaseBaseRuntime(base, impl) {
   this.phaseBase = base;
-  this.impl = trace.wrap(function() {
-    var args = base.inputArity >= 1 ? {tags: {}} : null;
-    if (args) {
-      // Clone to exclude updates.
-      for (var k in this.tags.tags) {
-        args.tags[k] = this.tags.tags[k];
-      }
-    }
-    return {cat: 'phase', name: base.name + '.impl', args: args};
-  }, impl.bind(this));
+  this.impl = impl;
 }
+
+PhaseBaseRuntime.prototype.toTraceInfo = function() {
+  return {cat: 'phase', name: this.phaseBase.name};
+};
 
 PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.baseTags = new Tags(tags);
@@ -206,6 +236,8 @@ PhaseBaseRuntime.prototype.put = function(data, tags) {
   } else {
     this.tags = this.baseTags.clone();
   }
+  // TODO: This misses tags when they are set after calling put().
+  flowItemPut(this, this.tags.tags);
   this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
   this.stream.put(data, this.tags.tags);
   return this.tags;

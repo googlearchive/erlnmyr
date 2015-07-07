@@ -2,6 +2,7 @@ var types = require('./types');
 var assert = require('chai').assert;
 var stages = require('./stages');
 var stageLoader = require('./stage-loader');
+var Promise = require('bluebird');
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -99,7 +100,7 @@ function RoutingStage(inRoutes, outRoutes) {
         }.bind(this));
       }
     }
-    cb(stream);
+    return Promise.resolve(stream);
   }
   var inputs = [];
   var outputs = [];
