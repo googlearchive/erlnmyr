@@ -29,7 +29,9 @@ describe('basicTargetCoverage', function() {
       stageLoader.stageSpecificationToStage('readDir'),
       stageLoader.stageSpecificationToStage('filter'),
       stream.tag(function() {}),
-      stageLoader.stageSpecificationToStage('fileToJSON'),
+      stageLoader.stageSpecificationToStage('fileToBuffer'),
+      stageLoader.stageSpecificationToStage('bufferToString'),
+      stageLoader.stageSpecificationToStage('jsonParse'),
       stageLoader.stageSpecificationToStage('HTMLWriter'),
       stream.tag(function() {}),
       stream.write()
