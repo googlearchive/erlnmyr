@@ -17,21 +17,19 @@ Stream.prototype = {
   put: function(data, tags) {
     this.data.push({tags: tags, data: data});
   },
-  get: function(key, match, fn) {
+  get: function(key, match) {
+    var result = [];
     var newData = [];
-    var oldData = this.data;
-    this.data = [];
-    for (var i = 0; i < oldData.length; i++) {
-      var item = oldData[i];
+    for (var i = 0; i < this.data.length; i++) {
+      var item = this.data[i];
       if (item.tags[key] == match || (item.tags[key] !== undefined && match == undefined)) {
-        var result = fn(item);
-        if (result !== undefined)
-          newData.push(result);
+        result.push(item);
       } else {
         newData.push(item);
       }
     }
-    this.data = this.data.concat(newData);
+    this.data = newData;
+    return result;
   }
 }
 
@@ -91,7 +89,7 @@ function RoutingStage(inRoutes, outRoutes) {
       var ins = inRoutes[i];
       var outs = outRoutes[i];
       for (var j = 0; j < ins.length; j++) {
-        stream.get('eto', ins[j] + '', function(result) {
+        stream.get('eto', ins[j] + '').forEach(function(result) {
           for (var k = 0; k < outs.length; k++) {
             var tags = cloneTags(result.tags);
             tags.efrom = outs[k] + '';
@@ -131,10 +129,7 @@ CoreStream.prototype.impl = function(stream, incb) {
   if (stream == null) {
     stream = new Stream();
   }
-  var inputs = [];
-  stream.get(this.fromKey, this.fromValue, function(result) {
-    inputs.push(result);
-  });
+  var inputs = stream.get(this.fromKey, this.fromValue);
   this.fn(inputs, function(results) {
     for (var i = 0; i < results.length; i++) {
       this.tag(results[i]);

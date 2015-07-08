@@ -128,7 +128,7 @@ function flowItemPut(runtime, tags) {
 
 PhaseBase.prototype.impl1To1 = function(stream) {
   this.runtime.stream = stream;
-  stream.get(this.inputKey, this.inputValue, function(item) {
+  stream.get(this.inputKey, this.inputValue).forEach(function(item) {
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     var result = this.runtime.impl(item.data, this.runtime.tags);
@@ -141,11 +141,7 @@ PhaseBase.prototype.impl1To1 = function(stream) {
 
 PhaseBase.prototype.impl1To1Async = function(stream) {
   this.runtime.stream = stream;
-  var items = [];
-  stream.get(this.inputKey, this.inputValue, function(item) {
-    items.push(item);
-  });
-
+  var items = stream.get(this.inputKey, this.inputValue);
   // TODO: Consider a way to specify batching to avoid starting all tasks
   //       at the same time.
   var phase = this;
@@ -167,7 +163,7 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
 
 PhaseBase.prototype.impl1ToN = function(stream) {
   this.runtime.stream = stream;
-  stream.get(this.inputKey, this.inputValue, function(item) {
+  stream.get(this.inputKey, this.inputValue).forEach(function(item) {
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     this.runtime.impl(item.data, this.runtime.tags);
@@ -178,10 +174,7 @@ PhaseBase.prototype.impl1ToN = function(stream) {
 
 PhaseBase.prototype.impl1ToNAsync = function(stream) {
   this.runtime.stream = stream;
-  var items = [];
-  stream.get(this.inputKey, this.inputValue, function(item) {
-    items.push(item);
-  });
+  var items = stream.get(this.inputKey, this.inputValue);
 
   var phase = this;
   return Promise.all(items.map(function(item) {
