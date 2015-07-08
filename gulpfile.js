@@ -92,7 +92,7 @@ buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetry
 /*
  * running an experiment
  */
-buildTask('runExperiment', ['file:' + options.file, 'doExperiment']);
+buildTask('runExperiment', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'doExperiment']);
 
 /*
  * ejs fabrication
@@ -101,7 +101,9 @@ gulp.task('ejs', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
     [
-      stageLoader.stageSpecificationToStage('file:' + options.file),
+      stageLoader.stageSpecificationToStage({name: 'input', options: {data: options.file}}),
+      stageLoader.stageSpecificationToStage('fileToBuffer'),
+      stageLoader.stageSpecificationToStage('bufferToString'),
       stageLoader.stageSpecificationToStage('ejsFabricator'),
       stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'ejsFabricator'}})
     ], cb, function(e) { throw e; });

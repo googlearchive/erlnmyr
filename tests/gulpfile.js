@@ -21,7 +21,9 @@ describe('basicTargetCoverage', function() {
   // into the standard ones and remove these two tests.
   it('should be possible to type check the ejs stage list', function() {
     stageLoader.typeCheck([
-      stageLoader.stageSpecificationToStage('file:dummy'),
+      stageLoader.stageSpecificationToStage({name: 'input', options: {data: 'dummy'}}),
+      stageLoader.stageSpecificationToStage('fileToBuffer'),
+      stageLoader.stageSpecificationToStage('bufferToString'),
       stageLoader.stageSpecificationToStage('ejsFabricator'),
       stageLoader.stageSpecificationToStage('writeStringFile')
     ]);

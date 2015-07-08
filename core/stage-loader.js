@@ -9,7 +9,6 @@ var device = require('./device');
 var experiment = require('./experiment');
 
 var argInputs = {
-  'file': stages.fileReader,
   'output': stages.fileOutput,
   'ejs': stages.ejsFabricator,
 }
