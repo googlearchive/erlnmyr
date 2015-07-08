@@ -29,9 +29,7 @@ def main():
 
     (opts, args) = parser.parse_args()
 
-    sys.path.insert(0, opts.directory + '/tools')
-    # TODO: Find a good place to put the binary zip files
-    os.chdir(opts.directory + '/tools')
+    sys.path.insert(0, os.path.join(opts.directory, 'tools'));
 
     # Python does not like filenames with hyphens
     build = __import__('bisect-builds')
