@@ -83,27 +83,6 @@ module.exports.fileToString = function() {
   };
 }
 
-function override(defaults, options) {
-  var result = {};
-  for (key in defaults) {
-    if (key in options)
-      result[key] = options[key];
-    else
-      result[key] = defaults[key];
-  }
-  return result;
-}
-
-module.exports.toFile = function() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) { writeFile(data.left, data.right, cb); },
-    name: 'toFile',
-    input: types.Tuple(types.string, typeVar),
-    output: typeVar
-  };
-}
-
 module.exports.consoleOutput = function() {
   var typeVar = types.newTypeVar();
   return {
