@@ -77,20 +77,6 @@ describe('Style Tokenizer / Detokenizer', function() {
   });
 });
 
-function compare(name) {
-  return {
-    impl: function(input, cb) {
-      stages.fileToString().impl(name, function(data) {
-        assert.equal(data, input, "for file " + name);
-        cb(input);
-      });
-    },
-    name: 'compare',
-    input: types.string,
-    output: types.string
-  };
-}
-
 describe('experiment', function() {
   it('should be able to run', function(done) {
     testPipeline([{name: 'input', options: {data: 'tests/pipeline/simple.exp'}}, 'fileToBuffer', 'bufferToString', 'doExperiment'].map(stageLoader.stageSpecificationToStage), done);

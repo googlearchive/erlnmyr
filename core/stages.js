@@ -27,24 +27,6 @@ function readJSONFile(filename, cb) {
   });
 }
 
-function readFile(filename, cb) {
-  console.log('reading', filename, 'as string');
-  fs.readFile(filename, 'utf8', function(err, data) {
-    if (err)
-      throw err;
-    cb(data);
-  });
-}
-
-function readFileRaw(filename, cb) {
-  console.log('reading', filename, 'raw');
-  fs.readFile(filename, function(err, data) {
-    if (err)
-      throw err;
-    cb(data);
-  });
-}
-
 /*
  * Pipeline Stages
  *
@@ -56,30 +38,12 @@ function readFileRaw(filename, cb) {
  * an 'input' type, and an 'output' type.
  */
 
-module.exports.reader = function(filename) {
-  return {
-    impl: function(_, cb) { readFileRaw(filename, cb); },
-    name: 'reader: ' + filename,
-    input: types.unit,
-    output: types.buffer
-  };
-}
-
 module.exports.fileToJSON = function() {
   return {
     impl: readJSONFile,
     name: 'fileToJSON',
     input: types.string,
     output: types.JSON
-  };
-}
-
-module.exports.fileToString = function() {
-  return {
-    impl: readFile,
-    name: 'fileToString',
-    input: types.string,
-    output: types.string
   };
 }
 
