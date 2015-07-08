@@ -164,3 +164,17 @@ module.exports.gunzipAndDecode = phase({
 });
 
 module.exports.bufferToString = phase({input: types.buffer, output: types.string, arity: '1:1'}, String);
+
+module.exports.regexReplace = phase({
+  name: 'regexReplace',
+  input: types.string,
+  output: types.string,
+  arity: '1:1'
+}, function(data) {
+  if (this.options.pattern && this.options.pattern !== '') {
+    this.tags.tag('regexReplace', this.options.pattern + ' -> ' + this.options.replace);
+    return data.replace(new RegExp(this.options.pattern, this.options.flags), this.options.replace);
+  }
+  this.tags.tag('regexReplace', this.options.match + ' -> ' + this.options.replace);
+  return data.replace(this.options.match, this.options.replace);
+}, { match: '', replace: '', pattern: '', flags: '' });
