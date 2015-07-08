@@ -163,3 +163,10 @@ register({
     return new StringDecoder('utf8').write(data);
   });
 });
+
+register({name: 'bufferToString', input: types.buffer, output: types.string, arity: '1:1', async: false},
+  function(buffer) {
+    return buffer.toString();
+  });
+
+register({name: 'parseJSON', input: types.string, output: types.JSON, arity: '1:1', async: false}, JSON.parse);

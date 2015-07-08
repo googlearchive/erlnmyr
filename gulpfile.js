@@ -58,34 +58,29 @@ function buildTask(name, stageList) {
       trace.dump();
       incb();
     };
-    stageList = stageList.map(function(stage) {
-      if (typeof stage == 'string')
-        return stageLoader.stageSpecificationToStage(stage);
-      return stageLoader.stageSpecificationToStage(stage.name, stage.options);
-    });
-    stageLoader.processStages(stageList, cb, function(e) { throw e; });
+    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), cb, function(e) { throw e; });
   });
 };
 
 /*
  * Some example pipelines.
  */
-buildTask('html', ['JSON:' + options.file, 'HTMLWriter', 'output:result.html.html']);
-buildTask('js', ['JSON:' + options.file, 'JSWriter', 'output:result.js.html']);
-buildTask('stats', ['JSON:' + options.file, 'StatsWriter', 'consoleOutput']);
+buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'HTMLWriter', 'output:result.html.html']);
+buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'JSWriter', 'output:result.js.html']);
+buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StatsWriter', 'consoleOutput']);
 
 /*
  * examples using filters
  */
-buildTask('compactComputedStyle', ['JSON:' + options.file, 'StyleFilter', 'output:' + options.file + '.filter']);
-buildTask('extractStyle', ['JSON:' + options.file, 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
-buildTask('tokenStyles', ['JSON:' + options.file, 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
-buildTask('nukeIFrame', ['JSON:' + options.file, 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
+buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleFilter', 'output:' + options.file + '.filter']);
+buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
+buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
+buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
 
 /*
  * example of fabrication
  */
-buildTask('generate', ['JSON:' + options.file, 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
+buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
 
 /*
  * examples using device telemetry
@@ -108,7 +103,7 @@ gulp.task('ejs', function(incb) {
     [
       stageLoader.stageSpecificationToStage('file:' + options.file),
       stageLoader.stageSpecificationToStage('ejsFabricator'),
-      stageLoader.stageSpecificationToStage('writeStringFile', {tag: 'ejsFabricator'})
+      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'ejsFabricator'}})
     ], cb, function(e) { throw e; });
 });
 
@@ -132,9 +127,9 @@ gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stageLoader.stageSpecificationToStage('input', {data: '.'}),
+        stageLoader.stageSpecificationToStage({name: 'input', options: {data: '.'}}),
         stageLoader.stageSpecificationToStage('readDir'),
-        stageLoader.stageSpecificationToStage('filter', {regExp: new RegExp(options.inputSpec)}),
+        stageLoader.stageSpecificationToStage({name: 'filter', options: {regExp: new RegExp(options.inputSpec)}}),
         tagFilename(),
         stageLoader.stageSpecificationToStage('fileToJSON'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
@@ -149,7 +144,7 @@ gulp.task('processLogs', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stageLoader.stageSpecificationToStage('input', {data: options.dir}),
+        stageLoader.stageSpecificationToStage({name: 'input', options: {data: options.dir}}),
         stageLoader.stageSpecificationToStage('readDir'),
         phase.pipeline(
             [
@@ -157,9 +152,9 @@ gulp.task('processLogs', function(incb) {
               stageLoader.stageSpecificationToStage('traceFilter'),
               stageLoader.stageSpecificationToStage('tracePIDSplitter'),
               stageLoader.stageSpecificationToStage('traceTree'),
-              stageLoader.stageSpecificationToStage('tracePrettyPrint', {showTrace: 'false'}),
+              stageLoader.stageSpecificationToStage({name: 'tracePrettyPrint', options: {showTrace: 'false'}}),
             ]),
-        stageLoader.stageSpecificationToStage('log', {tags: ['filename']})
+        stageLoader.stageSpecificationToStage({name: 'log', options: {tags: ['filename']}})
       ], cb, function(e) { throw e; });
 });
 

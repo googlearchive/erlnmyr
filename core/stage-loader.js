@@ -9,7 +9,6 @@ var device = require('./device');
 var experiment = require('./experiment');
 
 var argInputs = {
-  'JSON': stages.JSONReader,
   'file': stages.fileReader,
   'output': stages.fileOutput,
 }
@@ -31,8 +30,11 @@ function _stageSpecificationToStage(stage, options) {
 }
 
 // TODO once everything is a phase, this can be removed.
-function stageSpecificationToStage(stage, options) {
-  var stage = _stageSpecificationToStage(stage, options);
+function stageSpecificationToStage(stage) {
+  if (typeof stage == 'string')
+    stage = _stageSpecificationToStage(stage);
+  else
+    stage = _stageSpecificationToStage(stage.name, stage.options);
   if (!stage.isStream) {
     stage = stream.streamedStage(stage);
     var impl = stage.impl;
