@@ -178,3 +178,11 @@ module.exports.regexReplace = phase({
   this.tags.tag('regexReplace', this.options.match + ' -> ' + this.options.replace);
   return data.replace(this.options.match, this.options.replace);
 }, { match: '', replace: '', pattern: '', flags: '' });
+
+module.exports.updateTag = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+    function(data) {
+      var newValue = this.tags.read(this.options.tag).replace(this.options.in, this.options.out);
+      this.tags.tag(this.options.tag, newValue);
+      return data;
+    },
+    {tag: '', in: /.?/, out: ""});

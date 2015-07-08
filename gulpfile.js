@@ -120,17 +120,6 @@ gulp.task('ejs', function(incb) {
  *
  * example of using stages directly
  */
-
-function tagFilename() {
-  return stream.tag(function(data, tags) { return {key: 'filename', value: data} });
-}
-
-function genFilename() {
-  return stream.tag(function(data, tags) {
-    var filename = tags['filename'].replace(new RegExp(options.inputSpec), options.outputSpec);
-    return {key: 'filename', value: filename} });
-}
-
 gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
@@ -138,13 +127,12 @@ gulp.task('mhtml', function(incb) {
         stageLoader.stageSpecificationToStage({name: 'input', options: {data: '.'}}),
         stageLoader.stageSpecificationToStage('readDir'),
         stageLoader.stageSpecificationToStage({name: 'filter', options: {regExp: new RegExp(options.inputSpec)}}),
-        tagFilename(),
         stageLoader.stageSpecificationToStage('fileToBuffer'),
         stageLoader.stageSpecificationToStage('bufferToString'),
         stageLoader.stageSpecificationToStage('jsonParse'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
-        genFilename(),
-        stream.write()
+        stageLoader.stageSpecificationToStage({name: 'regexReplace', options: {tag: 'filename', inputSpec: new RegExp(options.inputSpec), outputSpec: options.outputSpec}}),
+        stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
       ], cb, function(e) { throw e; });
 });
 

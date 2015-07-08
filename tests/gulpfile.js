@@ -28,13 +28,12 @@ describe('basicTargetCoverage', function() {
       stageLoader.stageSpecificationToStage('input'),
       stageLoader.stageSpecificationToStage('readDir'),
       stageLoader.stageSpecificationToStage('filter'),
-      stream.tag(function() {}),
       stageLoader.stageSpecificationToStage('fileToBuffer'),
       stageLoader.stageSpecificationToStage('bufferToString'),
       stageLoader.stageSpecificationToStage('jsonParse'),
       stageLoader.stageSpecificationToStage('HTMLWriter'),
-      stream.tag(function() {}),
-      stream.write()
+      stageLoader.stageSpecificationToStage('regexReplace'),
+      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
     ]);
   });
 });
