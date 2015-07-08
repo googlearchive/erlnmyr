@@ -65,22 +65,22 @@ function buildTask(name, stageList) {
 /*
  * Some example pipelines.
  */
-buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'HTMLWriter', 'output:result.html.html']);
-buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'JSWriter', 'output:result.js.html']);
-buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StatsWriter', 'consoleOutput']);
+buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'HTMLWriter', 'output:result.html.html']);
+buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', 'output:result.js.html']);
+buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'consoleOutput']);
 
 /*
  * examples using filters
  */
-buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleFilter', 'output:' + options.file + '.filter']);
-buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
-buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
-buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
+buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleFilter', 'output:' + options.file + '.filter']);
+buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
+buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
+buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
 
 /*
  * example of fabrication
  */
-buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
+buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
 
 /*
  * examples using device telemetry

@@ -43,8 +43,7 @@ register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   },
   { tags: [] });
 
-register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'},
-  function(string) { return JSON.parse(string); });
+register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'}, JSON.parse);
 
 var treeBuilder = function(Type) {
   return function(data) {
@@ -164,9 +163,4 @@ register({
   });
 });
 
-register({name: 'bufferToString', input: types.buffer, output: types.string, arity: '1:1', async: false},
-  function(buffer) {
-    return buffer.toString();
-  });
-
-register({name: 'parseJSON', input: types.string, output: types.JSON, arity: '1:1', async: false}, JSON.parse);
+register({name: 'bufferToString', input: types.buffer, output: types.string, arity: '1:1'}, String);
