@@ -4,14 +4,13 @@ var zlib = Promise.promisifyAll(require('zlib'));
 var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
-var phase = require('./phase');
-var register = require('./phase-register.js');
+var phase = require('./phase-register.js');
 
 var StringDecoder = require('string_decoder').StringDecoder;
 var TreeBuilder = require('../lib/tree-builder');
 var EjsFabricator = require('../lib/ejs-fabricator');
 
-register({name: 'readDir', input: types.string, output: types.string, arity: '1:N'},
+module.exports.readDir = phase({input: types.string, output: types.string, arity: '1:N'},
   function(dirName, tags) {
     fs.readdirSync(dirName).forEach(function(filename) {
       this.put(path.join(dirName, filename)).tag('filename', filename);
@@ -25,7 +24,7 @@ function typeVar(s) { return (function(v) {
   return v[s];
 }); }
 
-register({name: 'filter', input: types.string, output: types.string, arity: '1:N'},
+module.exports.filter = phase({input: types.string, output: types.string, arity: '1:N'},
   function(value) {
     if (this.options.regExp.test(value)) {
       this.put(value);
@@ -33,7 +32,7 @@ register({name: 'filter', input: types.string, output: types.string, arity: '1:N
   },
   { regExp: /.?/ });
 
-register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+module.exports.log = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     this.options.tags.forEach(function(tag) {
       console.log(tag, tags.read(tag));
@@ -43,7 +42,7 @@ register({name: 'log', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   },
   { tags: [] });
 
-register({name: 'jsonParse', input: types.string, output: types.JSON, arity: '1:1'}, JSON.parse);
+module.exports.jsonParse = phase({input: types.string, output: types.JSON, arity: '1:1'}, JSON.parse);
 
 var treeBuilder = function(Type) {
   return function(data) {
@@ -69,23 +68,23 @@ var filters = {
 var fabricators = {
   SchemaBasedFabricator: require('../lib/schema-based-fabricator'),
 };
-for (WriterType in writers) {
-  register({name: WriterType, input: types.JSON, output: types.string, arity: '1:1'},
-    treeBuilder(writers[WriterType]));
+for (var writer in writers) {
+  module.exports[writer] = phase({input: types.JSON, output: types.string, arity: ':1'},
+    treeBuilder(writers[writer]));
 }
-for (FilterType in filters) {
-  register({name: FilterType, input: types.JSON, output: types.JSON, arity: '1:1'},
-    treeBuilder(filters[FilterType]));
+for (var filter in filters) {
+  module.exports[filter] = phase({input: types.JSON, output: types.JSON, arity: '1:1'},
+    treeBuilder(filters[filter]));
 }
-for (FabType in fabricators) {
-  register({name: FabType, input: types.JSON, output: types.JSON, arity: '1:1'},
+for (var fab in fabricators) {
+  module.exports[fab] = phase({input: types.JSON, output: types.JSON, arity: '1:1'},
     function(data) {
-      var fab = new (fabricators[FabType])(data);
+      var fab = new (fabricators[fab])(data);
       return fab.fabricate();
     });
 }
 
-register({name: 'ejsFabricator', input: types.string, output: types.string, arity: '1:N'},
+module.exports.ejsFabricator = phase({input: types.string, output: types.string, arity: '1:N'},
     function(data) {
       var result = new EjsFabricator(data, '').fabricate();
       for (key in result) {
@@ -94,7 +93,7 @@ register({name: 'ejsFabricator', input: types.string, output: types.string, arit
       }
     });
 
-register({name: 'writeStringFile', input: types.string, output: types.string, arity: '1:1'},
+module.exports.writeStringFile = phase({input: types.string, output: types.string, arity: '1:1'},
     function(data, tags) {
       if (this.options.tag == '') {
         var filename = this.options.filename;
@@ -106,7 +105,7 @@ register({name: 'writeStringFile', input: types.string, output: types.string, ar
     },
     { tag: '', filename: 'result' });
 
-register({name: 'input', output: types.string, arity: '0:1'},
+module.exports.input = phase({output: types.string, arity: '0:1'},
     function(tags) {
       if (this.options.tag)
         tags.tag('data', this.options.data);
@@ -114,7 +113,7 @@ register({name: 'input', output: types.string, arity: '0:1'},
     },
     { data: '', tag: true});
 
-register({name: 'retag', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+module.exports.retag = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     var input = tags.read(this.options.tag);
     if (input !== undefined)
@@ -123,11 +122,11 @@ register({name: 'retag', input: typeVar('a'), output: typeVar('a'), arity: '1:1'
   },
   { tag: '', in: '', out: ''});
 
-register({name: 'dummy', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+module.exports.dummy = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data) { return data; });
 
 // TODO: This is for testing. Does it belong here?
-register({name: 'compare', input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+module.exports.compare = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     var input = tags.read(this.options.tag);
     var inFile = fs.readFileSync(input, 'utf8');
@@ -140,14 +139,13 @@ register({name: 'compare', input: typeVar('a'), output: typeVar('a'), arity: '1:
   },
   { tag: ''});
 
-register({name: 'fileToBuffer', input: types.string, output: types.buffer, arity: '1:1', async: true},
+module.exports.fileToBuffer = phase({input: types.string, output: types.buffer, arity: '1:1', async: true},
   function(filename) {
     console.log('reading', filename, 'raw');
     return fs.readFileAsync(filename);
   });
 
-register({
-  name: 'gunzipAndDecode',
+module.exports.gunzipAndDecode = phase({
   input: types.buffer,
   output: types.string,
   arity: '1:1',
@@ -163,4 +161,4 @@ register({
   });
 });
 
-register({name: 'bufferToString', input: types.buffer, output: types.string, arity: '1:1'}, String);
+module.exports.bufferToString = phase({input: types.buffer, output: types.string, arity: '1:1'}, String);

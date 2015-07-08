@@ -7,6 +7,9 @@ var phase = require('./phase');
 var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 
+var register = require('./phase-register');
+register.load(require('./phase-lib'));
+
 function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
   var splits = phaseName.split('_');
@@ -53,7 +56,7 @@ function doExperiment() {
         var imports = eval(inGraph._label.imports);
         imports.forEach(function(lib) {
           // TODO: figure out the right way to specify this path
-          require('../' + lib);
+          register.load(require('../' + lib));
         });
       }
       var linear = linearConnectEdges(inGraph);
