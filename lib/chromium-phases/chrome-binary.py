@@ -9,7 +9,7 @@ CHROMIUM_BASE_URL = ('http://commondatastorage.googleapis.com'
 WEBKIT_BASE_URL = ('http://commondatastorage.googleapis.com'
                    '/chromium-webkit-snapshots')
 
-class Dummy(object):
+class DummyStdout(object):
     def write(self, x):
         pass
     def flush(self):
@@ -18,7 +18,6 @@ class Dummy(object):
 def main():
     parser = optparse.OptionParser()
     choices = ['mac', 'mac64', 'win', 'win64', 'linux', 'linux64', 'linux-arm', 'chromeos']
-    platforms = ['mac', 'linux', 'win', 'chromeos']
 
     parser.add_option('-a', '--archive', choices=choices, help='The platform archive to pull')
     parser.add_option('-v', '--version', type='str', help='A version you want to get')
@@ -29,7 +28,8 @@ def main():
 
     (opts, args) = parser.parse_args()
 
-    sys.path.insert(0, os.path.join(opts.directory, 'tools'));
+    path_to_tools = os.path.join(os.path.abspath(opts.directory), 'tools');
+    sys.path.insert(0, path_to_tools);
 
     # Python does not like filenames with hyphens
     build = __import__('bisect-builds')
@@ -47,29 +47,30 @@ def main():
     try:
         fetch.Start()
         save_stdout = sys.stdout
-        sys.stdout = Dummy()
+        sys.stdout = DummyStdout()
         fetch.WaitFor()
         sys.stdout = save_stdout
     except:
-        sys.stderr.write('Saving chromium zipfile to %s' % (zip_file))
-        sys.stderr.flush()
-        return 1
+        sys.stderr.write('Unable to save chromium zipfile to %s\n' % (zip_file))
+        raise
 
-    hasUnzipError = False
     try:
         temp_dir = tempfile.mkdtemp(prefix='chrome_binary_')
         build.UnzipFilenameToDir(zip_file, temp_dir)
     except:
         sys.stderr.write('Bad Zip file at %s\n' % (zip_file))
-        sys.stderr.write('Are you sure the version number %s is correct?' % (opts.version))
-        sys.stderr.flush()
-        hasUnzipError = True
-    finally:
+        sys.stderr.write('Are you sure the version number %s is correct?\n' % (opts.version))
         os.remove(zip_file);
-        if hasUnzipError:
-            return 1
+        raise
 
-    platform = [x for x in platforms if x in opts.archive][0]
+    os.remove(zip_file);
+
+    platforms = ['mac', 'linux', 'win', 'chromeos']
+    platform = 'linux';
+    for p in platforms:
+        if opts.archive.startswith(p):
+            platform = p
+            break
 
     sys.stdout.write('%s/chrome-%s/chrome' % (temp_dir, platform))
     return 0
