@@ -144,7 +144,7 @@ gulp.task('mhtml', function(incb) {
         stageLoader.stageSpecificationToStage('jsonParse'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
         genFilename(),
-        stream.write()
+        stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
       ], cb, function(e) { throw e; });
 });
 

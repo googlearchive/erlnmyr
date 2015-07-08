@@ -124,26 +124,6 @@ function coreStreamAsync(fn, name, id, input, output, fromKey, fromValue) {
     }, name, id, input, output, fromKey, fromValue);
 }
 
-function streamedStage0To1(stage, id, fromKey, fromValue) {
-  assert(stage.input == types.unit);
-  return new CoreStream(function(data, incb) {
-    stage.impl(undefined, function(dataOut) {
-      incb([{data: dataOut, tags: {}}]);
-    });
-  }, '<0<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
-}
-
-function streamedStageList0ToN(stage, id, fromKey, fromValue) {
-  assert(stage.input == types.unit);
-  assert(types.isList(stage.output));
-  return new CoreStream(function(data, incb) {
-    stage.impl(undefined, function(dataOut) {
-      dataOut = dataOut.map(function(data) { return {data: data, tags: {} }; });
-      incb(dataOut);
-    });
-  }, '<0<' + stage.name + '>N>', id, stage.input, types.deList(stage.output), fromKey, fromValue);
-}
-
 function streamedStage1To1(stage, id, fromKey, fromValue) {
   return coreStreamAsync(function(data, cb) {
       stage.impl(data.data, function(dataOut) { dataOut = {data: dataOut, tags: data.tags} ; cb(dataOut); });
@@ -151,34 +131,7 @@ function streamedStage1To1(stage, id, fromKey, fromValue) {
 }
 
 function streamedStage(stage, id, fromKey, fromValue) {
-  if (stage.input == 'unit' && types.isList(stage.output))
-    return streamedStageList0ToN(stage, id, fromKey, fromValue);
-  if (stage.input == 'unit')
-    return streamedStage0To1(stage, id, fromKey, fromValue);
   return streamedStage1To1(stage, id, fromKey, fromValue);
-}
-
-function cloneTags(tag) {
-  var result = {};
-  for (var key in tag)
-    result[key] = tag[key];
-  return result;
-}
-
-function clone(toKey, value1, value2, id) {
-  var typeVar = types.newTypeVar();
-  return new CoreStream(function(data, incb, stream) {
-      for (var i = 0; i < data.length; i++) {
-        var newTags = cloneTags(data[i].tags);
-        data[i].tags[toKey] = value1;
-        stream.put(data[i].data, data[i].tags);
-        data[i].tags = newTags;
-        data[i].tags[toKey] = value2;
-        stream.put(data[i].data, data[i].tags);
-      }
-      incb(data);
-    }, 'clone', id, typeVar, typeVar, fromKey, fromValue, [],
-    [{key: toKey, value: value1, type: typeVar}, {key: toKey, value: value2, type: typeVar}]);
 }
 
 function tag(fn, id, fromKey, fromValue) {
@@ -191,18 +144,8 @@ function tag(fn, id, fromKey, fromValue) {
       incb(data);
     }, 'tag', id, typeVar, typeVar, fromKey, fromValue);
 }
-
-function write(id) {
-  var typeVar = types.newTypeVar();
-  return coreStreamAsync(function(data, incb) {
-      stages.writeFile(data.tags['filename'], data.data, function() { incb(data); });
-    }, 'write', typeVar, typeVar, 'filename');
-}
-
-module.exports.cloneTags = cloneTags;
 module.exports.stageSpec = stageSpec;
 module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
-module.exports.write = write;
 module.exports.CoreStream = CoreStream;
 module.exports.Stream = Stream;

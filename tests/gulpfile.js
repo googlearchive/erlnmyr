@@ -34,7 +34,7 @@ describe('basicTargetCoverage', function() {
       stageLoader.stageSpecificationToStage('jsonParse'),
       stageLoader.stageSpecificationToStage('HTMLWriter'),
       stream.tag(function() {}),
-      stream.write()
+      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
     ]);
   });
 });
