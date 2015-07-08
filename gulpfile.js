@@ -103,7 +103,7 @@ gulp.task('ejs', function(incb) {
     [
       stageLoader.stageSpecificationToStage('file:' + options.file),
       stageLoader.stageSpecificationToStage('ejsFabricator'),
-      stageLoader.stageSpecificationToStage('writeStringFile', {tag: 'ejsFabricator'})
+      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'ejsFabricator'}})
     ], cb, function(e) { throw e; });
 });
 
@@ -127,9 +127,9 @@ gulp.task('mhtml', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stageLoader.stageSpecificationToStage('input', {data: '.'}),
+        stageLoader.stageSpecificationToStage({name: 'input', options: {data: '.'}}),
         stageLoader.stageSpecificationToStage('readDir'),
-        stageLoader.stageSpecificationToStage('filter', {regExp: new RegExp(options.inputSpec)}),
+        stageLoader.stageSpecificationToStage({name: 'filter', options: {regExp: new RegExp(options.inputSpec)}}),
         tagFilename(),
         stageLoader.stageSpecificationToStage('fileToJSON'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
@@ -144,7 +144,7 @@ gulp.task('processLogs', function(incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
-        stageLoader.stageSpecificationToStage('input', {data: options.dir}),
+        stageLoader.stageSpecificationToStage({name: 'input', options: {data: options.dir}}),
         stageLoader.stageSpecificationToStage('readDir'),
         phase.pipeline(
             [
@@ -152,9 +152,9 @@ gulp.task('processLogs', function(incb) {
               stageLoader.stageSpecificationToStage('traceFilter'),
               stageLoader.stageSpecificationToStage('tracePIDSplitter'),
               stageLoader.stageSpecificationToStage('traceTree'),
-              stageLoader.stageSpecificationToStage('tracePrettyPrint', {showTrace: 'false'}),
+              stageLoader.stageSpecificationToStage({name: 'tracePrettyPrint', options: {showTrace: 'false'}}),
             ]),
-        stageLoader.stageSpecificationToStage('log', {tags: ['filename']})
+        stageLoader.stageSpecificationToStage({name: 'log', options: {tags: ['filename']}})
       ], cb, function(e) { throw e; });
 });
 

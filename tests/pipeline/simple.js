@@ -24,20 +24,26 @@ function testOutput(expectedResult) {
 
 function fileComparisonPipeline(jsonFile, htmlFile) {
   return [
-    stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
+    stageLoader.stageSpecificationToStage({name: 'input', options: {data: jsonFile}}),
+    stageLoader.stageSpecificationToStage('fileToBuffer'),
+    stageLoader.stageSpecificationToStage('bufferToString'),
+    stageLoader.stageSpecificationToStage('parseJSON'),
     stageLoader.stageSpecificationToStage("HTMLWriter"),
     stream.tag(function(data, tags) { return {key: 'data', value: htmlFile}; }),
-    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
+    stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
   ];
 }
 
 function tokenizeDetokenizePipeline(jsonFile) {
   return [
-    stageLoader.stageSpecificationToStage("JSON:" + jsonFile),
+    stageLoader.stageSpecificationToStage({name: 'input', options: {data: jsonFile}}),
+    stageLoader.stageSpecificationToStage('fileToBuffer'),
+    stageLoader.stageSpecificationToStage('bufferToString'),
+    stageLoader.stageSpecificationToStage('parseJSON'),
     stageLoader.stageSpecificationToStage("StyleTokenizerFilter"),
     stageLoader.stageSpecificationToStage("StyleDetokenizerFilter"),
     stream.tag(function(data, tags) { return {key: 'data', value: jsonFile}; }),
-    stageLoader.stageSpecificationToStage("compare", {tag: 'data'})
+    stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
   ]
 }
 
@@ -46,7 +52,7 @@ function tokenizeDetokenizePipeline(jsonFile) {
 describe('Simple Pipeline', function() {
   it('should generate valid html', function(done) {
     var output = testOutput('<!DOCTYPE html><base href="http://localhost:8000/simple.html"><html><head>\n<style>\n.a {\n  background: red;\n  width: 100px;\n  height: 100px;\n}\n</style>\n</head><body><div class="a">This is some text in a div</div>\n</body></html>');
-    var pipeline = ["JSON:tests/pipeline/simple.json", "HTMLWriter"];
+    var pipeline = [{name: 'input', options: {data: 'tests/pipeline/simple.json'}}, 'fileToBuffer', 'bufferToString', 'parseJSON', "HTMLWriter"];
     pipeline = pipeline.map(stageLoader.stageSpecificationToStage);
     pipeline.push(output);
     testPipeline(pipeline, done);

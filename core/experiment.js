@@ -101,7 +101,7 @@ function doExperiment() {
         }
 
         var streams = linear[i].map(function(pipe, idx) {
-          var thisStream = stageLoader.stageSpecificationToStage(pipe.stageName, pipe.options);
+          var thisStream = stageLoader.stageSpecificationToStage({name: pipe.stageName, options: pipe.options});
           thisStream.setInput('efrom', idx + '');
           thisStream.setOutput('eto', idx + '');
           return thisStream;
