@@ -29,7 +29,7 @@ function fileComparisonPipeline(jsonFile, htmlFile) {
     stageLoader.stageSpecificationToStage('bufferToString'),
     stageLoader.stageSpecificationToStage('jsonParse'),
     stageLoader.stageSpecificationToStage("HTMLWriter"),
-    stream.tag(function(data, tags) { return {key: 'data', value: htmlFile}; }),
+    stageLoader.stageSpecificationToStage({name: 'regexReplace', options: {tag: 'data', inputSpec: /.*/, outputSpec: htmlFile}}),
     stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
   ];
 }
@@ -42,7 +42,6 @@ function tokenizeDetokenizePipeline(jsonFile) {
     stageLoader.stageSpecificationToStage('jsonParse'),
     stageLoader.stageSpecificationToStage("StyleTokenizerFilter"),
     stageLoader.stageSpecificationToStage("StyleDetokenizerFilter"),
-    stream.tag(function(data, tags) { return {key: 'data', value: jsonFile}; }),
     stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
   ]
 }

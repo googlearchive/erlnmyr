@@ -28,15 +28,6 @@ function stageSpecificationToStage(stage) {
     stage = _stageSpecificationToStage(stage);
   else
     stage = _stageSpecificationToStage(stage.name, stage.options);
-  if (!stage.isStream) {
-    stage = stream.streamedStage(stage);
-    var impl = stage.impl;
-    stage.impl = function(data, cb) {
-      var t = trace.async({cat: 'core', name: stage.name});
-      cb = t.endWrap(cb);
-      return impl.call(this, data, cb);
-    };
-  }
   return stage;
 }
 
