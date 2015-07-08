@@ -181,10 +181,8 @@ module.exports.regexReplace = phase({
 
 module.exports.updateTag = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
     function(data) {
-      this.tags.tag(this.options.tag, this.tags.read(this.options.tag).replace(this.options.inputSpec, this.options.outputSpec));
+      var newValue = this.tags.read(this.options.tag).replace(this.options.in, this.options.out);
+      this.tags.tag(this.options.tag, newValue);
       return data;
     },
-    {tag: '', inputSpec: /.?/, outputSpec: ""});
-
-
-
+    {tag: '', in: /.?/, out: ""});

@@ -29,7 +29,7 @@ function fileComparisonPipeline(jsonFile, htmlFile) {
     stageLoader.stageSpecificationToStage('bufferToString'),
     stageLoader.stageSpecificationToStage('jsonParse'),
     stageLoader.stageSpecificationToStage("HTMLWriter"),
-    stageLoader.stageSpecificationToStage({name: 'regexReplace', options: {tag: 'data', inputSpec: /.*/, outputSpec: htmlFile}}),
+    stageLoader.stageSpecificationToStage({name: 'updateTag', options: {tag: 'data', in: /.*/, out: htmlFile}}),
     stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
   ];
 }
