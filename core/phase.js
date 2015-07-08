@@ -28,19 +28,22 @@ function PhaseBase(info, impl, options) {
     this.outputType = info.output || types.unit;
   }
   this.async = info.async || false;
-  this.inputArity = 1;
   if (this.async) {
     switch(info.arity) {
       case '0:1':
         this.impl = this.impl0To1Async;
-        this.inputArity = 0;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:1':
       default:
         this.impl = this.impl1To1Async;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:N':
         this.impl = this.impl1ToNAsync;
+        assert(this.inputType !== undefined);
         break;
     }
   } else {
@@ -50,25 +53,30 @@ function PhaseBase(info, impl, options) {
         break;
       case '0:1':
         this.impl = this.impl0To1;
-        this.inputArity = 0;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:1':
       default:
         this.impl = this.impl1To1;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:N':
         this.impl = this.impl1ToN;
+        assert(this.inputType !== undefined);
         break;
     }
   }
-  this.runtime = new PhaseBaseRuntime(this, impl);
-  this.runtime.options = options;
+
   // default I/O
   this.inputKey = 'from';
   this.outputKey = 'from';
   this.outputValue = phaseSpec(this);
   this.makeInputList();
   this.makeOutputList();
+
+  this.runtime = new PhaseBaseRuntime(this, impl, options);
 }
 
 // TODO: remove me once stage loading doesn't need to detect
@@ -80,6 +88,7 @@ PhaseBase.prototype.setInput = function(name, value) {
   this.inputKey = name;
   this.inputValue = value;
   this.makeInputList();
+  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
 }
 
 PhaseBase.prototype.setOutput = function(name, value) {
@@ -87,6 +96,7 @@ PhaseBase.prototype.setOutput = function(name, value) {
   this.outputKey = name;
   this.outputValue = value;
   this.makeOutputList();
+  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
 }
 
 PhaseBase.prototype.makeInputList = function() {
@@ -111,7 +121,6 @@ function Tags(tags) {
 
 PhaseBase.prototype.implNToN = function(stream) {
   this.runtime.stream = stream;
-  // TODO: Check against type constraints / add to type constraints
   this.runtime.get = function(key, value, f) {
     this.stream.get(key, value, function(data) {
       this.setTags(data.tags);
@@ -244,8 +253,52 @@ Tags.prototype.read = function(key) {
   return this.tags[key];
 }
 
-function PhaseBaseRuntime(base, impl) {
+function getFunction(type) {
+  return function(f) {
+    this.stream.get(type.key, type.value, function(data) {
+      this.setTags(data.tags);
+      f(data.data);
+    }.bind(this));
+  }
+}
+
+function putFunction(type) {
+  return function(data, tags) {
+    if (tags) {
+      this.tags = new Tags(tags);
+    } else {
+      this.tags = this.baseTags.clone();
+    }
+    // TODO: This misses tags when they are set after calling put().
+    flowItemPut(this, this.tags.tags);
+    this.tags.tag(type.key, type.value);
+    this.stream.put(data, this.tags.tags);
+    return this.tags;
+  }
+}
+
+function PhaseBaseRuntime(base, impl, options) {
   this.phaseBase = base;
+  this.options = options;
+
+  // setup put/get
+  // TODO: Check against type constraints / add to type constraints
+  // TODO: use these for base get/put in arity 1 cases?
+  // TODO: don't install get/put in arity 1 cases
+  if (this.phaseBase.inputTypes !== undefined) {
+    this.inputs = [];
+    for (var i = 0; i < this.phaseBase.inputTypes.length; i++)
+      this.inputs.push({get: getFunction(this.phaseBase.inputTypes[i]).bind(this)});
+  } else {
+    this.get = getFunction({key: this.phaseBase.inputKey, value: this.phaseBase.inputValue});
+  }
+  if (this.phaseBase.outputTypes !== undefined) {
+    this.outputs = [];
+    for (var i = 0; i < this.phaseBase.outputTypes.length; i++)
+      this.outputs.push({put: putFunction(this.phaseBase.outputTypes[i]).bind(this)});
+  } else {
+    this.put = putFunction({key: this.phaseBase.outputKey, value: this.phaseBase.outputValue});
+  }
   this.impl = impl;
 }
 
@@ -256,19 +309,6 @@ PhaseBaseRuntime.prototype.toTraceInfo = function() {
 PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.baseTags = new Tags(tags);
   this.tags = this.baseTags;
-}
-
-PhaseBaseRuntime.prototype.put = function(data, tags) {
-  if (tags) {
-    this.tags = new Tags(tags);
-  } else {
-    this.tags = this.baseTags.clone();
-  }
-  // TODO: This misses tags when they are set after calling put().
-  flowItemPut(this, this.tags.tags);
-  this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
-  this.stream.put(data, this.tags.tags);
-  return this.tags;
 }
 
 function pipeline(phases) {
@@ -296,20 +336,36 @@ function pipeline(phases) {
 
 function routingPhase(inRoutes, outRoutes) {
   assert(inRoutes.length == outRoutes.length);
-  var typeVars = inRoutes.map(function() { return types.newTypeVar(); });
+  var inputDict = {};
+  var outputDict = {};
+  for (var i = 0; i < inRoutes.length; i++) {
+    var typeVar = types.newTypeVar();
+    for (var j = 0; j < inRoutes[i].length; j++)
+      inputDict[inRoutes[i][j]] = {key: 'eto', value: inRoutes[i][j] + '', type: typeVar};
+    for (var k = 0; k < outRoutes[i].length; k++)
+      outputDict[outRoutes[i][k]] = {key: 'efrom', value: outRoutes[i][k] + '', type: typeVar};
+  }
+  var inputs = [];
+  var outputs = [];
+  for (var i = 0; i < Object.keys(inputDict).length; i++)
+    inputs.push(inputDict[i]);
+  for (var i = 0; i < Object.keys(outputDict).length; i++)
+    outputs.push(outputDict[i]);
+
   var phase = new PhaseBase({
     name: 'routing',
     arity: 'N:N',
-    inputs: inRoutes.map(function(routes, i) { return routes.map(function(route) { return {key: 'eto', value: route + '', type: typeVars[i]} }) }),
-    outputs: outRoutes.map(function(routes, i) { return routes.map(function(route) { return {key: 'eto', value: route + '', type: typeVars[i]} }) }),
+    inputs: inputs,
+    outputs: outputs,
   }, function(stream) {
     for (var i = 0; i < inRoutes.length; i++) {
       var ins = inRoutes[i];
       var outs = outRoutes[i];
       for (var j = 0; j < ins.length; j++) {
-        this.get('eto', ins[j] + '', function(data) {
-          for (var k = 0; k < outs.length; k++)
-            this.put(data).tag('efrom', outs[k] + '');
+        this.inputs[ins[j]].get(function(data) {
+          for (var k = 0; k < outs.length; k++) {
+            this.outputs[outs[k]].put(data);
+          }
         }.bind(this));
       }
     }
