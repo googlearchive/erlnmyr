@@ -141,4 +141,3 @@ module.exports.taggedConsoleOutput = function() {
     output: types.Map(types.string)
   };
 }
-}
