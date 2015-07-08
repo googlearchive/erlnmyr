@@ -1,0 +1,15 @@
+digraph experiment {
+  imports="['./lib/trace-phases.js']";
+
+  input_w -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> regexReplace -> simplePerfer;
+  simplePerfer -> traceFilter -> traceTree -> tracePrettyPrint -> log;
+  input_steps -> fileToBuffer;
+
+  input_w [label="input", data="whitespace/example.ejs"];
+  traceFilter [traceEvents="['Document::updateStyle']"];
+  tracePrettyPrint [showTrace="false"];
+  log [tags="['data','ejsFabricator', 'regexReplace']"];
+  regexReplace [pattern=">\[\s\t\r\n\]+<", replace="><", flags="i"]
+  input_steps [label="input", data="whitespace/steps.ejs"];
+}
+
