@@ -44,6 +44,8 @@ module.exports.log = phase({input: typeVar('a'), output: typeVar('a'), arity: '1
 
 module.exports.jsonParse = phase({input: types.string, output: types.JSON, arity: '1:1'}, JSON.parse);
 
+module.exports.jsonStringify = phase({input: types.JSON, output: types.string, arity: '1:1'}, JSON.stringify);
+
 var treeBuilder = function(Type) {
   return function(data) {
     var writer = new Type();

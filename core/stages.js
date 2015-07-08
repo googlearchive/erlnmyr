@@ -94,16 +94,6 @@ function override(defaults, options) {
   return result;
 }
 
-module.exports.fileOutput = function(filename) {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) { writeFile(filename, data, cb); },
-    name: 'fileOutput: ' + filename,
-    input: typeVar,
-    output: typeVar
-  };
-}
-
 module.exports.toFile = function() {
   var typeVar = types.newTypeVar();
   return {
