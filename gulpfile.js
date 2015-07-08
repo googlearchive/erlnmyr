@@ -58,7 +58,7 @@ function buildTask(name, stageList) {
       trace.dump();
       incb();
     };
-    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage(stage)), cb, function(e) { throw e; });
+    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), cb, function(e) { throw e; });
   });
 };
 
