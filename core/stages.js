@@ -74,15 +74,6 @@ module.exports.fileToJSON = function() {
   };
 }
 
-module.exports.fileReader = function(filename) {
-  return {
-    impl: function(_, cb) { readFile(filename, cb); },
-    name: 'fileReader: ' + filename,
-    input: types.unit,
-    output: types.string
-  };
-}
-
 module.exports.fileToString = function() {
   return {
     impl: readFile,
