@@ -27,7 +27,6 @@ function _stageSpecificationToStage(stage, options) {
       return byName[i][stage](options);
   }
 
-    console.log(register.phases);
   assert(false, "No stage found for specification " + stage);
 }
 
