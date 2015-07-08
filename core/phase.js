@@ -127,7 +127,9 @@ PhaseBase.prototype.implNToN = function(stream) {
       f(data.data);
     }.bind(this));
   }.bind(this.runtime);
+  var t = trace.start(this.runtime);
   this.runtime.impl();
+  t.end();
   return Promise.resolve(stream);
 }
 
@@ -256,6 +258,7 @@ Tags.prototype.read = function(key) {
 function getFunction(type) {
   return function(f) {
     this.stream.get(type.key, type.value).forEach(function(data) {
+      flowItemGet(this, data.tags);
       this.setTags(data.tags);
       f(data.data);
     }.bind(this));
