@@ -57,6 +57,7 @@ def main():
         sys.stderr.flush()
         return 1
 
+    hasUnzipError = False
     try:
         temp_dir = tempfile.mkdtemp(prefix='chrome_binary_')
         build.UnzipFilenameToDir(zip_file, temp_dir)
@@ -64,7 +65,11 @@ def main():
         sys.stderr.write('Bad Zip file at %s\n' % (zip_file))
         sys.stderr.write('Are you sure the version number %s is correct?' % (opts.version))
         sys.stderr.flush()
-        return 1
+        hasUnzipError = True
+    finally:
+        os.remove(zip_file);
+        if hasUnzipError:
+            return 1
 
     platform = [x for x in platforms if x in opts.archive][0]
 
