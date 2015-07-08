@@ -27,7 +27,7 @@ function fileComparisonPipeline(jsonFile, htmlFile) {
     stageLoader.stageSpecificationToStage({name: 'input', options: {data: jsonFile}}),
     stageLoader.stageSpecificationToStage('fileToBuffer'),
     stageLoader.stageSpecificationToStage('bufferToString'),
-    stageLoader.stageSpecificationToStage('parseJSON'),
+    stageLoader.stageSpecificationToStage('jsonParse'),
     stageLoader.stageSpecificationToStage("HTMLWriter"),
     stream.tag(function(data, tags) { return {key: 'data', value: htmlFile}; }),
     stageLoader.stageSpecificationToStage({name: 'compare', options: {tag: 'data'}})
@@ -39,7 +39,7 @@ function tokenizeDetokenizePipeline(jsonFile) {
     stageLoader.stageSpecificationToStage({name: 'input', options: {data: jsonFile}}),
     stageLoader.stageSpecificationToStage('fileToBuffer'),
     stageLoader.stageSpecificationToStage('bufferToString'),
-    stageLoader.stageSpecificationToStage('parseJSON'),
+    stageLoader.stageSpecificationToStage('jsonParse'),
     stageLoader.stageSpecificationToStage("StyleTokenizerFilter"),
     stageLoader.stageSpecificationToStage("StyleDetokenizerFilter"),
     stream.tag(function(data, tags) { return {key: 'data', value: jsonFile}; }),
@@ -52,7 +52,7 @@ function tokenizeDetokenizePipeline(jsonFile) {
 describe('Simple Pipeline', function() {
   it('should generate valid html', function(done) {
     var output = testOutput('<!DOCTYPE html><base href="http://localhost:8000/simple.html"><html><head>\n<style>\n.a {\n  background: red;\n  width: 100px;\n  height: 100px;\n}\n</style>\n</head><body><div class="a">This is some text in a div</div>\n</body></html>');
-    var pipeline = [{name: 'input', options: {data: 'tests/pipeline/simple.json'}}, 'fileToBuffer', 'bufferToString', 'parseJSON', "HTMLWriter"];
+    var pipeline = [{name: 'input', options: {data: 'tests/pipeline/simple.json'}}, 'fileToBuffer', 'bufferToString', 'jsonParse', "HTMLWriter"];
     pipeline = pipeline.map(stageLoader.stageSpecificationToStage);
     pipeline.push(output);
     testPipeline(pipeline, done);
