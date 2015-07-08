@@ -7,7 +7,6 @@ var stream = require('../core/stream');
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
     for (name in tasks) {
-      console.log(name);
       var stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
       stageLoader.typeCheck(stageList);
     }
