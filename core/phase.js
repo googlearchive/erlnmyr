@@ -255,7 +255,7 @@ Tags.prototype.read = function(key) {
 
 function getFunction(type) {
   return function(f) {
-    this.stream.get(type.key, type.value, function(data) {
+    this.stream.get(type.key, type.value).forEach(function(data) {
       this.setTags(data.tags);
       f(data.data);
     }.bind(this));
