@@ -39,7 +39,7 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
       runTests(mochaReporter).on('end', cb);
       return;
     }
-    gulp.src(['core/*.js', 'lib/*.js'])
+    gulp.src(['core/*.js', 'lib/*.js', 'lib/chromium-phases/*.js'])
     .pipe(istanbul())
     .pipe(istanbul.hookRequire())
     .on('finish', function() {
