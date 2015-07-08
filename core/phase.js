@@ -28,10 +28,7 @@ function PhaseBase(info, impl, options) {
     this.outputType = info.output || types.unit;
   }
   this.async = info.async || false;
-  this.parallel = info.parallel;
-  if (this.parallel == undefined) {
-    this.parallel = true;
-  }
+  this.parallel = info.parallel || Infinity;
   if (this.async) {
     switch(info.arity) {
       case '0:1':
@@ -192,42 +189,32 @@ PhaseBase.prototype.impl1To1 = function(stream) {
 PhaseBase.prototype.impl1To1Async = function(stream) {
   this.runtime.stream = stream;
   var items = stream.get(this.inputKey, this.inputValue);
-  // TODO: Consider a way to specify batching to avoid starting all tasks
-  //       at the same time.
   var phase = this;
-  if (this.parallel) {
-    return Promise.all(items.map(function(item) {
-      // TODO: Simplify runtime so that we can share it across invocations.
-      var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
-      runtime.stream = stream;
-      runtime.setTags(item.tags);
-      var t = trace.start(runtime); flowItemGet(runtime, item.tags);
-      var result = runtime.impl(item.data, runtime.tags);
-      t.end();
-      return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
-        runtime.put(result);
-      }));
-    })).then(function() {
-      return stream;
-    });
-  } else {
-    items = items.reverse();
-    function process() {
-      if (items.length == 0) {
-        return Promise.resolve(stream);
-      }
-      var item = items.pop();
-      phase.runtime.setTags(item.tags);
-      var t = trace.start(phase.runtime); flowItemGet(phase.runtime, item.tags);
-      var result = phase.runtime.impl(item.data, phase.runtime.tags);
-      t.end();
-      return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
-        phase.runtime.put(result);
-        return process();
-      }));
+  function process() {
+    if (items.length == 0) {
+      return Promise.resolve();
     }
-    return process();
+    var item = items.pop();
+    // TODO: Simplify runtime so that we can share it across invocations.
+    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
+    runtime.stream = stream;
+    runtime.setTags(item.tags);
+    var t = trace.start(runtime); flowItemGet(runtime, item.tags);
+    var result = runtime.impl(item.data, runtime.tags);
+    t.end();
+    return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
+      runtime.put(result);
+      return process();
+    }));
   }
+  var spawn = Math.min(this.parallel, items.length);
+  var tasks = [];
+  for (var i = 0; i < spawn; i++) {
+    tasks.push(process());
+  }
+  return Promise.all(tasks).then(function() {
+    return stream;
+  });
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
@@ -246,7 +233,11 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
   var items = stream.get(this.inputKey, this.inputValue);
 
   var phase = this;
-  return Promise.all(items.map(function(item) {
+  function process() {
+    if (items.length == 0) {
+      return Promise.resolve();
+    }
+    var item = items.pop();
     var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
     runtime.stream = stream;
     runtime.setTags(item.tags);
@@ -256,8 +247,15 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
     t.end();
     return result.then(function(result) {
       flow.end();
+      return process();
     });
-  })).then(function() {
+  }
+  var spawn = Math.min(this.parallel, items.length);
+  var tasks = [];
+  for (var i = 0; i < spawn; i++) {
+    tasks.push(process());
+  }
+  return Promise.all(tasks).then(function() {
     return stream;
   });
 }
