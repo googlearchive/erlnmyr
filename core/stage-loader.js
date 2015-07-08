@@ -2,11 +2,13 @@ var assert = require('chai').assert;
 var stream = require('./stream');
 var trace = require('./trace');
 
-var register = require('./phase-register');
 var stages = require('./stages');
 var types = require('./types');
 var device = require('./device');
 var experiment = require('./experiment');
+
+var register = require('./phase-register');
+register.load(require('./phase-lib'));
 
 var argInputs = {
   'output': stages.fileOutput,

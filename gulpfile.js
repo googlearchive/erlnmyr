@@ -5,8 +5,6 @@ var istanbul = require('gulp-istanbul');
 var mocha = require('gulp-mocha');
 
 var stageLoader = require('./core/stage-loader');
-// TODO: Where is the correct place to trigger loading of core phases?
-var phaseLib = require('./core/phase-lib');
 var stream = require('./core/stream');
 var options = require('./core/options');
 var trace = require('./core/trace');
