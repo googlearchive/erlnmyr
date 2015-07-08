@@ -233,7 +233,11 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
   var items = stream.get(this.inputKey, this.inputValue);
 
   var phase = this;
-  return Promise.all(items.map(function(item) {
+  function process() {
+    if (items.length == 0) {
+      return Promise.resolve();
+    }
+    var item = items.pop();
     var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
     runtime.stream = stream;
     runtime.setTags(item.tags);
@@ -243,8 +247,15 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
     t.end();
     return result.then(function(result) {
       flow.end();
+      return process();
     });
-  })).then(function() {
+  }
+  var spawn = Math.min(this.parallel, items.length);
+  var tasks = [];
+  for (var i = 0; i < spawn; i++) {
+    tasks.push(process());
+  }
+  return Promise.all(tasks).then(function() {
     return stream;
   });
 }
