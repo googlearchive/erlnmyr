@@ -13,19 +13,27 @@ var trace = require('./core/trace');
 
 var tasks = {};
 
+function runTests(mochaReporter) {
+  return gulp.src(['tests/*.js', 'tests/pipeline/*.js', 'lib/*/tests/*.js'])
+      .pipe(mocha({
+        ui: 'bdd',
+        ignoreLeaks: true,
+        reporter: mochaReporter,
+      }));
+}
+
 function buildTestTask(name, mochaReporter, istanbulReporters) {
   gulp.task(name, function(cb) {
+    if (!options.coverage && typeof options.coverage !== 'undefined') {
+      runTests(mochaReporter).on('end', cb);
+      return;
+    }
     gulp.src(['core/*.js', 'lib/*.js'])
     .pipe(istanbul())
     .pipe(istanbul.hookRequire())
     .on('finish', function() {
       require('./core/trace').enable();
-      gulp.src(['tests/*.js', 'tests/pipeline/*.js', 'lib/*/tests/*.js'])
-      .pipe(mocha({
-        ui: 'bdd',
-        ignoreLeaks: true,
-        reporter: mochaReporter,
-      }))
+      runTests(mochaReporter)
       .pipe(istanbul.writeReports({
         reporters: istanbulReporters,
       }))
