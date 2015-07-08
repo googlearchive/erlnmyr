@@ -25,7 +25,8 @@
     "gulp-mocha": "^2.0.0",
     "istanbul": "^0.3.17",
     "minimist": "^1.1.0",
-    "mocha": "^2.2.1"
+    "mocha": "^2.2.1",
+    "proxyquire": "^1.6.0"
   },
   "scripts": {
     "test": "gulp travis-test"
