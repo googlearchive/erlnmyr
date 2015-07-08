@@ -10,7 +10,7 @@ var register = require('./phase-register');
 register.load(require('./phase-lib'));
 register.load(require('./experiment'));
 
-var byName = [device, register.phases, stages];
+var byName = [register.phases, stages];
 
 function _stageSpecificationToStage(stage, options) {
   options = options || {};

@@ -88,12 +88,14 @@ buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileTo
  */
 buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'SchemaBasedFabricator', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.gen'}}]);
 
+require('./core/phase-register').load(require('./lib/device-phases'));
+
 /*
  * examples using device telemetry
  */
-buildTask('get', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'result.json'}}]);
-buildTask('perf', [{name: 'input', options: {data: options.url}}, 'telemetryPerf', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
-buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
+buildTask('get', [{name: 'input', options: {data: options.url}}, 'fetch', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'result.json'}}]);
+buildTask('perf', [{name: 'input', options: {data: options.url}}, 'trace', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
+buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'fetch', 'HTMLWriter', 'simplePerfer', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
 
 /*
  * running an experiment
@@ -147,8 +149,8 @@ gulp.task('mhtml', function(incb) {
 });
 
 gulp.task('processLogs', function(incb) {
-  require('./lib/trace-phases');
   var phase = require('./core/phase');
+  require('./core/phase-register').load(require('./lib/trace-phases'));
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [
