@@ -17,33 +17,3 @@ function writeFile(output, data, cb) {
 }
 
 module.exports.writeFile = writeFile;
-
-function readJSONFile(filename, cb) {
-  console.log('reading', filename, 'as JSON');
-  fs.readFile(filename, 'utf8', function(err, data) {
-    if (err)
-      throw err;
-    cb(JSON.parse(data));
-  });
-}
-
-/*
- * Pipeline Stages
- *
- * Each stage has an implementation function, 'impl'.
- * This function accepts a data object and a callback, and is responsible for
- * calling the callback with the result of processing the data.
- *
- * Each stage also provides a human-readable 'name',
- * an 'input' type, and an 'output' type.
- */
-
-module.exports.fileToJSON = function() {
-  return {
-    impl: readJSONFile,
-    name: 'fileToJSON',
-    input: types.string,
-    output: types.JSON
-  };
-}
-

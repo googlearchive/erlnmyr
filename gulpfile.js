@@ -139,7 +139,9 @@ gulp.task('mhtml', function(incb) {
         stageLoader.stageSpecificationToStage('readDir'),
         stageLoader.stageSpecificationToStage({name: 'filter', options: {regExp: new RegExp(options.inputSpec)}}),
         tagFilename(),
-        stageLoader.stageSpecificationToStage('fileToJSON'),
+        stageLoader.stageSpecificationToStage('fileToBuffer'),
+        stageLoader.stageSpecificationToStage('bufferToString'),
+        stageLoader.stageSpecificationToStage('jsonParse'),
         stageLoader.stageSpecificationToStage('HTMLWriter'),
         genFilename(),
         stream.write()
@@ -156,7 +158,9 @@ gulp.task('processLogs', function(incb) {
         stageLoader.stageSpecificationToStage('readDir'),
         phase.pipeline(
             [
-              stageLoader.stageSpecificationToStage('fileToJSON'),
+              stageLoader.stageSpecificationToStage('fileToBuffer'),
+              stageLoader.stageSpecificationToStage('bufferToString'),
+              stageLoader.stageSpecificationToStage('jsonParse'),
               stageLoader.stageSpecificationToStage('traceFilter'),
               stageLoader.stageSpecificationToStage('tracePIDSplitter'),
               stageLoader.stageSpecificationToStage('traceTree'),
