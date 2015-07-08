@@ -3,6 +3,7 @@ var streamLib = require('./stream');
 var trace = require('./trace');
 var stageLoader = require('./stage-loader');
 var Promise = require('bluebird');
+var assert = require('chai').assert;
 
 var _instanceID = 0;
 function newInstanceID() {
@@ -16,47 +17,66 @@ function phaseSpec(phase) {
 function PhaseBase(info, impl, options) {
   this.name = info.name;
   this.id = info.id || newInstanceID();
-  this.inputType = info.input;
-  this.outputType = info.output;
+  if (info.inputs !== undefined) {
+    this.inputTypes = info.inputs || [];
+  } else {
+    this.inputType = info.input || types.unit;
+  }
+  if (info.outputs !== undefined) {
+    this.outputTypes = info.outputs || [];
+  } else {
+    this.outputType = info.output || types.unit;
+  }
   this.async = info.async || false;
-  this.inputArity = 1;
   if (this.async) {
     switch(info.arity) {
       case '0:1':
         this.impl = this.impl0To1Async;
-        this.inputArity = 0;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:1':
       default:
         this.impl = this.impl1To1Async;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:N':
         this.impl = this.impl1ToNAsync;
+        assert(this.inputType !== undefined);
         break;
     }
   } else {
     switch(info.arity) {
+      case 'N:N':
+        this.impl = this.implNToN;
+        break;
       case '0:1':
         this.impl = this.impl0To1;
-        this.inputArity = 0;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:1':
       default:
         this.impl = this.impl1To1;
+        assert(this.inputType !== undefined);
+        assert(this.outputType !== undefined);
         break;
       case '1:N':
         this.impl = this.impl1ToN;
+        assert(this.inputType !== undefined);
         break;
     }
   }
-  this.runtime = new PhaseBaseRuntime(this, impl);
-  this.runtime.options = options;
+
   // default I/O
   this.inputKey = 'from';
   this.outputKey = 'from';
   this.outputValue = phaseSpec(this);
   this.makeInputList();
   this.makeOutputList();
+
+  this.runtime = new PhaseBaseRuntime(this, impl, options);
 }
 
 // TODO: remove me once stage loading doesn't need to detect
@@ -64,27 +84,51 @@ function PhaseBase(info, impl, options) {
 PhaseBase.prototype.isStream = true;
 
 PhaseBase.prototype.setInput = function(name, value) {
+  assert(this.inputType !== undefined);
   this.inputKey = name;
   this.inputValue = value;
   this.makeInputList();
+  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
 }
 
 PhaseBase.prototype.setOutput = function(name, value) {
+  assert(this.outputType !== undefined);
   this.outputKey = name;
   this.outputValue = value;
   this.makeOutputList();
+  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
 }
 
 PhaseBase.prototype.makeInputList = function() {
-  this.input = types.Stream([{key: this.inputKey, value: this.inputValue, type: this.inputType}]);
+  if (this.inputType !== undefined) {
+    this.input = types.Stream([{key: this.inputKey, value: this.inputValue, type: this.inputType}]);
+  } else {
+    this.input = types.Stream(this.inputTypes);
+  }
 }
 
 PhaseBase.prototype.makeOutputList = function() {
-  this.output = types.Stream([{key: this.outputKey, value: this.outputValue, type: this.outputType}]);
+  if (this.outputType !== undefined) {
+    this.output = types.Stream([{key: this.outputKey, value: this.outputValue, type: this.outputType}]);
+  } else {
+    this.output = types.Stream(this.outputTypes);
+  }
 }
 
 function Tags(tags) {
   this.tags = tags;
+}
+
+PhaseBase.prototype.implNToN = function(stream) {
+  this.runtime.stream = stream;
+  this.runtime.get = function(key, value, f) {
+    this.stream.get(key, value, function(data) {
+      this.setTags(data.tags);
+      f(data.data);
+    }.bind(this));
+  }.bind(this.runtime);
+  this.runtime.impl();
+  return Promise.resolve(stream);
 }
 
 PhaseBase.prototype.impl0To1 = function(stream) {
@@ -209,8 +253,52 @@ Tags.prototype.read = function(key) {
   return this.tags[key];
 }
 
-function PhaseBaseRuntime(base, impl) {
+function getFunction(type) {
+  return function(f) {
+    this.stream.get(type.key, type.value).forEach(function(data) {
+      this.setTags(data.tags);
+      f(data.data);
+    }.bind(this));
+  }
+}
+
+function putFunction(type) {
+  return function(data, tags) {
+    if (tags) {
+      this.tags = new Tags(tags);
+    } else {
+      this.tags = this.baseTags.clone();
+    }
+    // TODO: This misses tags when they are set after calling put().
+    flowItemPut(this, this.tags.tags);
+    this.tags.tag(type.key, type.value);
+    this.stream.put(data, this.tags.tags);
+    return this.tags;
+  }
+}
+
+function PhaseBaseRuntime(base, impl, options) {
   this.phaseBase = base;
+  this.options = options;
+
+  // setup put/get
+  // TODO: Check against type constraints / add to type constraints
+  // TODO: use these for base get/put in arity 1 cases?
+  // TODO: don't install get/put in arity 1 cases
+  if (this.phaseBase.inputTypes !== undefined) {
+    this.inputs = [];
+    for (var i = 0; i < this.phaseBase.inputTypes.length; i++)
+      this.inputs.push({get: getFunction(this.phaseBase.inputTypes[i]).bind(this)});
+  } else {
+    this.get = getFunction({key: this.phaseBase.inputKey, value: this.phaseBase.inputValue});
+  }
+  if (this.phaseBase.outputTypes !== undefined) {
+    this.outputs = [];
+    for (var i = 0; i < this.phaseBase.outputTypes.length; i++)
+      this.outputs.push({put: putFunction(this.phaseBase.outputTypes[i]).bind(this)});
+  } else {
+    this.put = putFunction({key: this.phaseBase.outputKey, value: this.phaseBase.outputValue});
+  }
   this.impl = impl;
 }
 
@@ -223,25 +311,11 @@ PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.tags = this.baseTags;
 }
 
-PhaseBaseRuntime.prototype.put = function(data, tags) {
-  if (tags) {
-    this.tags = new Tags(tags);
-  } else {
-    this.tags = this.baseTags.clone();
-  }
-  // TODO: This misses tags when they are set after calling put().
-  flowItemPut(this, this.tags.tags);
-  this.tags.tag(this.phaseBase.outputKey, this.phaseBase.outputValue);
-  this.stream.put(data, this.tags.tags);
-  return this.tags;
-}
-
 function pipeline(phases) {
   return new PhaseBase({
     name: 'pipeline',
-    // TODO: OMG FIX THIS
-    input: phases[0].inputType, //.tags[0].type,
-    output: phases[phases.length - 1].outputType, //.tags[0].type,
+    input: phases[0].inputType,
+    output: phases[phases.length - 1].outputType,
     arity: '1:N',
     async: true,
   }, function(data, tags) {
@@ -260,5 +334,45 @@ function pipeline(phases) {
   {});
 }
 
+function routingPhase(inRoutes, outRoutes) {
+  assert(inRoutes.length == outRoutes.length);
+  var inputDict = {};
+  var outputDict = {};
+  for (var i = 0; i < inRoutes.length; i++) {
+    var typeVar = types.newTypeVar();
+    for (var j = 0; j < inRoutes[i].length; j++)
+      inputDict[inRoutes[i][j]] = {key: 'eto', value: inRoutes[i][j] + '', type: typeVar};
+    for (var k = 0; k < outRoutes[i].length; k++)
+      outputDict[outRoutes[i][k]] = {key: 'efrom', value: outRoutes[i][k] + '', type: typeVar};
+  }
+  var inputs = [];
+  var outputs = [];
+  for (var i = 0; i < Object.keys(inputDict).length; i++)
+    inputs.push(inputDict[i]);
+  for (var i = 0; i < Object.keys(outputDict).length; i++)
+    outputs.push(outputDict[i]);
+
+  var phase = new PhaseBase({
+    name: 'routing',
+    arity: 'N:N',
+    inputs: inputs,
+    outputs: outputs,
+  }, function(stream) {
+    for (var i = 0; i < inRoutes.length; i++) {
+      var ins = inRoutes[i];
+      var outs = outRoutes[i];
+      for (var j = 0; j < ins.length; j++) {
+        this.inputs[ins[j]].get(function(data) {
+          for (var k = 0; k < outs.length; k++) {
+            this.outputs[outs[k]].put(data);
+          }
+        }.bind(this));
+      }
+    }
+  });
+  return phase;
+}
+
 module.exports.PhaseBase = PhaseBase;
 module.exports.pipeline = pipeline;
+module.exports.routingPhase = routingPhase;

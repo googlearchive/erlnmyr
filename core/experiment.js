@@ -126,7 +126,7 @@ function doExperiment() {
         ins = ins.map(function(a) { return a.map(function(b) { return linearNames[i].indexOf(b.nodeName); })});
         var outs = outgoing.map(function(con) { return con.toPipes; });
         outs = outs.map(function(a) { return a.map(function(b) { return linearNames[i + 1].indexOf(b.nodeName); })});
-        var routingStage = new stream.RoutingStage(ins, outs);
+        var routingStage = phase.routingPhase(ins, outs);
         phaseStack[phaseStack.length - 1].push(routingStage);
       }
 

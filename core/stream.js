@@ -80,40 +80,6 @@ CoreStreamBase.prototype.setOutput = function(name, value) {
   this.output = types.Stream(this.outputList);
 }
 
-function RoutingStage(inRoutes, outRoutes) {
-  assert(inRoutes.length == outRoutes.length);
-  this.name = 'routing';
-  this.id = inRoutes + ' : ' + outRoutes;
-  this.impl = function(stream, cb) {
-    for (var i = 0; i < inRoutes.length; i++) {
-      var ins = inRoutes[i];
-      var outs = outRoutes[i];
-      for (var j = 0; j < ins.length; j++) {
-        stream.get('eto', ins[j] + '').forEach(function(result) {
-          for (var k = 0; k < outs.length; k++) {
-            var tags = cloneTags(result.tags);
-            tags.efrom = outs[k] + '';
-            stream.put(result.data, tags);
-          }
-        }.bind(this));
-      }
-    }
-    return Promise.resolve(stream);
-  }
-  var inputs = [];
-  var outputs = [];
-  for (var i = 0; i < inRoutes.length; i++) {
-    var typeVar = types.newTypeVar();
-    for (var j = 0; j < inRoutes[i].length; j++)
-      inputs.push({key: 'eto', value: inRoutes[i][j] + '', type: typeVar});
-    for (var k = 0; k < outRoutes[i].length; k++)
-      outputs.push({key: 'efrom', value: outRoutes[i][k] + '', type: typeVar});
-  }
-  this.input = types.Stream(inputs);
-  this.output = types.Stream(outputs);
-}
-
-
 /**
  * CoreStream's implementation function takes lists of tagged data and returns
  * lists of tagged data.
@@ -263,6 +229,5 @@ module.exports.stageSpec = stageSpec;
 module.exports.streamedStage = streamedStage;
 module.exports.tag = tag;
 module.exports.write = write;
-module.exports.RoutingStage = RoutingStage;
 module.exports.CoreStream = CoreStream;
 module.exports.Stream = Stream;
