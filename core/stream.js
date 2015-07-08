@@ -150,36 +150,11 @@ function streamedStage1To1(stage, id, fromKey, fromValue) {
     }, '<1<' + stage.name + '>1>', id, stage.input, stage.output, fromKey, fromValue);
 }
 
-function streamedStageMap1ToN(stage, id, fromKey, fromValue) {
-  assert(types.isMap(stage.output));
-  return new CoreStream(function(data, incb) {
-    var result = [];
-    var cb = function() {incb(result); }
-    for (var i = data.length - 1; i >= 0; i--) {
-      cb = (function(cb, i) {
-        return function() {
-          stage.impl(data[i].data, function(dataOut) {
-            for (key in dataOut) {
-              var tags = cloneTags(data[i].tags);
-              tags[id == undefined ? stage.name : id] = key;
-              result.push({data: dataOut[key], tags: tags});
-            }
-            cb();
-          });
-        }
-      })(cb, i);
-    }
-    cb();
-  }, '<1<' + stage.name + '>N>', id, stage.input, types.deMap(stage.output), fromKey, fromValue);
-}
-
 function streamedStage(stage, id, fromKey, fromValue) {
   if (stage.input == 'unit' && types.isList(stage.output))
     return streamedStageList0ToN(stage, id, fromKey, fromValue);
   if (stage.input == 'unit')
     return streamedStage0To1(stage, id, fromKey, fromValue);
-  if (types.isMap(stage.output) && !(types.isMap(stage.input)))
-    return streamedStageMap1ToN(stage, id, fromKey, fromValue);
   return streamedStage1To1(stage, id, fromKey, fromValue);
 }
 

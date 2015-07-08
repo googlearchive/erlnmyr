@@ -12,7 +12,6 @@ var argInputs = {
   'JSON': stages.JSONReader,
   'file': stages.fileReader,
   'output': stages.fileOutput,
-  'ejs': stages.ejsFabricator,
 }
 
 var byName = [device, experiment, register.phases, stages];
