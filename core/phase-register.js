@@ -27,7 +27,7 @@ PhaseDefinition.prototype.build = function() {
   var info = this.info;
   var impl = this.impl;
   return function(options) {
-    var infoClone = {name: info.name, arity: info.arity, async: info.async};
+    var infoClone = {name: info.name, arity: info.arity, async: info.async, parallel: info.parallel}};
     var v = {};
     if (typeof info.input == 'function')
       infoClone.input = info.input(v);
