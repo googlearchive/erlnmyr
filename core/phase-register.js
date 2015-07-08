@@ -9,14 +9,14 @@ function PhaseDefinition(info, impl, defaults) {
 
 PhaseDefinition.prototype.build = function() {
   var defaults = this.defaults;
-  function override(defaults, dotOptions) {
+  function override(defaults, experimentOptions) {
     var result = {};
     for (key in defaults) {
-      if (key in dotOptions) {
+      if (key in experimentOptions) {
         try {
-          result[key] = eval(dotOptions[key]);
+          result[key] = eval(experimentOptions[key]);
         } catch (e) {
-          result[key] = dotOptions[key];
+          result[key] = experimentOptions[key];
         }
       } else {
         result[key] = defaults[key];
@@ -27,7 +27,7 @@ PhaseDefinition.prototype.build = function() {
 
   var info = this.info;
   var impl = this.impl;
-  return function(dotOptions) {
+  return function(experimentOptions) {
     var infoClone = {name: info.name, arity: info.arity, async: info.async, parallel: info.parallel};
     var v = {};
     if (typeof info.input == 'function')
@@ -38,8 +38,8 @@ PhaseDefinition.prototype.build = function() {
       infoClone.output = info.output(v);
     else
       infoClone.output = info.output;
-    var dotOptions = override(defaults, dotOptions);
-    return new phase.PhaseBase(infoClone, impl, dotOptions);
+    var experimentOptions = override(defaults, experimentOptions);
+    return new phase.PhaseBase(infoClone, impl, experimentOptions);
   }
 }
 
