@@ -47,30 +47,3 @@ module.exports.fileToJSON = function() {
   };
 }
 
-module.exports.consoleOutput = function() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) { console.log(data); cb(data); },
-    name: 'consoleOutput',
-    input: typeVar,
-    output: typeVar
-  };
-}
-
-module.exports.taggedConsoleOutput = function() {
-  var typeVar = types.newTypeVar();
-  return {
-    impl: function(data, cb) {
-      for (key in data) {
-        console.log(key);
-        console.log('----------------'),
-        console.log(data[key]);
-        console.log();
-      }
-      cb(data);
-    },
-    name: 'taggedConsoleOutput',
-    input: types.Map(types.string),
-    output: types.Map(types.string)
-  };
-}

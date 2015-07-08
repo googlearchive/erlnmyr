@@ -73,7 +73,7 @@ function buildTask(name, stageList) {
  */
 buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'HTMLWriter', {name: 'writeStringFile', options: {filename: 'result.html.html'}}]);
 buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', {name: 'writeStringFile', options: {filename: 'result.js.html'}}]);
-buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'consoleOutput']);
+buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'log']);
 
 /*
  * examples using filters
