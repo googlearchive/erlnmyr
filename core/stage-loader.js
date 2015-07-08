@@ -74,7 +74,6 @@ function processStagesWithInput(input, stages, cb, fail) {
     var stage = stages.pop();
     var result = stage.impl(data, process);
     // TODO: Cleanup and propagate promises once all phases return them.
-    if (!result) console.log('XXXXXX', stage.name);
     result && result.then(process);
   });
   process(input);
