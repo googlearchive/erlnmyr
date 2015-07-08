@@ -71,29 +71,29 @@ function buildTask(name, stageList) {
 /*
  * Some example pipelines.
  */
-buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'HTMLWriter', 'output:result.html.html']);
-buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', 'output:result.js.html']);
+buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'HTMLWriter', {name: 'writeStringFile', options: {filename: 'result.html.html'}}]);
+buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', {name: 'writeStringFile', options: {filename: 'result.js.html'}}]);
 buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'consoleOutput']);
 
 /*
  * examples using filters
  */
-buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleFilter', 'output:' + options.file + '.filter']);
-buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
-buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
-buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
+buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
+buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleMinimizationFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
+buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleTokenizerFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
+buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'NukeIFrameFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
 
 /*
  * example of fabrication
  */
-buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
+buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'SchemaBasedFabricator', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.gen'}}]);
 
 /*
  * examples using device telemetry
  */
-buildTask('get', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'output:result.json']);
-buildTask('perf', [{name: 'input', options: {data: options.url}}, 'telemetryPerf', 'output:trace.json']);
-buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'output:trace.json']);
+buildTask('get', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'result.json'}}]);
+buildTask('perf', [{name: 'input', options: {data: options.url}}, 'telemetryPerf', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
+buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'telemetrySave', 'HTMLWriter', 'simplePerfer', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
 
 /*
  * running an experiment

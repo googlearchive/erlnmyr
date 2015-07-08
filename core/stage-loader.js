@@ -10,18 +10,10 @@ var experiment = require('./experiment');
 var register = require('./phase-register');
 register.load(require('./phase-lib'));
 
-var argInputs = {
-  'output': stages.fileOutput,
-}
-
 var byName = [device, experiment, register.phases, stages];
 
 function _stageSpecificationToStage(stage, options) {
   options = options || {};
-  var spec = stage.split(':');
-  if (spec.length > 1 && spec[0] in argInputs)
-    return argInputs[spec[0]](spec.slice(1, spec.length).join(':'));
-
   for (var i = 0; i < byName.length; i++) {
     if (stage in byName[i])
       return byName[i][stage](options);
