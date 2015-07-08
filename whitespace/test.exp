@@ -1,16 +1,17 @@
 digraph experiment {
-  imports="['./lib/trace-phases.js']";
+  imports="['./lib/trace-phases.js', './lib/device-phases.js']";
 
-  input_nw -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> simplePerfer;
-  simplePerfer -> traceFilter -> traceTree -> tracePrettyPrint -> log;
+  input_nw -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> trace;
+  trace -> traceFilter -> traceTree -> tracePrettyPrint -> log;
   input_w -> fileToBuffer;
   input_steps -> fileToBuffer;
 
-  input_w [label="input", data="whitespace/example.ejs"];
-  input_nw [label="input", data="whitespace/exampleNoText.ejs"];
-  input_steps [label="input", data="whitespace/steps.ejs"];
+  input_w [data="whitespace/example.ejs"];
+  input_nw [data="whitespace/exampleNoText.ejs"];
+  input_steps [data="whitespace/steps.ejs"];
   traceFilter [traceEvents="['Document::updateStyle']"];
   tracePrettyPrint [showTrace="false"];
   log [tags="['data','ejsFabricator']"];
+  trace [browser="system"];
 }
 

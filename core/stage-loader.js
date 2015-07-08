@@ -4,13 +4,13 @@ var trace = require('./trace');
 
 var stages = require('./stages');
 var types = require('./types');
-var device = require('./device');
 
 var register = require('./phase-register');
 register.load(require('./phase-lib'));
 register.load(require('./experiment'));
+register.load(require('../lib/device-phases'));
 
-var byName = [device, register.phases, stages];
+var byName = [register.phases, stages];
 
 function _stageSpecificationToStage(stage, options) {
   options = options || {};
