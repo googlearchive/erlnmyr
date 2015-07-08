@@ -30,3 +30,6 @@ node_modules
 # vim
 *.swp
 *.swo
+
+# Nodejs version manager. https://github.com/creationix/nvm
+.nvmrc
