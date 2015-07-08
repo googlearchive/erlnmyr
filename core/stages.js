@@ -131,23 +131,3 @@ module.exports.taggedConsoleOutput = function() {
     output: types.Map(types.string)
   };
 }
-
-module.exports.filenames = function(options) {
-  options = override({RE: ''}, options);
-  return {
-    impl: function(unused, cb) {
-      var pieces = options.RE.split('/');
-      var dir = pieces.slice(0, pieces.length - 1).join('/');
-      var file = pieces[pieces.length - 1];
-      var re = new RegExp('^' + file + '$');
-      if (dir == '')
-        var files = fs.readdirSync('.');
-      else
-        var files = fs.readdirSync(dir);
-      cb(files.filter(re.exec.bind(re)).map(function(file) { return dir == '' ? file : dir + '/' + file; }));
-    },
-    name: 'filenames',
-    input: types.unit,
-    output: types.List(types.string)
-  }
-}
