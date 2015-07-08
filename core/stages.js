@@ -56,15 +56,6 @@ function readFileRaw(filename, cb) {
  * an 'input' type, and an 'output' type.
  */
 
-module.exports.JSONReader = function(filename) {
-  return {
-    impl: function(_, cb) { readJSONFile(filename, cb); },
-    name: 'JSONReader: ' + filename,
-    input: types.unit,
-    output: types.JSON
-  };
-}
-
 module.exports.reader = function(filename) {
   return {
     impl: function(_, cb) { readFileRaw(filename, cb); },

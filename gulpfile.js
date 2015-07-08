@@ -58,34 +58,29 @@ function buildTask(name, stageList) {
       trace.dump();
       incb();
     };
-    stageList = stageList.map(function(stage) {
-      if (typeof stage == 'string')
-        return stageLoader.stageSpecificationToStage(stage);
-      return stageLoader.stageSpecificationToStage(stage.name, stage.options);
-    });
-    stageLoader.processStages(stageList, cb, function(e) { throw e; });
+    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage(stage)), cb, function(e) { throw e; });
   });
 };
 
 /*
  * Some example pipelines.
  */
-buildTask('html', ['JSON:' + options.file, 'HTMLWriter', 'output:result.html.html']);
-buildTask('js', ['JSON:' + options.file, 'JSWriter', 'output:result.js.html']);
-buildTask('stats', ['JSON:' + options.file, 'StatsWriter', 'consoleOutput']);
+buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'HTMLWriter', 'output:result.html.html']);
+buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'JSWriter', 'output:result.js.html']);
+buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StatsWriter', 'consoleOutput']);
 
 /*
  * examples using filters
  */
-buildTask('compactComputedStyle', ['JSON:' + options.file, 'StyleFilter', 'output:' + options.file + '.filter']);
-buildTask('extractStyle', ['JSON:' + options.file, 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
-buildTask('tokenStyles', ['JSON:' + options.file, 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
-buildTask('nukeIFrame', ['JSON:' + options.file, 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
+buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleFilter', 'output:' + options.file + '.filter']);
+buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleMinimizationFilter', 'output:' + options.file + '.filter']);
+buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'StyleTokenizerFilter', 'output:' + options.file + '.filter']);
+buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'NukeIFrameFilter', 'output:' + options.file + '.filter']);
 
 /*
  * example of fabrication
  */
-buildTask('generate', ['JSON:' + options.file, 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
+buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'parseJSON', 'SchemaBasedFabricator', 'output:' + options.file + '.gen']);
 
 /*
  * examples using device telemetry
