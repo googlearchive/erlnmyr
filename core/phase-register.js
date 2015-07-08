@@ -1,12 +1,6 @@
 var phase = require('./phase');
 
 function PhaseDefinition(info, impl, defaults) {
-  // TODO: I just want to call this constructor without new. Is there a better way?
-  if (!(this instanceof PhaseDefinition)) {
-    var result = Object.create(PhaseDefinition.prototype);
-    PhaseDefinition.apply(result, arguments);
-    return result;
-  }
   this.info = info;
   this.impl = impl;
   this.defaults = defaults;
@@ -61,6 +55,8 @@ function load(module) {
   }
 }
 
-module.exports = PhaseDefinition;
+module.exports = function(info, impl, defaults) {
+  return new PhaseDefinition(info, impl, defaults);
+};
 module.exports.phases = phases;
 module.exports.load = load;
