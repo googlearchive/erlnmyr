@@ -8,7 +8,6 @@ var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 
 var register = require('./phase-register');
-register.load(require('./phase-lib'));
 
 function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
