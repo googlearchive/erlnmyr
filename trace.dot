@@ -1,6 +1,6 @@
 digraph trace {
 
-  imports="['./lib/trace-phases.js']"
+  imports="['trace-phases']"
 
   input [data="traces"]
   input -> readDir -> fileToBuffer;
