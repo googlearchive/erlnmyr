@@ -1,6 +1,6 @@
 digraph chromeBinaryTest {
 
-  imports="['lib/chromium-phases/chromium-phases.js']"
+  imports="['chromium-phases']"
 
   input [data="./example.ejs"]
   chromeBinary [version="323860", chromium="<path to chromium/src>", platform="linux"]

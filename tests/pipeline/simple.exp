@@ -1,5 +1,5 @@
 digraph experiment {
-  imports="['./lib/trace-phases.js']"
+  imports="['trace-phases']"
 
   input_normal [label="input", data="tests/pipeline/simple.trace"];
   input_nostyle [label="input", data="tests/pipeline/simple-nostyle.trace"];

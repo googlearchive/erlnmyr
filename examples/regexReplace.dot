@@ -1,5 +1,5 @@
 digraph experiment {
-  imports="['./lib/trace-phases.js']";
+  imports="['trace-phases']";
 
   input_w -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> regexReplace -> simplePerfer;
   simplePerfer -> traceFilter -> traceTree -> tracePrettyPrint -> log;

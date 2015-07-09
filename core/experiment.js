@@ -59,6 +59,12 @@ function linearConnectEdges(inGraph) {
   return linearize(pipes[edges[0].v].graph);
 }
 
+var bundled = {
+  'trace-phases': '../lib/trace-phases',
+  'chromium-phases': '../lib/chromium-phases/chromium-phases',
+  'device-phases': '../lib/device-phases',
+};
+
 module.exports.doExperiment = definePhase({
   input: types.string,
   output: types.unit,
@@ -72,7 +78,9 @@ module.exports.doExperiment = definePhase({
     var imports = eval(inGraph.graph().imports);
     imports.forEach(function(lib) {
       // TODO: Are we passing the wrong tags object?
-      if (tags.tags.filename && lib[0] == '.') {
+      if (bundled[lib]) {
+        lib = bundled[lib];
+      } else if (tags.tags.filename && lib[0] == '.') {
         lib = path.join(path.dirname(tags.tags.filename), lib);
       }
       definePhase.load(require(lib));
