@@ -62,41 +62,107 @@ function typeCheck(stages) {
   }
 }
 
-/*
- * Constructing a pipeline
- *
- * Sorry for potato quality.
- */
+var done = 'done';
+var par = 'par';
+var yieldData = 'yield';
+
+function TaskQueue() {
+  this.tasks = [];
+  this.deferred = [];
+}
+
+TaskQueue.prototype.take = function() {
+  return this.tasks.pop();
+}
+
+TaskQueue.prototype.put = function(task) {
+  this.tasks.push(task);
+}
+
+TaskQueue.prototype.empty = function() {
+  return this.tasks.length == 0;
+}
+
+var x = 0;
+var executingTasks = 0;
+var maxTasks = 32;
+
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
+
+  var queue = new TaskQueue();
+  var name = stages[0].name;
   stages = stages.concat().reverse();
-  var process = trace.wrap({cat: 'core', name: 'process'}, function(data) {
-    if (!stages.length) {
-      cb(data);
+  queue.put({phases: stages, stream: input});
+  var selfExecutingTasks = 0;
+
+  function executeDependency(dep, task) {
+    dep().then(function() {
+      executingTasks--;
+      selfExecutingTasks--;
+      task.executingDependencies--;
+      process();
+    }, fail);
+  }
+
+  function executePhase(phase, task) {
+    phase.impl(task.stream).then(function(op) {
+      executingTasks--;
+      selfExecutingTasks--;
+      if (op.command == par) {
+        queue.put({
+          phases: task.phases,
+          stream: task.stream,
+          dependencies: op.dependencies,
+          executingDependencies: 0,
+        });
+        process();
+        return;
+      }
+      if (op.command == yieldData) {
+        queue.put({phases: task.phases.concat([phase]), stream: task.stream});
+      }
+
+      task.stream = op.stream;
+      queue.put(task);
+
+      process();
+    }, fail);
+  }
+
+  var process = trace.wrap({cat: 'core', name: 'process'}, function() {
+    var deferred = [];
+    // NOTE: if selfExecutingTasks is 0 and we don't schedule something here then we may never
+    // get another opportunity.
+    while (!queue.empty() && ((selfExecutingTasks == 0) || (executingTasks < maxTasks))) {
+      var task = queue.take();
+      if (task.dependencies && task.dependencies.length) {
+        executingTasks++;
+        selfExecutingTasks++;
+        task.executingDependencies++;
+        executeDependency(task.dependencies.pop(), task);
+        queue.put(task);
+      } else if (!task.dependencies || task.dependencies && task.dependencies.length == 0 && task.executingDependencies == 0) {
+        if (task.phases.length == 0) {
+          continue;
+        }
+        var phase = task.phases.pop();
+        executingTasks++;
+        selfExecutingTasks++;
+        executePhase(phase, task);
+      } else if (task.dependencies && task.executingDependencies > 0) {
+        deferred.push(task);
+      }
+    }
+    x = Math.max(x, executingTasks);
+    deferred.forEach(queue.put.bind(queue));
+    if (queue.empty() && selfExecutingTasks == 0) {
+      cb(input);
       return;
     }
-    var stage = stages.pop();
-    var result = stage.impl(data, process);
-    // TODO: Cleanup and propagate promises once all phases return them.
-    result && result.then(process);
   });
-  process(input);
+  process();
 };
-
-// TODO: This doesn't currently fail if the internal type is consistent and the external type is consistent
-// but they aren't consistent with each other.
-// for example, if the provided list uses tee() then justLeft(), regardless of what steps are in between,
-// this typechecks as 'a -> 'a from the perspective of the outside world.
-module.exports.stage = function(list) {
-  return {
-    impl: function(input, cb) {
-      processStagesWithInput(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
-    },
-    name: '[' + list.map(function(a) { return a.name; }) + ']',
-    input: list[0].input,
-    output: list[list.length - 1].output
-  };
-}
 
 module.exports.typeCheck = typeCheck;
 module.exports.processStages = processStages;
