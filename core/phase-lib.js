@@ -156,7 +156,6 @@ module.exports.compare = phase({input: typeVar('a'), output: typeVar('a'), arity
 
 module.exports.fileToBuffer = phase({input: types.string, output: types.buffer, arity: '1:1', async: true},
   function(filename, tags) {
-    console.log('reading', filename, 'raw');
     if (!tags.filename) {
       this.tags.tag('filename', filename);
     }
