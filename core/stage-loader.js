@@ -85,13 +85,14 @@ TaskQueue.prototype.empty = function() {
 
 var x = 0;
 var executingTasks = 0;
-var maxTasks = 32;
+var maxTasks = 10;
 
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
 
   var queue = new TaskQueue();
   var name = stages[0].name;
+  console.log('pSWI', name, input);
   stages = stages.concat().reverse();
   queue.put({phases: stages, stream: input});
   var selfExecutingTasks = 0;
@@ -110,7 +111,6 @@ function processStagesWithInput(input, stages, cb, fail) {
       executingTasks--;
       selfExecutingTasks--;
       if (op.command == par) {
-        console.error('incoming: ', op.dependencies.length);
         queue.put({
           phases: task.phases,
           stream: task.stream,
@@ -120,8 +120,10 @@ function processStagesWithInput(input, stages, cb, fail) {
         process();
         return;
       }
-      if (op.command == yieldData)
+      if (op.command == yieldData) {
+        console.log(op.stream, task.stream);
         queue.put({phases: task.phases.concat([phase]), stream: task.stream});
+      }
 
       task.stream = op.stream;
       queue.put(task);
@@ -131,11 +133,11 @@ function processStagesWithInput(input, stages, cb, fail) {
   }
 
   var process = trace.wrap({cat: 'core', name: 'process'}, function() {
-    console.error('process called', name, executingTasks);
     var deferred = [];
-    while (!queue.empty() && executingTasks < maxTasks) {
+    // NOTE: if selfExecutingTasks is 0 and we don't schedule something here then we may never
+    // get another opportunity.
+    while (!queue.empty() && ((selfExecutingTasks == 0) || (executingTasks < maxTasks))) {
       var task = queue.take();
-      console.error(task.phases.length, task.dependencies && task.dependencies.length, task.executingDependencies);
       if (task.dependencies && task.dependencies.length) {
         executingTasks++;
         selfExecutingTasks++;
@@ -143,8 +145,9 @@ function processStagesWithInput(input, stages, cb, fail) {
         executeDependency(task.dependencies.pop(), task);
         queue.put(task);
       } else if (!task.dependencies || task.dependencies && task.dependencies.length == 0 && task.executingDependencies == 0) {
-        if (task.phases.length == 0)
+        if (task.phases.length == 0) {
           continue;
+        }
         var phase = task.phases.pop();
         executingTasks++;
         selfExecutingTasks++;
@@ -155,8 +158,7 @@ function processStagesWithInput(input, stages, cb, fail) {
     }
     x = Math.max(x, executingTasks);
     deferred.forEach(queue.put.bind(queue));
-    if (selfExecutingTasks == 0) {
-      console.log('XXXXX', x);
+    if (queue.empty() && selfExecutingTasks == 0) {
       cb(input);
       return;
     }

@@ -97,6 +97,10 @@ function done(stream) {
   return {command: 'done', stream: stream};
 }
 
+function yield(stream) {
+  return {command: 'yield', stream: stream};
+}
+
 function par(dependencies) {
   return {command: 'par', dependencies: dependencies};
 }
@@ -202,8 +206,15 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     var result = this.runtime.impl(item.data, this.runtime.tags);
     this.runtime.tags.tag(this.outputKey, this.outputValue);
     this.runtime.put(result);
+    // WAT - this isn't going to work.
     t.end();
   }.bind(this));
+  if (this.runtime.yielding) {
+    this.runtime.yielding = false;
+    var result = yield(this.runtime.stream);
+    console.log(result);
+    return Promise.resolve(result);
+  }
   return Promise.resolve(done(stream));
 }
 
@@ -241,7 +252,6 @@ PhaseBase.prototype.impl1ToN = function(stream) {
 PhaseBase.prototype.impl1ToNAsync = function(stream) {
   this.runtime.stream = stream;
   var items = stream.get(this.inputKey, this.inputValue);
-  console.error('items length', items.length);
   var phase = this;
   return Promise.resolve(par(items.map(function(item) {
     return function() {
@@ -332,6 +342,15 @@ PhaseBaseRuntime.prototype.toTraceInfo = function() {
 PhaseBaseRuntime.prototype.setTags = function(tags) {
   this.baseTags = new Tags(tags);
   this.tags = this.baseTags;
+}
+
+PhaseBaseRuntime.prototype.newStream = function() {
+  this.stream = new streamLib.Stream();
+}
+
+PhaseBaseRuntime.prototype.yield = function(data) {
+  this.yielding = true;
+  return data;
 }
 
 function pipeline(phases) {
