@@ -71,29 +71,58 @@ function typeCheck(stages) {
 var done = 'done';
 var yieldData = 'yield';
 
+function TaskQueue() {
+  this.tasks = [];
+  this.deferred = [];
+}
+
+TaskQueue.prototype.take = function() {
+  return this.tasks.pop();
+}
+
+TaskQueue.prototype.put = function(task) {
+  this.tasks.push(task);
+}
+
+TaskQueue.prototype.empty = function() {
+  return this.tasks.length == 0;
+}
 
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
-  stages = stages.concat().reverse();
-  var stageStack = [stages];
-  var process = trace.wrap({cat: 'core', name: 'process'}, function(streamCommand) {
-    if (streamCommand.command == yieldData)
-      stageStack.push(stages.slice());
 
-    do {
-      stages = stageStack.pop();
-    } while (stages.length == 0 && stageStack.length > 0);
-    if (stages.length == 0 && stageStack.length == 0) {
-      cb(streamCommand.stream);
+  var queue = new TaskQueue();
+  stages = stages.concat().reverse();
+  queue.put({phases: stages, stream: input});
+  var executingTasks = 0;
+  var maxTasks = 1;
+
+  var process = trace.wrap({cat: 'core', name: 'process'}, function() {
+    while (!queue.empty() && executingTasks < maxTasks) {
+      var task = queue.take();
+      if (task.phases.length == 0)
+        continue;
+      var phase = task.phases.pop();
+      (function(phase, task) {
+        executingTasks++;
+        phase.impl(task.stream).then(function(streamCommand) {
+          if (streamCommand.stream == yieldData)
+            queue.put({phases: task.phases.concat([phase]), stream: task.stream});
+
+          task.stream = streamCommand.stream;
+          queue.put(task);
+
+          executingTasks--;
+          process();
+        }, fail);
+      })(phase, task);
+    }
+    if (executingTasks == 0) {
+      cb(input);
       return;
     }
-    var stage = stages.pop();
-    stageStack.push(stages);
-    var result = stage.impl(streamCommand.stream);
-    // TODO: Cleanup and propagate promises once all phases return them.
-    result.then(process, fail);
   });
-  process({command: done, stream: input});
+  process();
 };
 
 module.exports.typeCheck = typeCheck;

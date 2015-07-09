@@ -202,3 +202,15 @@ module.exports.updateTag = phase({input: typeVar('a'), output: typeVar('a'), ari
       return data;
     },
     {tag: '', in: /.?/, out: ""});
+
+module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+    function(data) {
+      this.newStream();
+      return this.yield(data);
+    });
+
+
+module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0:N', async: true, parallel: 1},
+    function() {
+      return readFromSTDIN().then(this.yield);
+    });
