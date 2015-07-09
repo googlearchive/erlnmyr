@@ -62,6 +62,9 @@ function load(module) {
   for (var k in module) {
     var item = module[k];
     if (item instanceof PhaseDefinition) {
+      console.assert(k.indexOf('_') === -1,
+          'Phase name "' + k + '" must not include an underscore.\n' +
+          'Underscores are reserved for separating phase names from node IDs in experiments.');
       item.info.name = k;
       phases[k] = item.build();
     }
