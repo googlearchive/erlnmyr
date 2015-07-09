@@ -208,9 +208,3 @@ module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '
       this.newStream();
       return this.yield(data);
     });
-
-
-module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0:N', async: true, parallel: 1},
-    function() {
-      return readFromSTDIN().then(this.yield);
-    });

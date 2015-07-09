@@ -97,7 +97,7 @@ function done(stream) {
   return {command: 'done', stream: stream};
 }
 
-function yield(stream) {
+function yieldData(stream) {
   return {command: 'yield', stream: stream};
 }
 
@@ -219,7 +219,7 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     t.end();
 
     if (this.runtime.yielding) {
-      return Promise.resolve(yield(this.runtime.stream));
+      return Promise.resolve(yieldData(this.runtime.stream));
     }
   }
   if (!this.runtime.yielding) {
