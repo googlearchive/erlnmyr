@@ -17,17 +17,19 @@ var stages = require('../../core/stages');
 var types = require('../../core/types');
 var experiment = require('../../core/experiment');
 var stream = require('../../core/stream');
+var Promise = require('bluebird');
 
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
   stageLoader.processStages(stageList, cb, function(e) { throw e; });
 };
 
+// TODO: Terminate this with extreme prejudice
 function testOutput(expectedResult) {
   return {
-    impl: function(data, cb) {
+    impl: function(data) {
       assert.deepEqual(expectedResult, data.data[0].data);
-      cb();
+      return Promise.resolve(data);
     },
     name: 'testOutput',
     input: types.newTypeVar(),

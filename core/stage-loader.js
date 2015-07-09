@@ -76,27 +76,12 @@ function processStagesWithInput(input, stages, cb, fail) {
       return;
     }
     var stage = stages.pop();
-    var result = stage.impl(data, process);
+    var result = stage.impl(data);
     // TODO: Cleanup and propagate promises once all phases return them.
-    result && result.then(process);
+    result.then(process, fail);
   });
   process(input);
 };
-
-// TODO: This doesn't currently fail if the internal type is consistent and the external type is consistent
-// but they aren't consistent with each other.
-// for example, if the provided list uses tee() then justLeft(), regardless of what steps are in between,
-// this typechecks as 'a -> 'a from the perspective of the outside world.
-module.exports.stage = function(list) {
-  return {
-    impl: function(input, cb) {
-      processStagesWithInput(input, list, cb, function(e) { console.log('failed pipeline', e, '\n', e.stack); cb(null); });
-    },
-    name: '[' + list.map(function(a) { return a.name; }) + ']',
-    input: list[0].input,
-    output: list[list.length - 1].output
-  };
-}
 
 module.exports.typeCheck = typeCheck;
 module.exports.processStages = processStages;
