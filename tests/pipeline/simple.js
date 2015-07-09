@@ -29,7 +29,7 @@ function testOutput(expectedResult) {
   return {
     impl: function(data) {
       assert.deepEqual(expectedResult, data.data[0].data);
-      return Promise.resolve(data);
+      return Promise.resolve({command: 'done', stream: data});
     },
     name: 'testOutput',
     input: types.newTypeVar(),

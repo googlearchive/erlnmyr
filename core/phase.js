@@ -93,6 +93,10 @@ function PhaseBase(info, impl, options) {
   this.runtime = new PhaseBaseRuntime(this, impl, options);
 }
 
+function done(stream) {
+  return {command: 'done', stream: stream};
+}
+
 // TODO: remove me once stage loading doesn't need to detect
 // whether we're already in a phase.
 PhaseBase.prototype.isStream = true;
@@ -144,7 +148,7 @@ PhaseBase.prototype.implNToN = function(stream) {
   var t = trace.start(this.runtime);
   this.runtime.impl();
   t.end();
-  return Promise.resolve(stream);
+  return Promise.resolve(done(stream));
 }
 
 PhaseBase.prototype.impl0To1 = function(stream) {
@@ -154,7 +158,7 @@ PhaseBase.prototype.impl0To1 = function(stream) {
   var result = this.runtime.impl(this.runtime.tags);
   this.runtime.put(result);
   t.end();
-  return Promise.resolve(this.runtime.stream);
+  return Promise.resolve(done(this.runtime.stream));
 };
 
 function flowItemGet(runtime, tags) {
@@ -196,7 +200,7 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     this.runtime.put(result);
     t.end();
   }.bind(this));
-  return Promise.resolve(stream);
+  return Promise.resolve(done(stream));
 }
 
 PhaseBase.prototype.impl1To1Async = function(stream) {
@@ -226,7 +230,7 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
     tasks.push(process());
   }
   return Promise.all(tasks).then(function() {
-    return stream;
+    return done(stream);
   });
 }
 
@@ -238,7 +242,7 @@ PhaseBase.prototype.impl1ToN = function(stream) {
     this.runtime.impl(item.data, this.runtime.tags);
     t.end();
   }.bind(this));
-  return Promise.resolve(stream);
+  return Promise.resolve(done(stream));
 }
 
 PhaseBase.prototype.impl1ToNAsync = function(stream) {
@@ -269,7 +273,7 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
     tasks.push(process());
   }
   return Promise.all(tasks).then(function() {
-    return stream;
+    return done(stream);
   });
 }
 

@@ -67,20 +67,24 @@ function typeCheck(stages) {
  *
  * Sorry for potato quality.
  */
+
+var done = 'done';
+
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
   stages = stages.concat().reverse();
-  var process = trace.wrap({cat: 'core', name: 'process'}, function(data) {
+  var process = trace.wrap({cat: 'core', name: 'process'}, function(streamCommand) {
+    assert(streamCommand.command == done);
     if (!stages.length) {
-      cb(data);
+      cb(streamCommand.stream);
       return;
     }
     var stage = stages.pop();
-    var result = stage.impl(data);
+    var result = stage.impl(streamCommand.stream);
     // TODO: Cleanup and propagate promises once all phases return them.
     result.then(process, fail);
   });
-  process(input);
+  process({command: done, stream: input});
 };
 
 module.exports.typeCheck = typeCheck;
