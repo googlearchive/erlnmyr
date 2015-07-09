@@ -62,13 +62,8 @@ function typeCheck(stages) {
   }
 }
 
-/*
- * Constructing a pipeline
- *
- * Sorry for potato quality.
- */
-
 var done = 'done';
+var par = 'par';
 var yieldData = 'yield';
 
 function TaskQueue() {
@@ -95,29 +90,66 @@ function processStagesWithInput(input, stages, cb, fail) {
   stages = stages.concat().reverse();
   queue.put({phases: stages, stream: input});
   var executingTasks = 0;
-  var maxTasks = 1;
+  var maxTasks = 32;
 
+  function executeDependency(dep, task) {
+    dep().then(function() {
+      executingTasks--;
+      task.executingDependencies--;
+      process();
+    }, fail);
+  }
+
+  function executePhase(phase, task) {
+    phase.impl(task.stream).then(function(op) {
+      executingTasks--;
+      if (op.command == par) {
+        console.error('incoming: ', op.dependencies.length);
+        queue.put({
+          phases: task.phases,
+          stream: task.stream,
+          dependencies: op.dependencies,
+          executingDependencies: 0,
+        });
+        process();
+        return;
+      }
+      if (op.command == yieldData)
+        queue.put({phases: task.phases.concat([phase]), stream: task.stream});
+
+      task.stream = op.stream;
+      queue.put(task);
+
+      process();
+    }, fail);
+  }
+
+  var x = 0;
   var process = trace.wrap({cat: 'core', name: 'process'}, function() {
+    console.error('process called');
+    var deferred = [];
     while (!queue.empty() && executingTasks < maxTasks) {
       var task = queue.take();
-      if (task.phases.length == 0)
-        continue;
-      var phase = task.phases.pop();
-      (function(phase, task) {
+      console.error(task.phases.length, task.dependencies && task.dependencies.length, task.executingDependencies);
+      if (task.dependencies && task.dependencies.length) {
         executingTasks++;
-        phase.impl(task.stream).then(function(streamCommand) {
-          if (streamCommand.stream == yieldData)
-            queue.put({phases: task.phases.concat([phase]), stream: task.stream});
-
-          task.stream = streamCommand.stream;
-          queue.put(task);
-
-          executingTasks--;
-          process();
-        }, fail);
-      })(phase, task);
+        task.executingDependencies++;
+        executeDependency(task.dependencies.pop(), task);
+        queue.put(task);
+      } else if (!task.dependencies || task.dependencies && task.dependencies.length == 0 && task.executingDependencies == 0) {
+        if (task.phases.length == 0)
+          continue;
+        var phase = task.phases.pop();
+        executingTasks++;
+        executePhase(phase, task);
+      } else if (task.dependencies && task.executingDependencies > 0) {
+        deferred.push(task);
+      }
     }
+    x = Math.max(x, executingTasks);
+    deferred.forEach(queue.put.bind(queue));
     if (executingTasks == 0) {
+      console.log('XXXXX', x);
       cb(input);
       return;
     }

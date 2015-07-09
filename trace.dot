@@ -2,9 +2,6 @@ digraph trace {
 
   imports="['trace-phases']"
 
-  input [data="traces"]
-  input -> readDir -> fileToBuffer;
-
   subgraph cluster0 {
     fileToBuffer -> gunzipAndDecode -> jsonParse;
     jsonParse -> traceFilter -> tracePIDSplitter -> traceTIDSplitter -> traceTree;
@@ -13,6 +10,9 @@ digraph trace {
     color=blue;
     strategy=pipeline;
   }
+
+  input [data="traces"]
+  input -> readDir -> fileToBuffer;
 
   log [tags="['filename']"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];

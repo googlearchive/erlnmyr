@@ -41,7 +41,7 @@ function PhaseBase(info, impl, options) {
     this.outputType = info.output || types.unit;
   }
   this.async = info.async || false;
-  this.parallel = info.parallel || Infinity;
+  this.parallel = 1;
   if (this.async) {
     switch(info.arity) {
       case '0:1':
@@ -95,6 +95,10 @@ function PhaseBase(info, impl, options) {
 
 function done(stream) {
   return {command: 'done', stream: stream};
+}
+
+function par(dependencies) {
+  return {command: 'par', dependencies: dependencies};
 }
 
 // TODO: remove me once stage loading doesn't need to detect
@@ -203,35 +207,24 @@ PhaseBase.prototype.impl1To1 = function(stream) {
   return Promise.resolve(done(stream));
 }
 
+
 PhaseBase.prototype.impl1To1Async = function(stream) {
   this.runtime.stream = stream;
   var items = stream.get(this.inputKey, this.inputValue);
   var phase = this;
-  function process() {
-    if (items.length == 0) {
-      return Promise.resolve();
-    }
-    var item = items.pop();
-    // TODO: Simplify runtime so that we can share it across invocations.
-    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
-    runtime.stream = stream;
-    runtime.setTags(item.tags);
-    var t = trace.start(runtime); flowItemGet(runtime, item.tags);
-    var result = runtime.impl(item.data, runtime.tags);
-    t.end();
-    return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
-      runtime.put(result);
-      return process();
-    }));
-  }
-  var spawn = Math.min(this.parallel, items.length);
-  var tasks = [];
-  for (var i = 0; i < spawn; i++) {
-    tasks.push(process());
-  }
-  return Promise.all(tasks).then(function() {
-    return done(stream);
-  });
+  return Promise.resolve(par(items.map(function(item) {
+    return function() {
+      var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
+      runtime.stream = stream;
+      runtime.setTags(item.tags);
+      var t = trace.start(runtime); flowItemGet(runtime, item.tags);
+      var result = runtime.impl(item.data, runtime.tags);
+      t.end();
+      return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
+        runtime.put(result);
+      }));
+    };
+  })));
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
