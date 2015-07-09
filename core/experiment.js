@@ -21,6 +21,7 @@ var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 var Promise = require('bluebird');
 var definePhase = require('./phase-register');
+var path = require('path');
 
 function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
@@ -63,15 +64,18 @@ module.exports.doExperiment = definePhase({
   output: types.unit,
   arity: '1:N',
   async: true,
-}, function(data) {
+}, function(data, tags) {
   var inGraph = dot.read(data);
   // TODO: Perhaps create instance of stage-loader and ask it to load these
   //       to avoid polluting other experiments.
   if (inGraph.graph().imports) {
-    var imports = eval(inGraph._label.imports);
+    var imports = eval(inGraph.graph().imports);
     imports.forEach(function(lib) {
-      // TODO: figure out the right way to specify this path
-      definePhase.load(require('../' + lib));
+      // TODO: Are we passing the wrong tags object?
+      if (tags.tags.filename && lib[0] == '.') {
+        lib = path.join(path.dirname(tags.tags.filename), lib);
+      }
+      definePhase.load(require(lib));
     });
   }
   var linear = linearConnectEdges(inGraph);
