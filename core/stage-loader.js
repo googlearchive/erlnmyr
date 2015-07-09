@@ -85,14 +85,13 @@ TaskQueue.prototype.empty = function() {
 
 var x = 0;
 var executingTasks = 0;
-var maxTasks = 10;
+var maxTasks = 32;
 
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
 
   var queue = new TaskQueue();
   var name = stages[0].name;
-  console.log('pSWI', name, input);
   stages = stages.concat().reverse();
   queue.put({phases: stages, stream: input});
   var selfExecutingTasks = 0;
@@ -121,7 +120,6 @@ function processStagesWithInput(input, stages, cb, fail) {
         return;
       }
       if (op.command == yieldData) {
-        console.log(op.stream, task.stream);
         queue.put({phases: task.phases.concat([phase]), stream: task.stream});
       }
 

@@ -200,24 +200,32 @@ function flowItemPut(runtime, tags) {
 
 PhaseBase.prototype.impl1To1 = function(stream) {
   this.runtime.stream = stream;
-  stream.get(this.inputKey, this.inputValue).forEach(function(item) {
+
+  if (!this.pendingItems || !this.pendingItems.length) {
+    if (this.runtime.yielding) {
+      return Promise.resolve(done(stream));
+      this.runtime.yielding = false;
+    }
+    this.pendingItems = stream.get(this.inputKey, this.inputValue);
+  }
+
+  while (this.pendingItems.length) {
+    var item = this.pendingItems.pop();
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     var result = this.runtime.impl(item.data, this.runtime.tags);
     this.runtime.tags.tag(this.outputKey, this.outputValue);
     this.runtime.put(result);
-    // WAT - this isn't going to work.
     t.end();
-  }.bind(this));
-  if (this.runtime.yielding) {
-    this.runtime.yielding = false;
-    var result = yield(this.runtime.stream);
-    console.log(result);
-    return Promise.resolve(result);
-  }
-  return Promise.resolve(done(stream));
-}
 
+    if (this.runtime.yielding) {
+      return Promise.resolve(yield(this.runtime.stream));
+    }
+  }
+  if (!this.runtime.yielding) {
+    return Promise.resolve(done(stream));
+  }
+}
 
 PhaseBase.prototype.impl1To1Async = function(stream) {
   this.runtime.stream = stream;

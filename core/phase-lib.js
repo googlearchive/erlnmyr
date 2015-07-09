@@ -205,7 +205,6 @@ module.exports.updateTag = phase({input: typeVar('a'), output: typeVar('a'), ari
 
 module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
     function(data) {
-      console.log('data', data);
       this.newStream();
       return this.yield(data);
     });
