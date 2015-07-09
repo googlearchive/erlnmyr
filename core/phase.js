@@ -241,33 +241,22 @@ PhaseBase.prototype.impl1ToN = function(stream) {
 PhaseBase.prototype.impl1ToNAsync = function(stream) {
   this.runtime.stream = stream;
   var items = stream.get(this.inputKey, this.inputValue);
-
+  console.error('items length', items.length);
   var phase = this;
-  function process() {
-    if (items.length == 0) {
-      return Promise.resolve();
-    }
-    var item = items.pop();
-    var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
-    runtime.stream = stream;
-    runtime.setTags(item.tags);
-    var t = trace.start(runtime); flowItemGet(runtime, item.tags);
-    var result = runtime.impl(item.data, runtime.tags);
-    var flow = trace.flow({cat: 'phase', name: phase.name}).start();
-    t.end();
-    return result.then(function(result) {
-      flow.end();
-      return process();
-    });
-  }
-  var spawn = Math.min(this.parallel, items.length);
-  var tasks = [];
-  for (var i = 0; i < spawn; i++) {
-    tasks.push(process());
-  }
-  return Promise.all(tasks).then(function() {
-    return done(stream);
-  });
+  return Promise.resolve(par(items.map(function(item) {
+    return function() {
+      var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
+      runtime.stream = stream;
+      runtime.setTags(item.tags);
+      var t = trace.start(runtime); flowItemGet(runtime, item.tags);
+      var result = runtime.impl(item.data, runtime.tags);
+      var flow = trace.flow({cat: 'phase', name: phase.name}).start();
+      t.end();
+      return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
+        flow.end();
+      }));
+    };
+  })));
 }
 
 Tags.prototype.clone = function() {

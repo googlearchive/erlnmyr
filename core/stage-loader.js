@@ -83,18 +83,23 @@ TaskQueue.prototype.empty = function() {
   return this.tasks.length == 0;
 }
 
+var x = 0;
+var executingTasks = 0;
+var maxTasks = 32;
+
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
 
   var queue = new TaskQueue();
+  var name = stages[0].name;
   stages = stages.concat().reverse();
   queue.put({phases: stages, stream: input});
-  var executingTasks = 0;
-  var maxTasks = 32;
+  var selfExecutingTasks = 0;
 
   function executeDependency(dep, task) {
     dep().then(function() {
       executingTasks--;
+      selfExecutingTasks--;
       task.executingDependencies--;
       process();
     }, fail);
@@ -103,6 +108,7 @@ function processStagesWithInput(input, stages, cb, fail) {
   function executePhase(phase, task) {
     phase.impl(task.stream).then(function(op) {
       executingTasks--;
+      selfExecutingTasks--;
       if (op.command == par) {
         console.error('incoming: ', op.dependencies.length);
         queue.put({
@@ -124,15 +130,15 @@ function processStagesWithInput(input, stages, cb, fail) {
     }, fail);
   }
 
-  var x = 0;
   var process = trace.wrap({cat: 'core', name: 'process'}, function() {
-    console.error('process called');
+    console.error('process called', name, executingTasks);
     var deferred = [];
     while (!queue.empty() && executingTasks < maxTasks) {
       var task = queue.take();
       console.error(task.phases.length, task.dependencies && task.dependencies.length, task.executingDependencies);
       if (task.dependencies && task.dependencies.length) {
         executingTasks++;
+        selfExecutingTasks++;
         task.executingDependencies++;
         executeDependency(task.dependencies.pop(), task);
         queue.put(task);
@@ -141,6 +147,7 @@ function processStagesWithInput(input, stages, cb, fail) {
           continue;
         var phase = task.phases.pop();
         executingTasks++;
+        selfExecutingTasks++;
         executePhase(phase, task);
       } else if (task.dependencies && task.executingDependencies > 0) {
         deferred.push(task);
@@ -148,7 +155,7 @@ function processStagesWithInput(input, stages, cb, fail) {
     }
     x = Math.max(x, executingTasks);
     deferred.forEach(queue.put.bind(queue));
-    if (executingTasks == 0) {
+    if (selfExecutingTasks == 0) {
       console.log('XXXXX', x);
       cb(input);
       return;
