@@ -143,10 +143,16 @@ function processStagesWithInput(input, stages, cb, fail) {
         executeDependency(task.dependencies.pop(), task);
         queue.put(task);
       } else if (!task.dependencies || task.dependencies && task.dependencies.length == 0 && task.executingDependencies == 0) {
-        if (task.phases.length == 0) {
+        var phase = undefined;
+        while (task.phases.length > 0) {
+          phase = task.phases.pop();
+          if (phase.impl !== undefined)
+            break;
+          phase = undefined;
+        }
+        if (phase == undefined) {
           continue;
         }
-        var phase = task.phases.pop();
         executingTasks++;
         selfExecutingTasks++;
         executePhase(phase, task);
