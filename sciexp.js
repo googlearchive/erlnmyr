@@ -13,23 +13,37 @@
   limitations under the License.
 */
 
-'use strict';
-var path = require('path');
-var stageLoader = require('./core/stage-loader');
+// This craziness basically just makes sure that imports inside experiments
+// are sane. When we run an experiment we do so as if the experiment were a
+// node module in the same location.
 
+var path = require('path');
+var spawn = require('child_process').spawn;
 var file = process.argv[2];
 if (!path.isAbsolute(file)) {
   file = path.join(process.cwd(), file);
 }
-var phases = [
-  {name: 'input', options: {data: file}},
-  'fileToBuffer',
-  'bufferToString',
-  'doExperiment',
-].map(stageLoader.stageSpecificationToStage);
+process.chdir(path.dirname(file));
 
-stageLoader.processStages(phases, function() {
-  require('./core/trace').dump();
-}, function(e) {
-  throw e;
-});
+function run(exports, target) {
+  var run;
+  try {
+    // If there's a local tree-builder-builder, use that.
+    run = require('tree-builder-builder').run;
+  } catch (e) {
+    // Otherwise fall back on the one alongside this binary.
+    run = require(exports).run;
+  }
+  run(target, function(name) {
+    return require(name);
+  });
+}
+
+var exports = JSON.stringify(path.join(__dirname, 'exports.js'));
+var target = JSON.stringify(file);
+
+spawn('/usr/bin/env', [
+  'node',
+  '-e',
+  '(' + String(run) + ')(' + exports + ', ' + target + ');',
+], {stdio: 'inherit'});

@@ -60,9 +60,9 @@ function linearConnectEdges(inGraph) {
 }
 
 var bundled = {
-  'trace-phases': '../lib/trace-phases',
-  'chromium-phases': '../lib/chromium-phases/chromium-phases',
-  'device-phases': '../lib/device-phases',
+  'trace-phases': path.join(__dirname, '../lib/trace-phases'),
+  'chromium-phases': path.join(__dirname, '../lib/chromium-phases/chromium-phases'),
+  'device-phases': path.join(__dirname, '../lib/device-phases'),
 };
 
 module.exports.doExperiment = definePhase({
@@ -76,6 +76,7 @@ module.exports.doExperiment = definePhase({
   //       to avoid polluting other experiments.
   if (inGraph.graph().imports) {
     var imports = eval(inGraph.graph().imports);
+    var options = this.options;
     imports.forEach(function(lib) {
       // TODO: Are we passing the wrong tags object?
       if (bundled[lib]) {
@@ -83,7 +84,7 @@ module.exports.doExperiment = definePhase({
       } else if (tags.tags.filename && lib[0] == '.') {
         lib = path.join(path.dirname(tags.tags.filename), lib);
       }
-      definePhase.load(require(lib));
+      definePhase.load(options.require(lib));
     });
   }
   var linear = linearConnectEdges(inGraph);
@@ -164,6 +165,8 @@ module.exports.doExperiment = definePhase({
   return new Promise(function(resolve, reject) {
     stageLoader.processStages(phaseStack[0], resolve, reject);
   });
+}, {
+  require: require,
 });
 
 module.exports.getPhaseName = getPhaseName;
