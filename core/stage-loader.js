@@ -16,6 +16,8 @@ var stream = require('./stream');
 var trace = require('./trace');
 var types = require('./types');
 
+var Promise = require('bluebird');
+
 var register;
 
 function stageSpecificationToStage(stage) {
@@ -81,12 +83,18 @@ var maxTasks = 32;
 
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
+  var initStages = [];
+  for (var i = 0; i < stages.length; i++) {
+    if (stages[i].init !== undefined) {
+      initStages.push({stage: stages[i], idx: i});
+    }
+  }
 
   var queue = new TaskQueue();
   var name = stages[0].name;
-  stages = stages.concat().reverse();
-  queue.put({phases: stages, stream: input});
+
   var selfExecutingTasks = 0;
+  var finished = false;
 
   function executeDependency(dep, task) {
     dep().then(function() {
@@ -135,10 +143,16 @@ function processStagesWithInput(input, stages, cb, fail) {
         executeDependency(task.dependencies.pop(), task);
         queue.put(task);
       } else if (!task.dependencies || task.dependencies && task.dependencies.length == 0 && task.executingDependencies == 0) {
-        if (task.phases.length == 0) {
+        var phase = undefined;
+        while (task.phases.length > 0) {
+          phase = task.phases.pop();
+          if (phase.impl !== undefined)
+            break;
+          phase = undefined;
+        }
+        if (phase == undefined) {
           continue;
         }
-        var phase = task.phases.pop();
         executingTasks++;
         selfExecutingTasks++;
         executePhase(phase, task);
@@ -148,12 +162,22 @@ function processStagesWithInput(input, stages, cb, fail) {
     }
     x = Math.max(x, executingTasks);
     deferred.forEach(queue.put.bind(queue));
-    if (queue.empty() && selfExecutingTasks == 0) {
+    if (finished && queue.empty() && selfExecutingTasks == 0) {
       cb(input);
       return;
     }
   });
-  process();
+
+
+  var promises = initStages.map(function(initStage) {
+    return initStage.stage.init(function(stream) {
+      queue.put({phases: stages.slice(initStage.idx + 1).reverse(), stream: stream});
+      // TODO: Probably want global control over process invocation.
+      process();
+    })
+  });
+
+  Promise.all(promises).then(function() { finished = true; });
 };
 
 module.exports.typeCheck = typeCheck;
