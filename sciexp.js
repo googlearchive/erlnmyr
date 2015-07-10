@@ -26,6 +26,7 @@ if (!path.isAbsolute(file)) {
 process.chdir(path.dirname(file));
 
 function run(exports, target) {
+  process.argv = [process.argv[0], 'ignore'].concat(JSON.parse(process.argv[1]));
   var run;
   try {
     // If there's a local tree-builder-builder, use that.
@@ -46,4 +47,6 @@ spawn('/usr/bin/env', [
   'node',
   '-e',
   '(' + String(run) + ')(' + exports + ', ' + target + ');',
+  // Can't pass --arguments to node -e :(
+  JSON.stringify(process.argv.slice(3)),
 ], {stdio: 'inherit'});
