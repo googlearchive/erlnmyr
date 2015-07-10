@@ -20,7 +20,8 @@
     "bluebird": "~2.9.32",
     "chai": "^2.2.0",
     "minimist": "^1.1.0",
-    "expand-home-dir": "^0.0.2"
+    "expand-home-dir": "^0.0.2",
+    "split": "*"
   },
   "devDependencies": {
     "gulp": "^3.8.11",

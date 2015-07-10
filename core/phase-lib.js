@@ -120,11 +120,12 @@ module.exports.writeStringFile = phase({input: types.string, output: types.strin
     },
     { tag: '', filename: 'result' });
 
-module.exports.input = phase({output: types.string, arity: '0:1'},
+module.exports.input = phase({output: types.string, arity: '0:N'},
     function(tags) {
       if (this.options.tag)
         tags.tag('data', this.options.data);
-      return this.options.data;
+      this.sendData(this.options.data);
+      return Promise.resolve();
     },
     { data: '', tag: true});
 
@@ -207,3 +208,17 @@ module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '
       this.newStream();
       return this.yield(data);
     });
+
+module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0:N', parallel: 1},
+    function() {
+      var sendLine = function(line) {
+        if (line == this.options.done) {
+          this.pipe.destroy();
+          this.resolve();
+        }
+        this.sendData(line);
+      }.bind(this);
+      this.pipe = process.stdin.pipe(require('split')()).on('data', sendLine);
+      return new Promise(function(resolve, reject) { this.resolve = resolve; }.bind(this));
+    },
+    { done: 'exit'});
