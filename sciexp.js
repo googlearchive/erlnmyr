@@ -24,10 +24,26 @@ if (!path.isAbsolute(file)) {
   file = path.join(process.cwd(), file);
 }
 process.chdir(path.dirname(file));
+
+function run(exports, target) {
+  var run;
+  try {
+    // If there's a local tree-builder-builder, use that.
+    run = require('tree-builder-builder').run;
+  } catch (e) {
+    // Otherwise fall back on the one alongside this binary.
+    run = require(exports).run;
+  }
+  run(target, function(name) {
+    return require(name);
+  });
+}
+
 var exports = JSON.stringify(path.join(__dirname, 'exports.js'));
 var target = JSON.stringify(file);
+
 spawn('/usr/bin/env', [
   'node',
   '-e',
-  'require(' + exports + ').run(' + target + ', function(name) { return require(name); });',
+  '(' + String(run) + ')(' + exports + ', ' + target + ');',
 ], {stdio: 'inherit'});
