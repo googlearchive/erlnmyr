@@ -11,7 +11,26 @@
   limitations under the License.
 */
 
-// TODO: Fix the cyclic dependency so this isn't needed.
-require('./core/stage-loader');
+'use strict';
 module.exports.phase = require('./core/phase-register');
 module.exports.types = require('./core/types');
+module.exports.run = function(file, loader) {
+  var path = require('path');
+  var stageLoader = require('./core/stage-loader');
+
+  if (!path.isAbsolute(file)) {
+    file = path.join(process.cwd(), file);
+  }
+  var phases = [
+    {name: 'input', options: {data: file}},
+    'fileToBuffer',
+    'bufferToString',
+    {name: 'doExperiment', options: {require: loader}},
+  ].map(stageLoader.stageSpecificationToStage);
+
+  stageLoader.processStages(phases, function() {
+    require('./core/trace').dump();
+  }, function(e) {
+    throw e;
+  }, loader);
+};

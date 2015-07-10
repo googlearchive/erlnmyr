@@ -14,34 +14,26 @@
 var assert = require('chai').assert;
 var stream = require('./stream');
 var trace = require('./trace');
-
-var stages = require('./stages');
 var types = require('./types');
 
-var register = require('./phase-register');
-register.load(require('./phase-lib'));
-register.load(require('./experiment'));
-register.load(require('../lib/device-phases'));
+var register;
 
-var byName = [register.phases, stages];
-
-function _stageSpecificationToStage(stage, options) {
-  options = options || {};
-  for (var i = 0; i < byName.length; i++) {
-    if (stage in byName[i])
-      return byName[i][stage](options);
-  }
-
-  assert(false, "No stage found for specification " + stage);
-}
-
-// TODO once everything is a phase, this can be removed.
 function stageSpecificationToStage(stage) {
-  if (typeof stage == 'string')
-    stage = _stageSpecificationToStage(stage);
-  else
-    stage = _stageSpecificationToStage(stage.name, stage.options);
-  return stage;
+  var name = stage;
+  var options = {};
+  if (typeof name != 'string') {
+    name = stage.name;
+    options = stage.options;
+  }
+  if (!register) {
+    // TODO: Fix the cyclic dependency to avoid this lazy loading.
+    register = require('./phase-register');
+    register.load(require('./phase-lib'));
+    register.load(require('./experiment'));
+    register.load(require('../lib/device-phases'));
+  }
+  assert(register.phases[name], "Can't find phase: " + name);
+  return register.phases[name](options || {});
 }
 
 function processStages(stages, cb, fail) {
