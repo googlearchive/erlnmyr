@@ -4,7 +4,7 @@ digraph trace {
 
     fileToBuffer -> gunzipAndDecode -> jsonParse;
     jsonParse -> traceFilter -> tracePIDSplitter -> traceTIDSplitter -> traceTree;
-    traceTree -> traceAnalyser -> logCsv;
+    traceTree -> tracePrettyPrint -> log;
 
     color=blue;
     strategy=pipeline;
@@ -12,7 +12,7 @@ digraph trace {
   input [data="traces"]
   input -> readDir -> fork -> fileToBuffer;
 
-  log [tags="['filename', 'eventName']"]
+  log [tags="['filename']"]
   traceFilter [traceEvents="['Document::updateStyle','V8.Execute','CSSParserImpl::parseStyleSheet']"];
   tracePrettyPrint [showTrace="false"];
 }
