@@ -65,8 +65,8 @@ function PhaseBase(info, impl, options) {
       case 'N:N':
         this.impl = this.implNToN;
         break;
-      case '0:1':
-        this.impl = this.impl0To1;
+      case '0:N':
+        this.init = this.init0ToN;
         assert(this.inputType !== undefined);
         assert(this.outputType !== undefined);
         break;
@@ -159,14 +159,17 @@ PhaseBase.prototype.implNToN = function(stream) {
   return Promise.resolve(done(stream));
 }
 
-PhaseBase.prototype.impl0To1 = function(stream) {
-  this.runtime.stream = stream || new streamLib.Stream();
+PhaseBase.prototype.init0ToN = function(handle) {
   this.runtime.setTags({});
   var t = trace.start(this.runtime);
-  var result = this.runtime.impl(this.runtime.tags);
-  this.runtime.put(result);
-  t.end();
-  return Promise.resolve(done(this.runtime.stream));
+  this.runtime.sendData = function(data) {
+    t.end();
+    this.stream = new streamLib.Stream();
+    this.put(data);
+    handle(this.stream);
+    this.setTags({});
+  }.bind(this.runtime);
+  return this.runtime.impl(this.runtime.tags);
 };
 
 function flowItemGet(runtime, tags) {
