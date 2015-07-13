@@ -1,6 +1,6 @@
 // An example pipeline.
 digraph experiment {
-  optionAliases="file=input.file";
+  optionAliases="file=input.data";
 
   input -> fileToBuffer -> bufferToString -> jsonParse -> StatsWriter -> log;
 }

@@ -1,5 +1,5 @@
 digraph experiment {
-  optionAliases="file=input.file";
+  optionAliases="file=input.data";
 
   writeStringFile [tag="ejsFabricator"];
 

@@ -1,5 +1,5 @@
 digraph experiment {
-  optionAliases="dir=input.file";
+  optionAliases="dir=input.data";
   imports="['trace-phases']";
 
   tracePrettyPrint [showTrace="false"];

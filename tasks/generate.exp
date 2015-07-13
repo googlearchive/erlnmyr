@@ -1,6 +1,6 @@
 // An example of fabrication.
 digraph experiment {
-  optionAliases="file=input.file";
+  optionAliases="file=input.data";
 
   retag [tag="filename", in=".*", out="$&.gen"];
 
