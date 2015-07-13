@@ -13,16 +13,34 @@
 
 var assert = require('chai').assert;
 
+var Promise = require('bluebird');
 var tasks = require('../gulpfile').tasks;
+var experimentFiles = require('../gulpfile').experimentFiles;
 var stageLoader = require('../core/stage-loader');
 var stream = require('../core/stream');
 
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
-    for (name in tasks) {
+    for (var name in tasks) {
       var stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
       stageLoader.typeCheck(stageList);
     }
+  });
+
+  it('should be possible to at least type check the experiment targets listed in gulpfile', function(done) {
+    Promise.all(experimentFiles.map(function(experimentFile) {
+      return new Promise(function(resolve, reject) {
+        var stageList = [
+          {name: 'input', options: {data: experimentFile}},
+          'fileToBuffer',
+          'bufferToString',
+          'typeCheckExperiment',
+        ];
+        stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), resolve, reject);
+      });
+    })).then(function() {
+      done();
+    }).catch(done);
   });
 
   // TODO: Once stage-loader has string names for all the fancy stages, roll the special gulpfile targets
