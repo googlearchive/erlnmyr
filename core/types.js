@@ -18,8 +18,9 @@ var string = 'string';
 var JSON = 'JSON';
 var experiment = 'experiment';
 var buffer = 'buffer';
+var number = 'number';
 
-var primitives = {unit: true, string: true, JSON: true, experiment: true, buffer: true};
+var primitives = {unit: true, string: true, JSON: true, experiment: true, buffer: true, number: true};
 
 function isPrimitive(type) {
   return primitives[type] == true || isTypeVar(type);
