@@ -44,15 +44,36 @@ function getNodeID(nodeName) {
   return nodeName.slice(i + 1);
 }
 
-function addCommandLineOptions(phaseName, nodeID, resultOptions) {
-  function addIfKeyPresent(key) {
+function parseOptionAliases(optionAliases) {
+  var aliases = [];
+  if (typeof optionAliases !== 'string' || optionAliases === '')
+    return aliases;
+  var regex = /(\w+)=(\w+)\.(\w+)/g;
+  var match = null;
+  while (match = regex.exec(optionAliases)) {
+    aliases.push({
+      alias: match[1],
+      selector: match[2],
+      option: match[3],
+    });
+  }
+  return aliases;
+}
+
+function addCommandLineOptions(phaseName, nodeID, optionAliases, resultOptions) {
+  function addIfKeyPresent(key, options) {
     if (key in commandLineOptions && typeof commandLineOptions[key] === 'object') {
       for (var innerKey in commandLineOptions[key])
         resultOptions[innerKey] = commandLineOptions[key][innerKey];
     }
   }
-  addIfKeyPresent(phaseName);
-  addIfKeyPresent(nodeID);
+  addIfKeyPresent(phaseName, commandLineOptions);
+  addIfKeyPresent(nodeID, commandLineOptions);
+  // TODO: Just parse optionAliases once per experiment.
+  parseOptionAliases(optionAliases).forEach(function(optionAlias) {
+    if (optionAlias.alias in commandLineOptions && (optionAlias.selector === phaseName || optionAlias.selector === nodeID))
+      resultOptions[optionAlias.option] = commandLineOptions[optionAlias.alias];
+  })
 }
 
 function mkPhase(nodeName, inGraph) {
@@ -60,7 +81,7 @@ function mkPhase(nodeName, inGraph) {
   options.id = nodeName;
   var phaseName = getPhaseName(nodeName, options);
   var nodeID = getNodeID(nodeName);
-  addCommandLineOptions(phaseName, nodeID, options);
+  addCommandLineOptions(phaseName, nodeID, inGraph.graph().optionAliases, options);
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;
