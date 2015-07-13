@@ -46,5 +46,38 @@ describe('Experiment command line options', function() {
       done();
     });
   });
+  it('should support node ID aliasing', function(done) {
+    options.testNodeIDAlias = 'test input';
+    var experiment =
+        'digraph experiment {' +
+        '  optionAliases="testNodeIDAlias=nodeID.data";' +
+        '  compareString [data="test input"];' +
+        '  input_nodeID -> compareString;' +
+        '}';
+    runExperiment(experiment, done);
+  });
+  it('should support phase aliasing', function(done) {
+    options.testPhaseAlias = 'test input';
+    var experiment =
+        'digraph experiment {' +
+        '  optionAliases="testPhaseAlias=input.data";' +
+        '  compareString [data="test input"];' +
+        '  input -> compareString;' +
+        '}';
+    runExperiment(experiment, done);
+  });
+  it('should support multiple aliases', function(done) {
+    options.testAliasA = 'test input A';
+    options.testAliasB = 'test input B';
+    var experiment =
+        'digraph experiment {' +
+        '  optionAliases="testAliasA=nodeA.data, testAliasB=nodeB.data";' +
+        '  compareString_a [data="test input A"];' +
+        '  compareString_b [data="test input B"];' +
+        '  input_nodeA -> compareString_a;' +
+        '  input_nodeB -> compareString_b;' +
+        '}';
+    runExperiment(experiment, done);
+  });
 });
 
