@@ -45,11 +45,10 @@ function getNodeID(nodeName) {
 }
 
 function addCommandLineOptions(phaseName, nodeID, resultOptions) {
-  function addIfKeyPresent(name) {
-    if (name in commandLineOptions && typeof commandLineOptions[name] === 'object') {
-      console.log(phaseName, nodeID, commandLineOptions[name])
-      for (var key in commandLineOptions[name])
-        resultOptions[key] = commandLineOptions[name][key];
+  function addIfKeyPresent(key) {
+    if (key in commandLineOptions && typeof commandLineOptions[key] === 'object') {
+      for (var innerKey in commandLineOptions[key])
+        resultOptions[innerKey] = commandLineOptions[key][innerKey];
     }
   }
   addIfKeyPresent(phaseName);
@@ -61,7 +60,7 @@ function mkPhase(nodeName, inGraph) {
   options.id = nodeName;
   var phaseName = getPhaseName(nodeName, options);
   var nodeID = getNodeID(nodeName);
-  addCommandLineOptions(options, phaseName, nodeID);
+  addCommandLineOptions(phaseName, nodeID, options);
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;
