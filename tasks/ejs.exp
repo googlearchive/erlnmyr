@@ -1,0 +1,7 @@
+digraph experiment {
+  optionAliases="file=input.data";
+
+  writeStringFile [tag="ejsFabricator"];
+
+  input -> fileToBuffer -> bufferToString -> ejsFabricator -> writeStringFile;
+}

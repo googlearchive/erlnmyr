@@ -1,0 +1,8 @@
+digraph experiment {
+  optionAliases="inputSpec=filter.regExp, inputSpec=retag.in, outputSpec=retag.out";
+
+  input [data='.'];
+  writeStringFile [tag='filename'];
+
+  input -> readDir -> filter -> fileToBuffer -> bufferToString -> jsonParse -> HTMLWriter -> regexReplace -> writeStringFile;
+}

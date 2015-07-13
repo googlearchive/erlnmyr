@@ -1,0 +1,9 @@
+digraph experiment {
+  optionAliases="dir=input.data";
+  imports="['trace-phases']";
+
+  tracePrettyPrint [showTrace="false"];
+  log [tags="filename"];
+
+  input -> readDir -> fileToBuffer -> bufferToString -> jsonParse -> traceFilter -> tracePIDSplitter -> traceTree -> tracePrettyPrint -> log;
+}
