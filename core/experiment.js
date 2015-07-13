@@ -22,6 +22,7 @@ var assert = require('chai').assert;
 var Promise = require('bluebird');
 var definePhase = require('./phase-register');
 var path = require('path');
+var commandLineOptions = require('./options');
 
 function getPhaseName(nodeName, options) {
   var phaseName = nodeName;
@@ -36,10 +37,30 @@ function getPhaseName(nodeName, options) {
   return phaseName;
 }
 
+function getNodeID(nodeName) {
+  var i = nodeName.indexOf('_');
+  if (i === -1)
+    return null;
+  return nodeName.slice(i + 1);
+}
+
+function addCommandLineOptions(phaseName, nodeID, resultOptions) {
+  function addIfKeyPresent(key) {
+    if (key in commandLineOptions && typeof commandLineOptions[key] === 'object') {
+      for (var innerKey in commandLineOptions[key])
+        resultOptions[innerKey] = commandLineOptions[key][innerKey];
+    }
+  }
+  addIfKeyPresent(phaseName);
+  addIfKeyPresent(nodeID);
+}
+
 function mkPhase(nodeName, inGraph) {
   var options = inGraph.node(nodeName) || {};
   options.id = nodeName;
   var phaseName = getPhaseName(nodeName, options);
+  var nodeID = getNodeID(nodeName);
+  addCommandLineOptions(phaseName, nodeID, options);
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;
   return result;

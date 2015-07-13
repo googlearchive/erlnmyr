@@ -155,6 +155,14 @@ module.exports.compare = phase({input: typeVar('a'), output: typeVar('a'), arity
   },
   { tag: ''});
 
+module.exports.compareString = phase({input: types.string, output: types.string, arity: '1:1'},
+  function(input) {
+    var assert = require('chai').assert;
+    assert.equal(input, this.options.data);
+    return input;
+  },
+  {data: ''});
+
 module.exports.fileToBuffer = phase({input: types.string, output: types.buffer, arity: '1:1', async: true},
   function(filename, tags) {
     if (!tags.filename) {
