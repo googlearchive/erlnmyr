@@ -44,12 +44,12 @@ function getNodeID(nodeName) {
   return nodeName.slice(i + 1);
 }
 
-function addCommandLineOptions(options, phaseName, nodeID) {
+function addCommandLineOptions(phaseName, nodeID, resultOptions) {
   function addIfKeyPresent(name) {
     if (name in commandLineOptions && typeof commandLineOptions[name] === 'object') {
       console.log(phaseName, nodeID, commandLineOptions[name])
       for (var key in commandLineOptions[name])
-        options[key] = commandLineOptions[name][key];
+        resultOptions[key] = commandLineOptions[name][key];
     }
   }
   addIfKeyPresent(phaseName);
