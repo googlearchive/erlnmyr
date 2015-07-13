@@ -107,18 +107,12 @@ var bundled = {
   'device-phases': path.join(__dirname, '../lib/device-phases'),
 };
 
-module.exports.doExperiment = definePhase({
-  input: types.string,
-  output: types.unit,
-  arity: '1:N',
-  async: true,
-}, function(data, tags) {
-  var inGraph = dot.read(data);
+function buildstageList(graphData, tags, require) {
+  var inGraph = dot.read(graphData);
   // TODO: Perhaps create instance of stage-loader and ask it to load these
   //       to avoid polluting other experiments.
   if (inGraph.graph().imports) {
     var imports = eval(inGraph.graph().imports);
-    var options = this.options;
     imports.forEach(function(lib) {
       // TODO: Are we passing the wrong tags object?
       if (bundled[lib]) {
@@ -126,7 +120,7 @@ module.exports.doExperiment = definePhase({
       } else if (tags.tags.filename && lib[0] == '.') {
         lib = path.join(path.dirname(tags.tags.filename), lib);
       }
-      definePhase.load(options.require(lib));
+      definePhase.load(require(lib));
     });
   }
   var linear = linearConnectEdges(inGraph);
@@ -204,11 +198,29 @@ module.exports.doExperiment = definePhase({
   }
 
   assert(phaseStack.length == 1);
+  return phaseStack[0];
+}
+
+module.exports.doExperiment = definePhase({
+  input: types.string,
+  output: types.unit,
+  arity: '1:N',
+  async: true,
+}, function(data, tags) {
+  var require = this.options.require;
   return new Promise(function(resolve, reject) {
-    stageLoader.processStages(phaseStack[0], resolve, reject);
+    stageLoader.processStages(buildstageList(data, tags, require), resolve, reject);
   });
 }, {
   require: require,
+});
+
+module.exports.typeCheckExperiment = definePhase({
+  input: types.string,
+  output: types.unit,
+  arity: '1:N',
+}, function(data, tags) {
+  stageLoader.typeCheck(buildstageList(data, tags, require));
 });
 
 module.exports.getPhaseName = getPhaseName;

@@ -23,6 +23,7 @@ var options = require('./core/options');
 var trace = require('./core/trace');
 
 var tasks = {};
+var experimentFiles = [];
 
 function runTests(mochaReporter) {
   return gulp.src(['tests/*.js', 'tests/pipeline/*.js', 'lib/*/tests/*.js'])
@@ -81,10 +82,15 @@ function buildTask(name, stageList) {
   });
 };
 
+function buildExperimentTask(name, experimentFile) {
+  experimentFiles.push(experimentFile);
+  buildTask(name, [{name: 'input', options: {data: experimentFile}}, 'fileToBuffer', 'bufferToString', 'doExperiment']);
+};
+
 /*
  * Some example pipelines.
  */
-buildTask('html', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'HTMLWriter', {name: 'writeStringFile', options: {filename: 'result.html.html'}}]);
+buildExperimentTask('html', 'tasks/html.exp');
 buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', {name: 'writeStringFile', options: {filename: 'result.js.html'}}]);
 buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'log']);
 
@@ -172,3 +178,4 @@ gulp.task('processLogs', function(incb) {
 });
 
 module.exports.tasks = tasks;
+module.exports.experimentFiles = experimentFiles;

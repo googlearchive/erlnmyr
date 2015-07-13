@@ -1,0 +1,6 @@
+digraph experiment {
+  optionAliases="file=input.data";
+  writeStringFile [filename="result.html.html"];
+
+  input -> fileToBuffer -> bufferToString -> jsonParse -> HTMLWriter -> writeStringFile;
+}
