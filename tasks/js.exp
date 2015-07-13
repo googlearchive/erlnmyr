@@ -1,0 +1,8 @@
+// An example pipeline.
+digraph experiment {
+  optionAliases="file=input.file";
+
+  writeStringFile [filename="result.js.html"];
+
+  input -> fileToBuffer -> bufferToString -> jsonParse -> JSWriter -> writeStringFile;
+}

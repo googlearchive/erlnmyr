@@ -14,21 +14,13 @@
 var assert = require('chai').assert;
 
 var Promise = require('bluebird');
-var tasks = require('../gulpfile').tasks;
-var experimentFiles = require('../gulpfile').experimentFiles;
+var experimentFilesForTesting = require('../gulpfile').experimentFilesForTesting;
 var stageLoader = require('../core/stage-loader');
 var stream = require('../core/stream');
 
 describe('basicTargetCoverage', function() {
-  it('should be possible to at least type check the targets listed in gulpfile', function() {
-    for (var name in tasks) {
-      var stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
-      stageLoader.typeCheck(stageList);
-    }
-  });
-
   it('should be possible to at least type check the experiment targets listed in gulpfile', function(done) {
-    Promise.all(experimentFiles.map(function(experimentFile) {
+    Promise.all(experimentFilesForTesting.map(function(experimentFile) {
       return new Promise(function(resolve, reject) {
         var stageList = [
           {name: 'input', options: {data: experimentFile}},

@@ -1,0 +1,8 @@
+// An example of fabrication.
+digraph experiment {
+  optionAliases="file=input.file";
+
+  retag [tag="filename", in=".*", out="$&.gen"];
+
+  input -> fileToBuffer -> bufferToString -> jsonParse -> SchemaBasedFabricator -> jsonStringify -> retag -> writeStringFile;
+}

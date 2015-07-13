@@ -1,0 +1,8 @@
+// An example of using device telemetry.
+digraph experiment {
+  optionAliases="url=input.file";
+
+  writeStringFile [filename="trace.json"];
+
+  input -> fetch -> HTMLWriter -> trace -> jsonStringify -> writeStringFile;
+}

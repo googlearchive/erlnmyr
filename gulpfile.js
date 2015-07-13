@@ -22,8 +22,7 @@ var stream = require('./core/stream');
 var options = require('./core/options');
 var trace = require('./core/trace');
 
-var tasks = {};
-var experimentFiles = [];
+var experimentFilesForTesting = [];
 
 function runTests(mochaReporter) {
   return gulp.src(['tests/*.js', 'tests/pipeline/*.js', 'lib/*/tests/*.js'])
@@ -71,8 +70,13 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
 buildTestTask('test', 'nyan', ['html', 'text-summary']);
 buildTestTask('travis-test', 'spec', ['lcov', 'text', 'text-summary']);
 
-function buildTask(name, stageList) {
-  tasks[name] = stageList;
+function buildExperimentTask(name, experimentFile) {
+  var stageList = [
+    {name: 'input', options: {data: experimentFile}},
+    'fileToBuffer',
+    'bufferToString',
+    'doExperiment',
+  ];
   gulp.task(name, function(incb) {
     var cb = function(data) {
       trace.dump();
@@ -80,102 +84,15 @@ function buildTask(name, stageList) {
     };
     stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), cb, function(e) { throw e; });
   });
-};
+}
 
-function buildExperimentTask(name, experimentFile) {
-  experimentFiles.push(experimentFile);
-  buildTask(name, [{name: 'input', options: {data: experimentFile}}, 'fileToBuffer', 'bufferToString', 'doExperiment']);
-};
-
-/*
- * Some example pipelines.
- */
-buildExperimentTask('html', 'tasks/html.exp');
-buildTask('js', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'JSWriter', {name: 'writeStringFile', options: {filename: 'result.js.html'}}]);
-buildTask('stats', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StatsWriter', 'log']);
-
-/*
- * examples using filters
- */
-buildTask('compactComputedStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
-buildTask('extractStyle', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleMinimizationFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
-buildTask('tokenStyles', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'StyleTokenizerFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
-buildTask('nukeIFrame', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'NukeIFrameFilter', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.filter'}}]);
-
-/*
- * example of fabrication
- */
-buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'jsonParse', 'SchemaBasedFabricator', 'jsonStringify', {name: 'writeStringFile', options: {filename: options.file + '.gen'}}]);
-
-/*
- * examples using device telemetry
- */
-buildTask('get', [{name: 'input', options: {data: options.url}}, 'fetch', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'result.json'}}]);
-buildTask('perf', [{name: 'input', options: {data: options.url}}, 'trace', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
-buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'fetch', 'HTMLWriter', 'trace', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
-
-/*
- * running an experiment
- */
-buildTask('runExperiment', [{name: 'input', options: {data: options.file}}, 'fileToBuffer', 'bufferToString', 'doExperiment']);
-
-/*
- * ejs fabrication
- */
-gulp.task('ejs', function(incb) {
-  var cb = function(data) { incb(); };
-  stageLoader.processStages(
-    [
-      stageLoader.stageSpecificationToStage({name: 'input', options: {data: options.file}}),
-      stageLoader.stageSpecificationToStage('fileToBuffer'),
-      stageLoader.stageSpecificationToStage('bufferToString'),
-      stageLoader.stageSpecificationToStage('ejsFabricator'),
-      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'ejsFabricator'}})
-    ], cb, function(e) { throw e; });
+fs.readdirSync('tasks').forEach(function(experimentFile) {
+  var filePath = 'tasks/' + experimentFile;
+  var taskName = /(.*)\.exp/.exec(experimentFile)[1];
+  buildExperimentTask(taskName, filePath);
+  experimentFilesForTesting.push(filePath);
 });
 
-/*
- * TODO: Refactor stage-loader so it can load fancy stages too.
- *
- * example of using stages directly
- */
-gulp.task('mhtml', function(incb) {
-  var cb = function(data) { incb(); };
-  stageLoader.processStages(
-      [
-        stageLoader.stageSpecificationToStage({name: 'input', options: {data: '.'}}),
-        stageLoader.stageSpecificationToStage('readDir'),
-        stageLoader.stageSpecificationToStage({name: 'filter', options: {regExp: new RegExp(options.inputSpec)}}),
-        stageLoader.stageSpecificationToStage('fileToBuffer'),
-        stageLoader.stageSpecificationToStage('bufferToString'),
-        stageLoader.stageSpecificationToStage('jsonParse'),
-        stageLoader.stageSpecificationToStage('HTMLWriter'),
-        stageLoader.stageSpecificationToStage({name: 'regexReplace', options: {tag: 'filename', inputSpec: new RegExp(options.inputSpec), outputSpec: options.outputSpec}}),
-        stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
-      ], cb, function(e) { throw e; });
-});
+buildExperimentTask('runExperiment', options.file);
 
-gulp.task('processLogs', function(incb) {
-  var phase = require('./core/phase');
-  require('./core/phase-register').load(require('./lib/trace-phases'));
-  var cb = function(data) { incb(); };
-  stageLoader.processStages(
-      [
-        stageLoader.stageSpecificationToStage({name: 'input', options: {data: options.dir}}),
-        stageLoader.stageSpecificationToStage('readDir'),
-        phase.pipeline(
-            [
-              stageLoader.stageSpecificationToStage('fileToBuffer'),
-              stageLoader.stageSpecificationToStage('bufferToString'),
-              stageLoader.stageSpecificationToStage('jsonParse'),
-              stageLoader.stageSpecificationToStage('traceFilter'),
-              stageLoader.stageSpecificationToStage('tracePIDSplitter'),
-              stageLoader.stageSpecificationToStage('traceTree'),
-              stageLoader.stageSpecificationToStage({name: 'tracePrettyPrint', options: {showTrace: 'false'}}),
-            ]),
-        stageLoader.stageSpecificationToStage({name: 'log', options: {tags: ['filename']}})
-      ], cb, function(e) { throw e; });
-});
-
-module.exports.tasks = tasks;
-module.exports.experimentFiles = experimentFiles;
+module.exports.experimentFilesForTesting = experimentFilesForTesting;

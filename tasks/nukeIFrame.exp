@@ -1,0 +1,8 @@
+// An example of using a filter.
+digraph experiment {
+  optionAliases="file=input.file";
+
+  retag [tag="filename", in=".*", out="$&.filter"];
+
+  input -> fileToBuffer -> bufferToString -> jsonParse -> NukeIFrameFilter -> jsonStringify -> retag -> writeStringFile;
+}
