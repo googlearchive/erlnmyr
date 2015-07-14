@@ -159,6 +159,7 @@ module.exports.compareString = phase({input: types.string, output: types.string,
   function(input) {
     var assert = require('chai').assert;
     assert.equal(input, this.options.data);
+    console.log(input);
     return input;
   },
   {data: ''});

@@ -90,8 +90,6 @@ function startPhase(task) {
   if (dependenciesRemain(task))
     return false;
   var oldIndex = task.index;
-  if (task.phases[task.index].impl == undefined)
-    console.log(task.phases, task.index);
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
