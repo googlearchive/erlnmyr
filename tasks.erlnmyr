@@ -1,4 +1,4 @@
-digraph experiment {
+digraph html {
   optionAliases="file=input.data";
   writeStringFile [filename="result.html.html"];
 
