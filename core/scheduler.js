@@ -18,7 +18,7 @@ var taskQueue = [];
 var maxWaiting = 32;
 var waitCount = 0;
 
-function startPhaseList(phases) {
+function runPhases(phases) {
   var initPhases = phases
       .map(function(phase, idx) { return {phase: phase, idx: idx} })
       .filter(function(phase) { return phase.phase.init !== undefined; });
@@ -50,7 +50,7 @@ function startTasks() {
         task.resolve();
       continue;
     }
-    if (startDependency(task) || startPhase(task))
+    if (runDependency(task) || runPhase(task))
       waitCount++;
     else
       deferred.push(task);
@@ -67,7 +67,7 @@ function dependenciesRemain(task) {
   return task.dependencies.length + task.executingDependencies > 0;
 }
 
-function startDependency(task) {
+function runDependency(task) {
   if (task.dependencies.length > 0) {
     var dependency = task.dependencies.pop();
     task.executingDependencies++;
@@ -86,7 +86,7 @@ var doneCmd = 'done';
 var parCmd = 'par';
 var yieldCmd = 'yield';
 
-function startPhase(task) {
+function runPhase(task) {
   if (dependenciesRemain(task))
     return false;
   var oldIndex = task.index;
@@ -105,4 +105,4 @@ function startPhase(task) {
   return true;
 }
 
-module.exports.startPhaseList = startPhaseList;
+module.exports.runPhases = runPhases;

@@ -80,7 +80,7 @@ TaskQueue.prototype.empty = function() {
 
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
-  scheduler.startPhaseList(stages).then(cb, fail);
+  scheduler.runPhases(stages).then(cb, fail);
 }
 
 module.exports.typeCheck = typeCheck;
