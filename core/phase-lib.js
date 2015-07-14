@@ -211,14 +211,12 @@ module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '
 
 module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0:N', parallel: 1},
     function() {
-      var sendLine = function(line) {
-        if (line == this.options.done) {
-          this.pipe.destroy();
-          this.resolve();
-        }
-        this.sendData(line);
-      }.bind(this);
-      this.pipe = process.stdin.pipe(require('split')()).on('data', sendLine);
+      process.stdin.pipe(require('split')()).on('data', function(line) {
+        // We get an emptry string between the last newline and end of stream :(
+        if (line != '')
+          this.sendData(line);
+      }.bind(this)).on('end', function() {
+        this.resolve();
+      }.bind(this));
       return new Promise(function(resolve, reject) { this.resolve = resolve; }.bind(this));
-    },
-    { done: 'exit'});
+    });
