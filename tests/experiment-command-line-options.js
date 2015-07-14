@@ -22,7 +22,6 @@ function runExperiment(experiment, cb) {
 
 describe('Experiment command line options', function() {
   it('should be able to target node IDs', function(done) {
-    console.log('**********************************');
     options.targetNodeID = {data: 'test input'};
     var experiment =
         'digraph experiment {' +
@@ -31,7 +30,7 @@ describe('Experiment command line options', function() {
         '  input_targetNodeID -> compareString_withData;' +
         '  input_untargeted -> compareString_withoutData;' +
         '}';
-    runExperiment(experiment, function() { console.log('***************************************'); done();});
+    runExperiment(experiment, done);
   });
   it('should be able to target phases', function(done) {
     var oldInput = options.input;
