@@ -212,7 +212,7 @@ module.exports.fork = phase({input: typeVar('a'), output: typeVar('a'), arity: '
 module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0:N', parallel: 1},
     function() {
       process.stdin.pipe(require('split')()).on('data', function(line) {
-        // We get an emptry string between the last newline and end of stream :(
+        // TODO: replace split so we can actually receive empty strings.
         if (line != '')
           this.sendData(line);
       }.bind(this)).on('end', function() {
