@@ -7,7 +7,7 @@
   "license": "",
   "main": "exports.js",
   "bin": {
-    "sciexp": "sciexp.js"
+    "erlnmyr": "erlnmyr"
   },
   "repository": {
     "type": "git",
