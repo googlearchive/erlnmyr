@@ -19,7 +19,6 @@ var maxWaiting = 32;
 var waitCount = 0;
 
 function startPhaseList(phases) {
-  console.log('startPhaseList!!!');
   var initPhases = phases
       .map(function(phase, idx) { return {phase: phase, idx: idx} })
       .filter(function(phase) { return phase.phase.init !== undefined; });
@@ -28,13 +27,12 @@ function startPhaseList(phases) {
 
   return Promise.all(initPhases.map(function(phase) {
     return phase.phase.init(function(stream) {
-      console.log('schedule!');
       var promise = new Promise(function(resolve, reject) {
         schedule(phases, phase.idx + 1, stream, resolve);
       });
       finishedPromiseList.push(promise);
     });
-  })).then(function() { console.log(finishedPromiseList.length); return Promise.all(finishedPromiseList).then(function() {console.log("FINISHED"); })});
+  })).then(function() { return Promise.all(finishedPromiseList).then(function() { })});
 
 }
 
@@ -43,17 +41,11 @@ function schedule(phases, index, stream, resolve) {
   startTasks();
 }
 
-function printTask(task) {
-  console.log(task.phases.map(function(phase) { return phase.name; }), task.index);
-}
-
 function startTasks() {
-  console.log('-> startTasks', waitCount, taskQueue.length);
-  taskQueue.map(printTask);
   var deferred = [];
   while (taskQueue.length && waitCount < maxWaiting) {
     var task = taskQueue.pop();
-    if (task.index == task.phases.length) {
+    if (task.index == task.phases.length && !dependenciesRemain(task)) {
       if (task.resolve)
         task.resolve();
       continue;
@@ -64,8 +56,6 @@ function startTasks() {
       deferred.push(task);
   }
   deferred.forEach(function(task) { taskQueue.push(task); });
-  console.log('<- startTasks', waitCount, taskQueue.length);
-  taskQueue.map(printTask);
 }
 
 function done() {
@@ -99,8 +89,9 @@ var yieldCmd = 'yield';
 function startPhase(task) {
   if (dependenciesRemain(task))
     return false;
-  console.log('starting', task.phases[task.index].name);
   var oldIndex = task.index;
+  if (task.phases[task.index].impl == undefined)
+    console.log(task.phases, task.index);
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
