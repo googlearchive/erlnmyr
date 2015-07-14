@@ -19,6 +19,7 @@ var maxWaiting = 32;
 var waitCount = 0;
 
 function startPhaseList(phases) {
+  console.log('startPhaseList!!!');
   var initPhases = phases
       .map(function(phase, idx) { return {phase: phase, idx: idx} })
       .filter(function(phase) { return phase.phase.init !== undefined; });
@@ -42,11 +43,21 @@ function schedule(phases, index, stream, resolve) {
   startTasks();
 }
 
+function printTask(task) {
+  console.log(task.phases.map(function(phase) { return phase.name; }), task.index);
+}
+
 function startTasks() {
   console.log('-> startTasks', waitCount, taskQueue.length);
+  taskQueue.map(printTask);
   var deferred = [];
   while (taskQueue.length && waitCount < maxWaiting) {
     var task = taskQueue.pop();
+    if (task.index == task.phases.length) {
+      if (task.resolve)
+        task.resolve();
+      continue;
+    }
     if (startDependency(task) || startPhase(task))
       waitCount++;
     else
@@ -54,6 +65,7 @@ function startTasks() {
   }
   deferred.forEach(function(task) { taskQueue.push(task); });
   console.log('<- startTasks', waitCount, taskQueue.length);
+  taskQueue.map(printTask);
 }
 
 function done() {
@@ -87,19 +99,18 @@ var yieldCmd = 'yield';
 function startPhase(task) {
   if (dependenciesRemain(task))
     return false;
+  console.log('starting', task.phases[task.index].name);
+  var oldIndex = task.index;
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
     } else if (op.command == yieldCmd) {
-      taskQueue.push({phases: task.phases, index: task.index, stream: task.stream, dependencies: [], executingDependencies: 0, resolve: task.resolve});
+      taskQueue.push({phases: task.phases, index: oldIndex, stream: task.stream, dependencies: [], executingDependencies: 0, resolve: task.resolve});
       task.resolve = undefined;
       task.stream = op.stream;
     }
     task.index++;
-    if (task.index < task.phases.length)
-      taskQueue.push(task);
-    else if (task.resolve)
-      task.resolve();
+    taskQueue.push(task);
     done();
   });
   return true;

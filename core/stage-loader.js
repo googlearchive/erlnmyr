@@ -15,7 +15,7 @@ var assert = require('chai').assert;
 var stream = require('./stream');
 var trace = require('./trace');
 var types = require('./types');
-//var scheduler = require('./scheduler');
+var scheduler = require('./scheduler');
 
 var Promise = require('bluebird');
 
@@ -85,8 +85,8 @@ var maxTasks = 32;
 function processStagesWithInput(input, stages, cb, fail) {
   typeCheck(stages);
 
-  //scheduler.startPhaseList(stages).then(cb, fail);
-  //return;
+  scheduler.startPhaseList(stages).then(cb, fail);
+  return;
 
   var initStages = [];
   for (var i = 0; i < stages.length; i++) {

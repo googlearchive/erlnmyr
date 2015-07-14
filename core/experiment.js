@@ -208,6 +208,7 @@ module.exports.doExperiment = definePhase({
   async: true,
 }, function(data, tags) {
   var require = this.options.require;
+  console.log('doing experiment');
   return new Promise(function(resolve, reject) {
     stageLoader.processStages(buildstageList(data, tags, require), resolve, reject);
   });
