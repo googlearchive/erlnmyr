@@ -1,13 +1,13 @@
 {
-  "name": "tree-builder-builder",
+  "name": "erlenmeyer",
   "version": "0.0.0",
-  "description": "Tree Builder Builder",
+  "description": "Science!",
   "homepage": "https://github.com/dglazkov/tree-builder-builder",
   "author": "",
   "license": "",
   "main": "exports.js",
   "bin": {
-    "sciexp": "sciexp.js"
+    "erlnmyr": "erlnmyr"
   },
   "repository": {
     "type": "git",
