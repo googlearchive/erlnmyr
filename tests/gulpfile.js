@@ -19,10 +19,20 @@ var stream = require('../core/stream');
 
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
-    for (name in tasks) {
+    for (var name in tasks) {
       var stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
       stageLoader.typeCheck(stageList);
     }
+  });
+
+  it('should be possible to at least type check the tasks.erlnmyr file', function(done) {
+    var stageList = [
+      {name: 'input', options: {data: 'tasks.erlnmyr'}},
+      'fileToBuffer',
+      'bufferToString',
+      'typeCheckExperiment',
+    ];
+    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), done, function(error) { throw error; });
   });
 
   // TODO: Once stage-loader has string names for all the fancy stages, roll the special gulpfile targets
