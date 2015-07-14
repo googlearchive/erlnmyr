@@ -4,10 +4,8 @@ HTMLDocumentParser::processParsedChunkFromBackgroundParser: 17222 (1193) [42899/
     Document::updateStyle: 291 (1302) [42899/1299]
   FrameView::layout: 16595 (1894) [42899/1299]
     FrameView::layout: 122 (27059) [42899/1299]
-FD0A071E-FBF1-4BDE-AF74-C736F12006DA: 17 (70903) [42899/1299]
 
 HTMLDocumentParser::processParsedChunkFromBackgroundParser: 0.577ms
 Document::updateRenderTree: 0.008ms
 Document::updateStyle: 0.291ms
 FrameView::layout: 16.595ms
-FD0A071E-FBF1-4BDE-AF74-C736F12006DA: 0.017ms
