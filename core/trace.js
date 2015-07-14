@@ -192,7 +192,7 @@ function init() {
   };
   module.exports.dump = function() {
     events.forEach(function(event) {
-      event.pid = 0;
+      event.pid = process.pid;
       event.tid = 0;
       if (!event.args) {
         delete event.args;
