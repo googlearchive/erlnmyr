@@ -67,6 +67,10 @@ function PhaseBase(info, impl, options) {
         break;
       case '0:N':
         this.init = this.init0ToN;
+        // 0:N phases pass inputs through untouched.
+        this.impl = function(stream) {
+          return Promise.resolve(done(stream));
+        }
         assert(this.inputType !== undefined);
         assert(this.outputType !== undefined);
         break;
