@@ -19,6 +19,10 @@ function PhaseDefinition(info, impl, defaults) {
   this.defaults = defaults;
 }
 
+function evalOptionValue($value) {
+  return eval($value);
+}
+
 PhaseDefinition.prototype.build = function() {
   var defaults = this.defaults;
   function override(defaults, options) {
@@ -26,7 +30,7 @@ PhaseDefinition.prototype.build = function() {
     for (key in defaults) {
       if (key in options) {
         try {
-          result[key] = eval(options[key]);
+          result[key] = evalOptionValue(options[key]);
         } catch (e) {
           result[key] = options[key];
         }
@@ -50,7 +54,7 @@ PhaseDefinition.prototype.build = function() {
       infoClone.output = info.output(v);
     else
       infoClone.output = info.output;
-    var options = override(defaults, options);
+    options = override(defaults, options);
     return new phase.PhaseBase(infoClone, impl, options);
   }
 }
