@@ -17,8 +17,8 @@ import sys;
 from telemetry.internal.browser import browser_options
 from telemetry.internal.browser import browser_finder
 
-from telemetry.core.platform import tracing_category_filter
-from telemetry.core.platform import tracing_options
+from telemetry.timeline import tracing_category_filter
+from telemetry.timeline import tracing_options
 
 from json import dumps
 
