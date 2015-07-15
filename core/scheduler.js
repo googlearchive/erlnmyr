@@ -33,14 +33,29 @@ Task.prototype = {
   dependenciesRemain: function() {
     return this.dependencies.length + this.executingDependencies > 0;
   },
+  /**
+   * A task waits for another task by recording the waitee in the waitingFor
+   * list.
+   */
   waitFor: function(task) {
     this.waitingFor = task.waitingFor;
     task.waitingFor = [];
     this.waitingFor.push(task);
   },
+  /**
+   * When a task is finished, it checks to see if all the tasks it is waiting
+   * for are finished too. If they are, it can call resolve.
+   *
+   * If not, rather than busy looping, the task transfers its resolve method
+   * and waitingFor list to one of the unfinished tasks.
+   *
+   * Note: only one task in any set of related tasks can have a resolve method -
+   * this is the task that must have the list of waitingFor tasks too.
+   * Transferring one requires transferring both.
+   */
   resolveTask: function() {
     this.finished = true;
-    this.waitingFor = this.waitingFor.filter(function(task) { return task.finished == false; });
+    this.waitingFor = this.waitingFor.filter(function(task) { return !task.finished; });
     if (this.waitingFor.length == 0) {
       this.resolve();
       return;
