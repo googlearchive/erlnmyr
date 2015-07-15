@@ -57,7 +57,7 @@ Task.prototype = {
     this.finished = true;
     this.waitingFor = this.waitingFor.filter(function(task) { return !task.finished; });
     if (this.waitingFor.length == 0) {
-      this.resolve();
+      this.resolve && this.resolve();
       return;
     }
     var newWaitingTask = this.waitingFor.pop();
