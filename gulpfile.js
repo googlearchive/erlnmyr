@@ -106,7 +106,8 @@ buildTask('generate', [{name: 'input', options: {data: options.file}}, 'fileToBu
  */
 buildTask('get', [{name: 'input', options: {data: options.url}}, 'fetch', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'result.json'}}]);
 buildTask('perf', [{name: 'input', options: {data: options.url}}, 'trace', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
-buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, 'fetch', 'HTMLWriter', 'trace', 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
+buildTask('endToEnd', [{name: 'input', options: {data: options.url}}, {name: 'fetch', options: {browser: options.saveBrowser}}, 'HTMLWriter', 
+                       {name: 'trace', options: {browser: options.perfBrowser}}, 'jsonStringify', {name: 'writeStringFile', options: {filename: 'trace.json'}}]);
 
 /*
  * running an experiment
