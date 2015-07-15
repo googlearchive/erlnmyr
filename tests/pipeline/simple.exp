@@ -9,5 +9,5 @@ digraph experiment {
   updateTag [tag="data", in="/(.*).trace/", out="$1.dump"];
   traceFilter [traceCategories="['blink.console']"];
 
-  {input_normal; input_nostyle; input_reduced; input_minimized} -> fileToBuffer -> bufferToString -> jsonParse -> traceFilter -> traceTree -> tracePrettyPrint -> updateTag -> compare;
+  {input_normal; input_nostyle; input_reduced; input_minimized} -> fork -> fileToBuffer -> bufferToString -> jsonParse -> traceFilter -> traceTree -> tracePrettyPrint -> updateTag -> compare;
 }
