@@ -18,6 +18,21 @@ var taskQueue = [];
 var maxWaiting = 32;
 var waitCount = 0;
 
+function Task(phases, index, stream, resolve, dependencies) {
+  this.phases = phases;
+  this.index = index;
+  this.stream = stream;
+  this.dependencies = dependencies || [];
+  this.executingDependencies = 0;
+  this.resolve = resolve;
+}
+
+Task.prototype = {
+  dependenciesRemain: function() {
+    return this.dependencies.length + this.executingDependencies > 0;
+  }
+}
+
 function runPhases(phases) {
   var initPhases = phases
       .map(function(phase, idx) { return {phase: phase, idx: idx} })
@@ -37,7 +52,7 @@ function runPhases(phases) {
 }
 
 function schedule(phases, index, stream, resolve) {
-  taskQueue.push({phases: phases, index: index, stream: stream, dependencies: [], executingDependencies: 0, resolve: resolve});
+  taskQueue.push(new Task(phases, index, stream, resolve));
   startTasks();
 }
 
@@ -45,7 +60,7 @@ function startTasks() {
   var deferred = [];
   while (taskQueue.length && waitCount < maxWaiting) {
     var task = taskQueue.pop();
-    if (task.index == task.phases.length && !dependenciesRemain(task)) {
+    if (task.index == task.phases.length && !task.dependenciesRemain()) {
       if (task.resolve)
         task.resolve();
       continue;
@@ -63,10 +78,6 @@ function done() {
   startTasks();
 }
 
-function dependenciesRemain(task) {
-  return task.dependencies.length + task.executingDependencies > 0;
-}
-
 function runDependency(task) {
   if (task.dependencies.length > 0) {
     var dependency = task.dependencies.pop();
@@ -75,7 +86,7 @@ function runDependency(task) {
       task.executingDependencies--;
       done();
     });
-    if (dependenciesRemain(task))
+    if (task.dependenciesRemain())
       taskQueue.push(task);
     return true;
   }
@@ -87,14 +98,14 @@ var parCmd = 'par';
 var yieldCmd = 'yield';
 
 function runPhase(task) {
-  if (dependenciesRemain(task))
+  if (task.dependenciesRemain())
     return false;
   var oldIndex = task.index;
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
     } else if (op.command == yieldCmd) {
-      taskQueue.push({phases: task.phases, index: oldIndex, stream: task.stream, dependencies: [], executingDependencies: 0, resolve: task.resolve});
+      taskQueue.push(new Task(task.phases, oldIndex, task.stream, task.resolve));
       task.resolve = undefined;
       task.stream = op.stream;
     }
