@@ -59,6 +59,9 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
             console.warn(err);
             console.warn('Failed to upload LCOV data to Coveralls.')
             console.warn('Has this repository been enabled for Coveralls tracking? https://coveralls.io/repos/new');
+          })
+          .on('finish', function() {
+            process.stdout.write('Uploaded LCOV data to Coveralls.\n');
           });
         }
         cb();
