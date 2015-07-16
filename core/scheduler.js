@@ -18,18 +18,53 @@ var taskQueue = [];
 var maxWaiting = 32;
 var waitCount = 0;
 
-function Task(phases, index, stream, resolve, dependencies) {
+function Task(phases, index, stream, resolve) {
   this.phases = phases;
   this.index = index;
   this.stream = stream;
-  this.dependencies = dependencies || [];
+  this.dependencies = [];
   this.executingDependencies = 0;
   this.resolve = resolve;
+  this.waitingFor = [];
+  this.finished = false;
 }
 
 Task.prototype = {
   dependenciesRemain: function() {
     return this.dependencies.length + this.executingDependencies > 0;
+  },
+  /**
+   * A task waits for another task by recording the waitee in the waitingFor
+   * list.
+   */
+  waitFor: function(task) {
+    this.waitingFor = task.waitingFor;
+    task.waitingFor = [];
+    this.waitingFor.push(task);
+  },
+  /**
+   * When a task is finished, it checks to see if all the tasks it is waiting
+   * for are finished too. If they are, it can call resolve.
+   *
+   * If not, rather than busy looping, the task transfers its resolve method
+   * and waitingFor list to one of the unfinished tasks.
+   *
+   * Note: only one task in any set of related tasks can have a resolve method -
+   * this is the task that must have the list of waitingFor tasks too.
+   * Transferring one requires transferring both.
+   */
+  resolveTask: function() {
+    this.finished = true;
+    this.waitingFor = this.waitingFor.filter(function(task) { return !task.finished; });
+    if (this.waitingFor.length == 0) {
+      this.resolve && this.resolve();
+      return;
+    }
+    var newWaitingTask = this.waitingFor.pop();
+    newWaitingTask.waitingFor = this.waitingFor;
+    newWaitingTask.resolve = this.resolve;
+    this.resolve = undefined;
+    this.waitingFor = undefined;
   }
 }
 
@@ -61,8 +96,7 @@ function startTasks() {
   while (taskQueue.length && waitCount < maxWaiting) {
     var task = taskQueue.pop();
     if (task.index == task.phases.length && !task.dependenciesRemain()) {
-      if (task.resolve)
-        task.resolve();
+      task.resolveTask();
       continue;
     }
     if (runDependency(task) || runPhase(task))
@@ -105,8 +139,10 @@ function runPhase(task) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
     } else if (op.command == yieldCmd) {
-      taskQueue.push(new Task(task.phases, oldIndex, task.stream, task.resolve));
+      var newTask = new Task(task.phases, oldIndex, task.stream, task.resolve);
       task.resolve = undefined;
+      newTask.waitFor(task);
+      taskQueue.push(newTask);
       task.stream = op.stream;
     }
     task.index++;
