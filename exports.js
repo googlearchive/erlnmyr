@@ -18,9 +18,7 @@ module.exports.run = function(file, loader) {
   var path = require('path');
   var stageLoader = require('./core/stage-loader');
 
-  if (!path.isAbsolute(file)) {
-    file = path.join(process.cwd(), file);
-  }
+  file = path.resolve(file);
   var phases = [
     {name: 'input', options: {data: file}},
     'fileToBuffer',

@@ -20,9 +20,7 @@
 var path = require('path');
 var spawn = require('child_process').spawn;
 var file = process.argv[2];
-if (!path.isAbsolute(file)) {
-  file = path.join(process.cwd(), file);
-}
+var file = path.resolve(file);
 process.chdir(path.dirname(file));
 
 function run(exports, target) {
