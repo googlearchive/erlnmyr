@@ -36,17 +36,27 @@ function isTypeVar(type) {
   return typeof type == 'object' && type.tVar !== undefined;
 }
 
-function List(type) {
-  return {base: type};
+function Tagged(type, tag) {
+  return {base: type, tag: tag};
 }
 
-function isList(type) {
-  return typeof type == 'object' && type.base !== undefined;
+function isTagged(type) {
+  return typeof type == 'object' && type.tag !== undefined;
 }
 
-function deList(type) {
-  assert.isTrue(isList(type));
+function getTag(type) {
+  assert.isTrue(isTagged(type));
+  return type.tag;
+}
+
+function deTag(type, tag) {
+  assert.isTrue(isTagged(type));
+  assert.isTrue(getTag(type) == tag);
   return type.base;
+}
+
+function List(type) {
+  return Tagged(type, 'list');
 }
 
 function Tuple(left, right) {
@@ -109,8 +119,9 @@ function coerce(left, right, coersion, visited) {
   if (left == right)
     return coersion;
 
-  if (isList(left) && isList(right)) {
-    return coerce(deList(left), deList(right), coersion);
+  if (isTagged(left) && isTagged(right) && getTag(left) == getTag(right)) {
+    var tag = getTag(left);
+    return coerce(deTag(left, tag), deTag(right, tag), coersion);
   }
 
   if (isTuple(left) && isTuple(right)) {
@@ -179,8 +190,6 @@ for (primitive in primitives)
   module.exports[primitive] = primitive;
 module.exports.newTypeVar = newTypeVar;
 module.exports.List = List;
-module.exports.isList = isList;
-module.exports.deList = deList;
 module.exports.Tuple = Tuple;
 module.exports.Map = Map;
 module.exports.isMap = isMap;
