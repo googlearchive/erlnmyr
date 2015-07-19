@@ -18,7 +18,12 @@ import telemetry.core
 from telemetry.internal.browser import browser_options
 from telemetry.internal.browser import browser_finder
 
+from telemetry.timeline import tracing_category_filter
+from telemetry.timeline import tracing_options
+
 from json import dumps
+
+import tempfile
 
 options = browser_options.BrowserFinderOptions();
 parser = options.CreateParser();
@@ -38,4 +43,25 @@ with browserFactory.Create(options) as browser:
     command = sys.stdin.readline()[:-1];
     if command == 'exit':
       break
-
+    elif command.startswith('load:'):
+      url = command[5:]
+      tab.Navigate(url);
+      tab.WaitForDocumentReadyStateToBeComplete();
+      sys.stdout.write('OK');
+      sys.stdout.flush();
+    elif command.startswith('startTracing'):
+      category_filter = tracing_category_filter.TracingCategoryFilter()
+      options = tracing_options.TracingOptions()
+      options.enable_chrome_trace = True
+      browser.platform.tracing_controller.Start(options, category_filter);
+      sys.stdout.write('OK');
+      sys.stdout.flush();
+    elif command.startswith('endTracing'):
+      data = browser.platform.tracing_controller.Stop();
+      f = tempfile.NamedTemporaryFile();
+      data.Serialize(f);
+      sys.stdout.write(f.name + '\n');
+      sys.stdout.flush();
+      command = sys.stdin.readline()[:-1];
+      assert command == 'done';
+      f.close();

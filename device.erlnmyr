@@ -1,0 +1,5 @@
+digraph device {
+  input -> browser -> startTracing -> load -> endTracing -> closeBrowser -> bufferToString -> log;
+
+  input [data="http://abc.net.au"];
+}

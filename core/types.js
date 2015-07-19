@@ -59,6 +59,10 @@ function List(type) {
   return Tagged(type, 'list');
 }
 
+function Browser(type) {
+  return Tagged(type, 'browser');
+}
+
 function Tuple(left, right) {
   return {left: left, right: right};
 }
@@ -189,6 +193,7 @@ function coerce(left, right, coersion, visited) {
 for (primitive in primitives)
   module.exports[primitive] = primitive;
 module.exports.newTypeVar = newTypeVar;
+module.exports.Browser = Browser;
 module.exports.List = List;
 module.exports.Tuple = Tuple;
 module.exports.Map = Map;
