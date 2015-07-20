@@ -31,6 +31,7 @@ parser = options.CreateParser();
 
 browserFactory = browser_finder.FindBrowser(options);
 
+
 with browserFactory.Create(options) as browser:
   tab = browser.tabs.New();
   tab.Activate();
@@ -60,6 +61,19 @@ with browserFactory.Create(options) as browser:
       data = browser.platform.tracing_controller.Stop();
       f = tempfile.NamedTemporaryFile();
       data.Serialize(f);
+      f.flush();
+      sys.stdout.write(f.name + '\n');
+      sys.stdout.flush();
+      command = sys.stdin.readline()[:-1];
+      assert command == 'done';
+      f.close();
+    elif command.startswith('exec:'):
+      length = int(command[5:]);
+      js = sys.stdin.read(length);
+      result = tab.EvaluateJavaScript(js);
+      f = tempfile.NamedTemporaryFile();
+      f.write(dumps(result));
+      f.flush();
       sys.stdout.write(f.name + '\n');
       sys.stdout.flush();
       command = sys.stdin.readline()[:-1];
