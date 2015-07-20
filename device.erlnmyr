@@ -1,5 +1,8 @@
 digraph device {
-  input -> browser -> startTracing -> load -> endTracing -> closeBrowser -> bufferToString -> log;
+  imports="['browser-phases']";
+
+  input -> browser -> load -> inlineStylify -> onlyPseudoElementStyles -> save -> closeBrowser -> bufferToString -> jsonParse -> HTMLWriter -> writeStringFile;
 
   input [data="http://abc.net.au"];
+  writeStringFile [filename="abc.html"];
 }

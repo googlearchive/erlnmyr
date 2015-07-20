@@ -105,6 +105,7 @@ var bundled = {
   'trace-phases': path.join(__dirname, '../lib/trace-phases'),
   'chromium-phases': path.join(__dirname, '../lib/chromium-phases/chromium-phases'),
   'device-phases': path.join(__dirname, '../lib/device-phases'),
+  'browser-phases': path.join(__dirname, '../lib/browser-phases')
 };
 
 function buildstageList(graphData, tags, require) {
