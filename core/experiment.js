@@ -172,8 +172,6 @@ function buildstageList(graphData, tags, require) {
       if (pipe.stageName == undefined)
         pipe.stageName = 'passthrough';
       var thisStream = stageLoader.stageSpecificationToStage({name: pipe.stageName, options: pipe.options});
-      //thisStream.setInput('efrom', idx + '');
-      //thisStream.setOutput('eto', idx + '');
       thisStream.setInput('efrom', pipe.id);
       thisStream.setOutput('eto', pipe.id);
       return thisStream;
@@ -192,7 +190,11 @@ function buildstageList(graphData, tags, require) {
       break;
 
     // Unique output connections.
-    var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(function(v, i, s) { return s.indexOf(v) == i; });
+    var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(
+        function(v, i, s) { return s.indexOf(v) == i; });
+
+    // output connections that feed directly to the next phase. These are
+    // the connections that are currently routable.
     var thisPhaseOutgoing = outgoing.filter(function(con) {
       for (var j = 0; j < con.toPipes.length; j++) {
         if (linearNames[i + 1].indexOf(con.toPipes[j].nodeName) == -1)
@@ -200,16 +202,18 @@ function buildstageList(graphData, tags, require) {
       }
       return true;
     });
-    var thisPhaseIns = thisPhaseOutgoing.map(function(con) { return con.fromPipes.map(function(pipe) { return pipe.id; }) });
-    var thisPhaseOuts = thisPhaseOutgoing.map(function(con) { return con.toPipes.map(function(pipe) { return pipe.id; }) });
-    
 
-    // Indexes of from/to to construct the routing stage.
-    var ins = outgoing.map(function(con) { return con.fromPipes; });
-    ins = ins.map(function(a) { return a.map(function(b) { return linearNames[i].indexOf(b.nodeName); })});
-    var outs = outgoing.map(function(con) { return con.toPipes; });
-    outs = outs.map(function(a) { return a.map(function(b) { return linearNames[i + 1].indexOf(b.nodeName); })});
-    // var routingStage = phase.routingPhase(ins, outs);
+    // the inputs in this linear group that feed into the currently
+    // routable connections.
+    var thisPhaseIns = thisPhaseOutgoing.map(function(con) {
+      return con.fromPipes.map(function(pipe) { return pipe.id; })
+    });
+
+    // the outputs to the next linear group that feed out of the currently
+    // routable connections.
+    var thisPhaseOuts = thisPhaseOutgoing.map(function(con) {
+      return con.toPipes.map(function(pipe) { return pipe.id; })
+    });
 
     var routingStage = phase.routingPhase(thisPhaseIns, thisPhaseOuts);
     phaseStack[phaseStack.length - 1].push(routingStage);

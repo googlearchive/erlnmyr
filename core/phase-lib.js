@@ -155,6 +155,21 @@ module.exports.compare = phase({input: typeVar('a'), output: typeVar('a'), arity
   },
   { tag: ''});
 
+// TODO: This is for testing. Does it belong here?
+module.exports.compareSome = phase({input: types.string, output: types.string, arity: '1:1'},
+  function(data) {
+    if (this.position == undefined)
+      this.position = 0;
+    var assert = require('chai').assert;
+    assert.deepEqual(this.options.data[this.position], data);
+    return data;
+  },
+  {data: []});
+
+module.exports.passthrough = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
+  function(data) { return data; }
+);
+
 module.exports.compareString = phase({input: types.string, output: types.string, arity: '1:1'},
   function(input) {
     var assert = require('chai').assert;
