@@ -108,6 +108,20 @@ describe('graph.connect', function() {
     var x = a.out.toPipes[1];
     assert.deepEqual(linearize(a.graph), [[a, c], [b, x], [d]]);
   });
+  it('should allow extra paths to be installed when a direct path exists', function() {
+    var a = new graph.Pipe('a');
+    var b = new graph.Pipe('b');
+    graph.connect(a, b);
+    a.graph.dump();
+    console.log('---');
+    var c = new graph.Pipe('c');
+    graph.connect(a, c);
+    a.graph.dump();
+    console.log('---');
+    graph.connect(c, b);
+    a.graph.dump();
+    assert.deepEqual(linearize(a.graph), [[a], [c], [b]]);
+  });
 });
 
 describe('Pipe.from', function() {
