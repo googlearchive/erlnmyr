@@ -334,16 +334,16 @@ function PhaseBaseRuntime(base, impl, options) {
   // TODO: use these for base get/put in arity 1 cases?
   // TODO: don't install get/put in arity 1 cases
   if (this.phaseBase.inputTypes !== undefined) {
-    this.inputs = [];
+    this.inputs = {}
     for (var i = 0; i < this.phaseBase.inputTypes.length; i++)
-      this.inputs.push({get: getFunction(this.phaseBase.inputTypes[i]).bind(this)});
+      this.inputs[this.phaseBase.inputTypes[i].name] = {get: getFunction(this.phaseBase.inputTypes[i]).bind(this)};
   } else {
     this.get = getFunction({key: this.phaseBase.inputKey, value: this.phaseBase.inputValue});
   }
   if (this.phaseBase.outputTypes !== undefined) {
-    this.outputs = [];
+    this.outputs = {};
     for (var i = 0; i < this.phaseBase.outputTypes.length; i++)
-      this.outputs.push({put: putFunction(this.phaseBase.outputTypes[i]).bind(this)});
+      this.outputs[this.phaseBase.outputTypes[i].name] = {put: putFunction(this.phaseBase.outputTypes[i]).bind(this)};
   } else {
     this.put = putFunction({key: this.phaseBase.outputKey, value: this.phaseBase.outputValue});
   }
@@ -398,16 +398,18 @@ function routingPhase(inRoutes, outRoutes) {
   for (var i = 0; i < inRoutes.length; i++) {
     var typeVar = types.newTypeVar();
     for (var j = 0; j < inRoutes[i].length; j++)
-      inputDict[inRoutes[i][j]] = {key: 'eto', value: inRoutes[i][j] + '', type: typeVar};
+      inputDict[inRoutes[i][j]] = {key: 'eto', value: inRoutes[i][j], type: typeVar, name: inRoutes[i][j]};
     for (var k = 0; k < outRoutes[i].length; k++)
-      outputDict[outRoutes[i][k]] = {key: 'efrom', value: outRoutes[i][k] + '', type: typeVar};
+      outputDict[outRoutes[i][k]] = {key: 'efrom', value: outRoutes[i][k], type: typeVar, name: outRoutes[i][k]};
   }
   var inputs = [];
   var outputs = [];
-  for (var i = 0; i < Object.keys(inputDict).length; i++)
-    inputs.push(inputDict[i]);
-  for (var i = 0; i < Object.keys(outputDict).length; i++)
-    outputs.push(outputDict[i]);
+  var keys = Object.keys(inputDict);
+  for (var i = 0; i < keys.length; i++)
+    inputs.push(inputDict[keys[i]]);
+  var keys = Object.keys(outputDict);
+  for (var i = 0; i < keys.length; i++)
+    outputs.push(outputDict[keys[i]]);
 
   var phase = new PhaseBase({
     name: 'routing',

@@ -173,7 +173,7 @@ Graph.prototype.edgesCount = function() {
 Graph.prototype.dump = function() {
   for (var e in this.edges) {
     var edge = this.edges[e];
-    console.log(edge.in == undefined ? '_' : edge.in.id, '-' + edge.stageName + '->', 
+    console.log(edge.in == undefined ? '_' : edge.in.id, '-' + edge.stageName + '(' + edge.id + ')->', 
                 edge.out == undefined ? '_' : edge.out.id);
   }
 }
