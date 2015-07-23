@@ -111,16 +111,12 @@ describe('graph.connect', function() {
   it('should allow extra paths to be installed when a direct path exists', function() {
     var a = new graph.Pipe('a');
     var b = new graph.Pipe('b');
-    graph.connect(a, b);
-    a.graph.dump();
-    console.log('---');
     var c = new graph.Pipe('c');
-    graph.connect(a, c);
-    a.graph.dump();
-    console.log('---');
     graph.connect(c, b);
-    a.graph.dump();
-    assert.deepEqual(linearize(a.graph), [[a], [c], [b]]);
+    graph.connect(a, c);
+    graph.connect(a, b);
+    var l = linearize(a.graph);
+    assert.deepEqual(linearize(a.graph), [[a], [c, a.out.toPipes[1]], [b]]);
   });
 });
 

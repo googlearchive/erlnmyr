@@ -105,11 +105,20 @@ function linearConnectEdges(inGraph) {
         }
       }
       if (validNode) {
-        handledNodes[nodes[i]] = mkPhase(nodes[i], inGraph);
+        var from = mkPhase(nodes[i], inGraph);
+        handledNodes[nodes[i]] = from;
         handledNodeCount++;
+        var tos = [];
         for (var j = 0; j < outEdges.length; j++) {
-          graph.connect(handledNodes[outEdges[j].v], handledNodes[outEdges[j].w]);
+          var to = handledNodes[outEdges[j].w];
+          if (to.in == undefined)
+            graph.connect(from, to);
+          else
+            tos.push(to)
         }
+        tos.forEach(function(to) {
+          graph.connect(from, to);
+        });
       }
     }
   }
