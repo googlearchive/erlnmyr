@@ -88,17 +88,42 @@ function mkPhase(nodeName, inGraph) {
 }
 
 function linearConnectEdges(inGraph) {
-  var edges = inGraph.edges();
-  var pipes = {};
-  for (var i = 0; i < edges.length; i++) {
-    var edge = edges[i];
-    if (!pipes[edge.v])
-      pipes[edge.v] = mkPhase(edge.v, inGraph);
-    if (!pipes[edge.w])
-      pipes[edge.w] = mkPhase(edge.w, inGraph);
-    graph.connect(pipes[edge.v], pipes[edge.w]);
+  var nodes = inGraph.nodes();
+  var handledNodes = {};
+  var handledNodeCount = 0;
+
+  while (handledNodeCount < nodes.length) {
+    for (var i = 0; i < nodes.length; i++) {
+      if (handledNodes[nodes[i]] !== undefined)
+        continue;
+      var outEdges = inGraph.outEdges(nodes[i]);
+      var validNode = true;
+      for (var j = 0; j < outEdges.length; j++) {
+        if (handledNodes[outEdges[j].w] == undefined) {
+          validNode = false;
+          break;
+        }
+      }
+      if (validNode) {
+        var from = mkPhase(nodes[i], inGraph);
+        handledNodes[nodes[i]] = from;
+        handledNodeCount++;
+        var tos = [];
+        for (var j = 0; j < outEdges.length; j++) {
+          var to = handledNodes[outEdges[j].w];
+          if (to.in == undefined)
+            graph.connect(from, to);
+          else
+            tos.push(to)
+        }
+        tos.forEach(function(to) {
+          graph.connect(from, to);
+        });
+      }
+    }
   }
-  return linearize(pipes[edges[0].v].graph);
+
+  return linearize(handledNodes[nodes[0]].graph);
 }
 
 var bundled = {
