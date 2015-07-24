@@ -18,7 +18,10 @@ var taskQueue = [];
 var maxWaiting = 32;
 var waitCount = 0;
 
+var tid = 0;
+
 function Task(phases, index, stream, resolve) {
+  this.id = tid++;
   this.phases = phases;
   this.index = index;
   this.stream = stream;
@@ -27,6 +30,7 @@ function Task(phases, index, stream, resolve) {
   this.resolve = resolve;
   this.waitingFor = [];
   this.finished = false;
+  this.checkpointList = [];
 }
 
 Task.prototype = {
@@ -40,6 +44,7 @@ Task.prototype = {
   waitFor: function(task) {
     this.waitingFor = task.waitingFor;
     task.waitingFor = [];
+    task.waitee = true;
     this.waitingFor.push(task);
   },
   /**
@@ -60,11 +65,43 @@ Task.prototype = {
       this.resolve && this.resolve();
       return;
     }
+    this.transferWaitingList();
+  },
+  transferWaitingList: function() {
     var newWaitingTask = this.waitingFor.pop();
     newWaitingTask.waitingFor = this.waitingFor;
     newWaitingTask.resolve = this.resolve;
     this.resolve = undefined;
     this.waitingFor = undefined;
+  },
+  /**
+   * Make a new task that duplicates a phase that this task has just executed.
+   * That duplicate task will need to take this task's stream, so cloning
+   * requires a new stream for this task to continue executing with.
+   *
+   * Cloning implies a relationship, so the new task will need to wait for this
+   * task to complete at some points in the future execution of phases.
+   */
+  clone: function(clonedIndex, newData) {
+    var newTask = new Task(this.phases, clonedIndex, this.stream, this.resolve);
+    this.resolve = undefined;
+    this.stream = newData;
+    newTask.waitFor(this);
+    taskQueue.push(newTask);
+    return newTask;
+  },
+  isSchedulable: function() {
+    if (this.phases[this.index - 1].arity !== 'N:1')
+      return true;
+    this.waitingFor = this.waitingFor.filter(function(task) { return task.index !== this.index; }.bind(this));
+    if (this.waitee)
+      return false;
+    if (this.waitingFor.length == 0) {
+      this.stream = this.phases[this.index - 1].groupCompleted();
+      return true;
+    }
+    this.transferWaitingList();
+    return false;
   }
 }
 
@@ -139,14 +176,13 @@ function runPhase(task) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
     } else if (op.command == yieldCmd) {
-      var newTask = new Task(task.phases, oldIndex, task.stream, task.resolve);
-      task.resolve = undefined;
-      newTask.waitFor(task);
-      taskQueue.push(newTask);
-      task.stream = op.stream;
+      task.clone(oldIndex, op.stream);
     }
     task.index++;
-    taskQueue.push(task);
+    // if the next phase is N:1 then we don't push here unless
+    // we aren't waiting for any other tasks.
+    if (task.isSchedulable())
+      taskQueue.push(task);
     done();
   });
   return true;

@@ -243,3 +243,25 @@ module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0
       }.bind(this));
       return new Promise(function(resolve, reject) { this.resolve = resolve; }.bind(this));
     });
+
+module.exports.concat = phase({input: types.string, output: types.string, arity: 'N:1'},
+    {
+      impl: function(data) {
+        this.concatString = this.concatString || '';
+        this.concatString += data;
+      },
+      onCompletion: function() {
+        var result = this.concatString;
+        this.concatString = undefined;
+        return result;
+      }
+    });
+
+module.exports.duplicate = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:N'},
+    function(data) {
+      for (var i = 0; i < this.options.count; i++) {
+        this.put(data);
+        this.tags.tag('duplicate', i + '');
+      }
+    },
+    { count: 1});
