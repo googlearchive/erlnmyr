@@ -41,6 +41,7 @@ function PhaseBase(info, impl, options) {
     this.outputType = info.output || types.unit;
   }
   this.async = info.async || false;
+  this.arity = info.arity;
   this.parallel = 1;
   if (this.async) {
     switch(info.arity) {
@@ -64,6 +65,9 @@ function PhaseBase(info, impl, options) {
     switch(info.arity) {
       case 'N:N':
         this.impl = this.implNToN;
+        break;
+      case 'N:1':
+        this.impl = this.implNTo1;
         break;
       case '0:N':
         this.init = this.init0ToN;
@@ -94,6 +98,8 @@ function PhaseBase(info, impl, options) {
   this.makeInputList();
   this.makeOutputList();
 
+  this.inputImpl = impl;
+  this.inputOptions = options;
   this.runtime = new PhaseBaseRuntime(this, impl, options);
 }
 
@@ -118,7 +124,7 @@ PhaseBase.prototype.setInput = function(name, value) {
   this.inputKey = name;
   this.inputValue = value;
   this.makeInputList();
-  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
+  this.runtime = new PhaseBaseRuntime(this, this.inputImpl, this.inputOptions);
 }
 
 PhaseBase.prototype.setOutput = function(name, value) {
@@ -126,7 +132,7 @@ PhaseBase.prototype.setOutput = function(name, value) {
   this.outputKey = name;
   this.outputValue = value;
   this.makeOutputList();
-  this.runtime = new PhaseBaseRuntime(this, this.runtime.impl, this.runtime.options);
+  this.runtime = new PhaseBaseRuntime(this, this.inputImpl, this.inputOptions);
 }
 
 PhaseBase.prototype.makeInputList = function() {
@@ -175,6 +181,29 @@ PhaseBase.prototype.init0ToN = function(handle) {
   }.bind(this.runtime);
   return this.runtime.impl(this.runtime.tags);
 };
+
+
+PhaseBase.prototype.implNTo1 = function(stream) {
+  if (this.baseStream == undefined) {
+    this.baseStream = stream;
+  }
+  this.runtime.stream = stream;
+  this.pendingItems = stream.get(this.inputKey, this.inputValue);
+  for (var i = 0; i < this.pendingItems.length; i++) {
+    this.runtime.setTags(this.pendingItems[i].tags);
+    this.runtime.impl(this.pendingItems[i].data, this.runtime.tags);
+  }
+  return Promise.resolve(done());
+}
+
+PhaseBase.prototype.groupCompleted = function() {
+  this.runtime.stream = this.baseStream;
+  this.baseStream = undefined;
+  var result = this.runtime.onCompletion();
+  this.runtime.tags.tag(this.outputKey, this.outputValue);
+  this.runtime.put(result);
+  return this.runtime.stream;
+}
 
 function flowItemGet(runtime, tags) {
   if (!trace.enabled) return;
@@ -240,7 +269,7 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
   var phase = this;
   return Promise.resolve(par(items.map(function(item) {
     return function() {
-      var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
+      var runtime = new PhaseBaseRuntime(phase, phase.inputImpl, phase.inputOptions);
       runtime.stream = stream;
       runtime.setTags(item.tags);
       var t = trace.start(runtime); flowItemGet(runtime, item.tags);
@@ -270,7 +299,7 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
   var phase = this;
   return Promise.resolve(par(items.map(function(item) {
     return function() {
-      var runtime = new PhaseBaseRuntime(phase, phase.runtime.impl, phase.runtime.options);
+      var runtime = new PhaseBaseRuntime(phase, phase.inputImpl, phase.inputOptions);
       runtime.stream = stream;
       runtime.setTags(item.tags);
       var t = trace.start(runtime); flowItemGet(runtime, item.tags);
@@ -347,7 +376,12 @@ function PhaseBaseRuntime(base, impl, options) {
   } else {
     this.put = putFunction({key: this.phaseBase.outputKey, value: this.phaseBase.outputValue});
   }
-  this.impl = impl;
+  if (impl.impl) {
+    this.impl = impl.impl;
+    this.onCompletion = impl.onCompletion;
+  } else {
+    this.impl = impl;
+  }
 }
 
 PhaseBaseRuntime.prototype.toTraceInfo = function() {
