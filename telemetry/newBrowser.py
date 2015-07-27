@@ -13,6 +13,8 @@
  # limitations under the License
 
 import sys
+import os
+import subprocess
 
 import telemetry.core
 from telemetry.internal.browser import browser_options
@@ -21,16 +23,43 @@ from telemetry.internal.browser import browser_finder
 from telemetry.timeline import tracing_category_filter
 from telemetry.timeline import tracing_options
 
+from profile_chrome import trace_packager
+
 from json import dumps
 
 import tempfile
 
+# import optionParser
+
 options = browser_options.BrowserFinderOptions();
+options.extra_browser_args_as_string = '--single-process --no-sandbox'
 parser = options.CreateParser();
 (_, args) = parser.parse_args();
+cwd = os.getcwd()
+import os
+os.chdir('/usr/local/google/home/soonm/chromium-android/src')
 
 browserFactory = browser_finder.FindBrowser(options);
 
+def convertPerfProfileToJSON(perf_profile):
+    sys.stderr.write('writing ' + perf_profile + ' to json\n')
+    perfhost_path = '/usr/local/google/home/soonm/chromium-android/src/tools/telemetry/bin/linux/x86_64/perfhost_trusty'
+    perf_script_path = '/usr/local/google/home/soonm/chromium-android/src/tools/profile_chrome/third_party/perf_to_tracing.py'
+    symfs_dir = '/tmp/erlnmyr-perf/'
+    kallsyms = '/tmp/erlnmyr-perf/kallsyms'
+    json_file_name = os.path.basename(perf_profile)
+    sys.stderr.write(json_file_name)
+    with open(os.devnull, 'w') as dev_null, \
+        open(json_file_name, 'w') as json_file:
+      cmd = [perfhost_path, 'script', '-s', perf_script_path, '-i',
+             perf_profile, '--symfs', symfs_dir, '--kallsyms', kallsyms]
+
+      if subprocess.call(cmd, stdout=json_file, stderr=sys.stderr):
+        sys.stderr.write('Perf data to JSON conversion failed. The result will '
+                        'not contain any perf samples. You can still view the '
+                        'perf data manually as shown above.')
+        return None
+    return json_file_name
 
 with browserFactory.Create(options) as browser:
   tab = browser.tabs.New();
@@ -55,15 +84,24 @@ with browserFactory.Create(options) as browser:
       options = tracing_options.TracingOptions()
       options.enable_chrome_trace = True
       browser.platform.tracing_controller.Start(options, category_filter);
+      browser.profiling_controller.Start('perf', '/tmp/erlnmyr-perf/profiling-results');
       sys.stdout.write('OK');
       sys.stdout.flush();
     elif command.startswith('endTracing'):
+      sys.stderr.write('EndTrace\n');
       data = browser.platform.tracing_controller.Stop();
+      result = browser.profiling_controller.Stop();
+      sys.stderr.write('Results : ' + str(result));
+      json_result = [convertPerfProfileToJSON(i) for i in result]
       f = tempfile.NamedTemporaryFile();
       data.Serialize(f);
       f.flush();
+      sys.stderr.write('final files : ' + str(json_result))
       sys.stdout.write(f.name + '\n');
       sys.stdout.flush();
+      json_result.append(f.name)
+      combined = trace_packager.PackageTraces(json_result, output=cwd+'/final-form', compress=False, write_json=False)
+      sys.stderr.write("Trace written to file://%s" % os.path.abspath(combined))
       command = sys.stdin.readline()[:-1];
       assert command == 'done';
       f.close();
