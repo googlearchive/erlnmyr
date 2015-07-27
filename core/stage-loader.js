@@ -30,7 +30,7 @@ function stageSpecificationToStage(stage) {
   }
   if (!register) {
     // TODO: Fix the cyclic dependency to avoid this lazy loading.
-    register = require('./phase-register');
+    register = require('./register');
     register.load(require('./phase-lib'));
     register.load(require('./experiment'));
     register.load(require('../lib/device-phases'));

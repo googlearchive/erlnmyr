@@ -20,7 +20,8 @@ var phase = require('./phase');
 var stageLoader = require('./stage-loader');
 var assert = require('chai').assert;
 var Promise = require('bluebird');
-var definePhase = require('./phase-register');
+var definePhase = require('./register').phase;
+var register = require('./register');
 var path = require('path');
 var commandLineOptions = require('./options');
 
@@ -146,7 +147,7 @@ function buildstageList(graphData, tags, require) {
       } else if (tags.tags.filename && lib[0] == '.') {
         lib = path.join(path.dirname(tags.tags.filename), lib);
       }
-      definePhase.load(require(lib));
+      register.load(require(lib));
     });
   }
   var linear = linearConnectEdges(inGraph);
