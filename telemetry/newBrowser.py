@@ -98,8 +98,8 @@ with browserFactory.Create(options) as browser:
       sys.stdout.flush();
     elif command.startswith('endTracing'):
       sys.stderr.write('EndTrace\n');
-      f = tempfile.NamedTemporaryFile();
       data = browser.platform.tracing_controller.Stop();
+      f = tempfile.NamedTemporaryFile();
       data.Serialize(f);
       f.flush();
 
@@ -119,7 +119,6 @@ with browserFactory.Create(options) as browser:
         sys.stderr.write("Trace written to file://%s" % os.path.abspath(combined))
 
       command = sys.stdin.readline()[:-1];
-      sys.stderr.write('Command now is ' + command);
       assert command == 'done';
       f.close();
     elif command.startswith('exec:'):
