@@ -199,7 +199,7 @@ function buildstageList(graphData, tags, require) {
       if (pipe.stageName == undefined)
         pipe.stageName = 'passthrough';
       var thisStream = stageLoader.stageSpecificationToStage({name: pipe.stageName, options: pipe.options});
-      if (thisStream.__proto__ == [].__proto__) {
+      if (thisStream instanceof Array) {
         thisStream[0].setInput('efrom', pipe.id);
         thisStream[thisStream.length - 1].setOutput('eto', pipe.id);
         streams = streams.concat(thisStream);

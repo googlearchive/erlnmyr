@@ -13,6 +13,7 @@
 
 'use strict';
 module.exports.phase = require('./core/register').phase;
+module.exports.alias = require('./core/register').alias;
 module.exports.types = require('./core/types');
 module.exports.run = function(file, loader) {
   var path = require('path');

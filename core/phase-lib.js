@@ -184,7 +184,7 @@ module.exports.fileToBuffer = phase({input: types.string, output: types.buffer, 
     if (!tags.filename) {
       this.tags.tag('filename', filename);
     }
-    return fs.readFileAsync(filename).then(function(data) { return data; });
+    return fs.readFileAsync(filename);
   });
 
 module.exports.gunzipAndDecode = phase({
