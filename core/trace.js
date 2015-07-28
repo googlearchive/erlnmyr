@@ -201,11 +201,9 @@ function init() {
         event.cat = '';
       }
     });
-    zlib.gzip(JSON.stringify({
-      traceEvents: events,
-    }), function(_, buffer) {
-      fs.writeFileSync(options.traceFile, buffer, 0, buffer.length);
-    });
+    fs.writeFileSync(options.traceFile, JSON.stringify({
+        traceEvents: events,
+    }));
   };
 }
 
