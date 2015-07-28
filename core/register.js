@@ -59,7 +59,20 @@ PhaseDefinition.prototype.build = function() {
   }
 }
 
+function AliasDefinition(list) {
+  this.list = list;
+}
+
+AliasDefinition.prototype.build = function() {
+  var list = this.list;
+  return function() {
+    var stageLoader = require('./stage-loader');
+    return list.map(stageLoader.stageSpecificationToStage);
+  }
+}
+
 var phases = {};
+var aliases = {};
 
 // TODO: Move load to a new 'module-loader' module.
 function load(module) {
@@ -72,11 +85,22 @@ function load(module) {
       item.info.name = k;
       phases[k] = item.build();
     }
+    if (item instanceof AliasDefinition) {
+      console.assert(k.indexOf('_') === -1,
+          'Alias name "' + k + '" must not include an underscore.\n' +
+          'Underscores are reserved for separating phase names from node IDs in experiments.');
+      item.name = k;
+      aliases[k] = item.build();
+    }
   }
 }
 
-module.exports = function(info, impl, defaults) {
+module.exports.phase = function(info, impl, defaults) {
   return new PhaseDefinition(info, impl, defaults);
 };
 module.exports.phases = phases;
+module.exports.alias = function(list) {
+  return new AliasDefinition(list);
+};
+module.exports.aliases = aliases;
 module.exports.load = load;
