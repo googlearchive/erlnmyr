@@ -237,9 +237,9 @@ function flowItemPut(runtime, tags) {
 }
 
 PhaseBase.prototype.impl1To1 = function(stream) {
-  this.runtime.stream = stream;
 
   if (!this.pendingItems || !this.pendingItems.length) {
+    this.runtime.stream = stream;
     this.pendingItems = stream.get(this.inputKey, this.inputValue);
   }
 
@@ -253,7 +253,9 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     t.end();
 
     if (this.runtime.yielding && this.pendingItems.length > 0) {
-      return Promise.resolve(yieldData(this.runtime.stream));
+      var result = yieldData(this.runtime.stream);
+      this.runtime.newStream();
+      return Promise.resolve(result);
     }
   }
   if (!this.runtime.yielding) {

@@ -177,6 +177,8 @@ function runPhase(task) {
       task.dependencies = op.dependencies;
     } else if (op.command == yieldCmd) {
       task.clone(oldIndex, op.stream);
+    } else {
+      task.stream = op.stream;
     }
     task.index++;
     // if the next phase is N:1 then we don't push here unless
