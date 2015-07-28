@@ -349,6 +349,7 @@ function putFunction(type) {
     // TODO: This misses tags when they are set after calling put().
     flowItemPut(this, this.tags.tags);
     this.tags.tag(type.key, type.value);
+    // delete this.tags.tags['from'];
     this.stream.put(data, this.tags.tags);
     return this.tags;
   }

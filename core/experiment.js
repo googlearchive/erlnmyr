@@ -194,14 +194,22 @@ function buildstageList(graphData, tags, require) {
       }
     }
 
-    var streams = linear[i].map(function(pipe, idx) {
+    var streams = [];
+    linear[i].forEach(function(pipe, idx) {
       if (pipe.stageName == undefined)
         pipe.stageName = 'passthrough';
       var thisStream = stageLoader.stageSpecificationToStage({name: pipe.stageName, options: pipe.options});
-      thisStream.setInput('efrom', pipe.id);
-      thisStream.setOutput('eto', pipe.id);
-      return thisStream;
+      if (thisStream.__proto__ == [].__proto__) {
+        thisStream[0].setInput('efrom', pipe.id);
+        thisStream[thisStream.length - 1].setOutput('eto', pipe.id);
+        streams = streams.concat(thisStream);
+      } else {
+        thisStream.setInput('efrom', pipe.id);
+        thisStream.setOutput('eto', pipe.id);
+        streams.push(thisStream);
+      }
     });
+
     phaseStack[phaseStack.length - 1] = phaseStack[phaseStack.length - 1].concat(streams);
 
     while (groupStack.length > 0 && (linearGroups.length <= i + 1 || linearGroups[i + 1].indexOf(groupStack[groupStack.length - 1]) == -1)) {

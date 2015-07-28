@@ -18,6 +18,7 @@ var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
 var phase = require('./register.js').phase;
+var alias = require('./register.js').alias;
 
 var StringDecoder = require('string_decoder').StringDecoder;
 var TreeBuilder = require('../lib/tree-builder');
@@ -183,7 +184,7 @@ module.exports.fileToBuffer = phase({input: types.string, output: types.buffer, 
     if (!tags.filename) {
       this.tags.tag('filename', filename);
     }
-    return fs.readFileAsync(filename);
+    return fs.readFileAsync(filename).then(function(data) { return data; });
   });
 
 module.exports.gunzipAndDecode = phase({
@@ -203,6 +204,8 @@ module.exports.gunzipAndDecode = phase({
 });
 
 module.exports.bufferToString = phase({input: types.buffer, output: types.string, arity: '1:1'}, String);
+
+module.exports.fileToString = alias(['fileToBuffer', 'bufferToString']);
 
 module.exports.regexReplace = phase({
   name: 'regexReplace',

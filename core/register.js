@@ -64,9 +64,10 @@ function AliasDefinition(list) {
 }
 
 AliasDefinition.prototype.build = function() {
+  var list = this.list;
   return function() {
     var stageLoader = require('./stage-loader');
-    return this.list.map(stageLoader.stageSpecificationToStage);
+    return list.map(stageLoader.stageSpecificationToStage);
   }
 }
 
