@@ -212,6 +212,7 @@ function flowItemGet(runtime, tags) {
     if (k != 'flow')
       args.tags[k] = tags[k];
   }
+  args.streamID = runtime.stream.id;
   var t = trace.start({cat: 'phase', name: 'get:' + runtime.phaseBase.name, args: args});
   if (tags.flow) {
     tags.flow.step();
@@ -226,6 +227,7 @@ function flowItemPut(runtime, tags) {
     if (k != 'flow')
       args.tags[k] = tags[k];
   }
+  args.streamID = runtime.stream.id;
   var t = trace.start({cat: 'phase', name: 'put:' + runtime.phaseBase.name, args: args});
   if (tags.flow) {
     tags.flow.step();
@@ -235,13 +237,9 @@ function flowItemPut(runtime, tags) {
 }
 
 PhaseBase.prototype.impl1To1 = function(stream) {
-  this.runtime.stream = stream;
 
   if (!this.pendingItems || !this.pendingItems.length) {
-    if (this.runtime.yielding) {
-      return Promise.resolve(done(stream));
-      this.runtime.yielding = false;
-    }
+    this.runtime.stream = stream;
     this.pendingItems = stream.get(this.inputKey, this.inputValue);
   }
 
@@ -254,12 +252,16 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     this.runtime.put(result);
     t.end();
 
-    if (this.runtime.yielding) {
-      return Promise.resolve(yieldData(this.runtime.stream));
+    if (this.runtime.yielding && this.pendingItems.length > 0) {
+      var result = yieldData(this.runtime.stream);
+      this.runtime.newStream();
+      return Promise.resolve(result);
     }
   }
   if (!this.runtime.yielding) {
     return Promise.resolve(done(stream));
+  } else {
+    return Promise.resolve(done(this.runtime.stream));
   }
 }
 
@@ -385,7 +387,7 @@ function PhaseBaseRuntime(base, impl, options) {
 }
 
 PhaseBaseRuntime.prototype.toTraceInfo = function() {
-  return {cat: 'phase', name: this.phaseBase.name};
+  return {cat: 'phase', name: this.phaseBase.name, args: {pipeId: this.phaseBase.pipeId}};
 };
 
 PhaseBaseRuntime.prototype.setTags = function(tags) {

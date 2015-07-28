@@ -1,13 +1,13 @@
 digraph experiment {
   imports="['trace-phases']"
 
-  input_normal [label="input", data="tests/pipeline/simple.trace"];
-  input_nostyle [label="input", data="tests/pipeline/simple-nostyle.trace"];
-  input_reduced [label="input", data="tests/pipeline/simple-reduced.trace"];
-  input_minimized [label="input", data="tests/pipeline/simple-minimized.trace"];
+  input_normal [label="input", data="simple.trace"];
+  input_nostyle [label="input", data="simple-nostyle.trace"];
+  input_reduced [label="input", data="simple-reduced.trace"];
+  input_minimized [label="input", data="simple-minimized.trace"];
   compare [tag="data"];
   updateTag [tag="data", in="/(.*).trace/", out="$1.dump"];
   traceFilter [traceCategories="['blink.console']"];
 
-  {input_normal; input_nostyle; input_reduced; input_minimized} -> fileToString -> jsonParse -> traceFilter -> traceTree -> tracePrettyPrint -> updateTag -> compare;
+  {input_normal; input_nostyle; input_reduced; input_minimized} -> fork -> fileToString -> jsonParse -> traceFilter -> traceTree -> tracePrettyPrint -> updateTag -> compare;
 }

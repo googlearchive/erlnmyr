@@ -27,8 +27,8 @@ module.exports.run = function(file, loader) {
     {name: 'doExperiment', options: {require: loader}},
   ].map(stageLoader.stageSpecificationToStage);
 
+  process.on('exit', function() { require('./core/trace').dump() });
   stageLoader.processStages(phases, function() {
-    require('./core/trace').dump();
   }, function(e) {
     throw e;
   }, loader);

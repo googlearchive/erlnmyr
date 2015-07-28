@@ -92,7 +92,11 @@ describe('Style Tokenizer / Detokenizer', function() {
 
 describe('experiment', function() {
   it('should be able to run', function(done) {
-    testPipeline([{name: 'input', options: {data: 'tests/pipeline/simple.exp'}}, 'fileToBuffer', 'bufferToString', 'doExperiment'].map(stageLoader.stageSpecificationToStage), done);
+    process.chdir('tests/pipeline');
+    testPipeline([{name: 'input', options: {data: 'simple.exp'}}, 'fileToBuffer', 'bufferToString', 'doExperiment'].map(stageLoader.stageSpecificationToStage), function() {
+      process.chdir('../..');
+      done();
+    });
   });
 });
 

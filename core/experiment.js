@@ -202,10 +202,12 @@ function buildstageList(graphData, tags, require) {
       if (thisStream instanceof Array) {
         thisStream[0].setInput('efrom', pipe.id);
         thisStream[thisStream.length - 1].setOutput('eto', pipe.id);
+        thisStream.forEach(function(stream) { stream.pipeId = pipe.id; });
         streams = streams.concat(thisStream);
       } else {
         thisStream.setInput('efrom', pipe.id);
         thisStream.setOutput('eto', pipe.id);
+        thisStream.pipeId = pipe.id;
         streams.push(thisStream);
       }
     });

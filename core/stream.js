@@ -16,13 +16,14 @@ var assert = require('chai').assert;
 var stageLoader = require('./stage-loader');
 var Promise = require('bluebird');
 
-var _instanceID = 0;
-function newInstanceID() {
-  return (_instanceID++) + '';
+var _streamID = 0;
+function newStreamID() {
+  return _streamID++;
 }
 
 function Stream() {
   this.data = [];
+  this.id = newStreamID();
 }
 
 Stream.prototype = {
