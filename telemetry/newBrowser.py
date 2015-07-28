@@ -104,8 +104,9 @@ with browserFactory.Create(options) as browser:
       f.flush();
 
       if options.perf:
+        sys.stderr.write('Downloading perf data and symbols from device...')
         perf_data = browser.profiling_controller.Stop();
-        sys.stderr.write('Converting Perf profiles to JSON\n')
+        sys.stderr.write('Converting perf data to JSON\n')
         json_perf_data = [convertPerfProfileToJSON(i) for i in perf_data]
         json_perf_data = [i for i in json_perf_data if i is not None]
 

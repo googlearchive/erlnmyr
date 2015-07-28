@@ -4,5 +4,5 @@ digraph device {
   input -> browser -> startTracing -> load -> endTracing -> closeBrowser;
 
   input [data="http://www.nytimes.com"];
-  browser [browser="android-chromium"];
+  browser [browser="android-chromium", perf="true"];
 }
