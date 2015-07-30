@@ -249,13 +249,15 @@ module.exports.stdin = phase({input: types.unit, output: types.string, arity: '0
 module.exports.concat = phase({input: types.string, output: types.string, arity: 'N:1'},
     {
       impl: function(data) {
-        this.concatString = this.concatString || '';
         this.concatString += data;
       },
       onCompletion: function() {
         var result = this.concatString;
         this.concatString = undefined;
         return result;
+      },
+      onStart: function() {
+        this.concatString = '';
       }
     });
 
