@@ -1,0 +1,9 @@
+digraph test {
+
+  input -> duplicate -> fork -> passthrough -> concat -> compareSome;
+
+  duplicate [count="5"];
+  input [data = "foobar"];
+  compareSome [data="['foobarfoobarfoobarfoobarfoobar']"];
+
+}

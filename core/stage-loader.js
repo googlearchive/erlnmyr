@@ -35,6 +35,8 @@ function stageSpecificationToStage(stage) {
     register.load(require('./experiment'));
     register.load(require('../lib/device-phases'));
     register.load(require('../lib/browser-phases'));
+    register.load(require('../lib/test-phases'));
+    register.load(require('../lib/trace-phases'));
   }
   assert(register.phases[name] || register.aliases[name], "Can't find phase: " + name);
   if (register.phases[name])
@@ -42,10 +44,26 @@ function stageSpecificationToStage(stage) {
   return register.aliases[name]();
 }
 
-function processStages(stages, cb, fail) {
+function startPipeline(stageNames, cb, fail) {
+  return processStages(loadPipeline(stageNames), cb, fail);
+}
+
+function loadPipeline(stageNames) {
+  var stages = [];
+  stageNames.forEach(function(name) {
+    var stage = stageSpecificationToStage(name);
+    if (stage instanceof Array)
+      stages = stages.concat(stage);
+    else
+      stages.push(stage);
+  });
+  return stages;
+}
+
+function processStages(stages) {
   // TODO: Put this back when I work out what it means for stages.
   // assert.equal(stages[0].input, 'unit');
-  processStagesWithInput(null, stages, cb, fail);
+  return processStagesWithInput(null, stages);
 }
 
 function typeCheck(stages) {
@@ -81,12 +99,15 @@ TaskQueue.prototype.empty = function() {
   return this.tasks.length == 0;
 }
 
-function processStagesWithInput(input, stages, cb, fail) {
+// TODO: Fix this! It's not currently feeding the input in anywhere.
+function processStagesWithInput(input, stages) {
   typeCheck(stages);
-  scheduler.runPhases(stages).then(cb, fail);
+  return scheduler.runPhases(stages);
 }
 
 module.exports.typeCheck = typeCheck;
 module.exports.processStages = processStages;
+module.exports.startPipeline = startPipeline;
+module.exports.loadPipeline = loadPipeline;
 module.exports.processStagesWithInput = processStagesWithInput;
 module.exports.stageSpecificationToStage = stageSpecificationToStage;

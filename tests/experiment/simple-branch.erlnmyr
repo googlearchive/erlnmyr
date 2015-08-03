@@ -1,8 +1,6 @@
 digraph test {
 
-  input -> passthrough -> compareSome;
-  input -> compareSome;
+  t0ToN -> t1To1 -> capture;
+  t0ToN -> capture;
 
-  input [data="foobar"];
-  compareSome [data="['foobar','foobar']"];
 }

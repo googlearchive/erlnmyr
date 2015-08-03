@@ -1,0 +1,7 @@
+digraph test {
+
+  t0ToN -> t1To1 -> tNTo1 -> capture;
+
+  t0ToN [items="5"];
+
+}
