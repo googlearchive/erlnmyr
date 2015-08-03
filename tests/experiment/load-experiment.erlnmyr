@@ -1,5 +1,5 @@
 digraph test {
   input -> capture -> fileToString -> doExperiment;
 
-  input [data="tests/experiment/multiple-inputs.erlnmyr", todo="fix the fact that this reverts to parent directory on execution"];
+  input [data="multiple-inputs.erlnmyr"];
 }

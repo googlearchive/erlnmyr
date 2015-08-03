@@ -1,9 +1,7 @@
 digraph test {
 
-  input -> duplicate -> fork -> passthrough -> concat -> compareSome;
+  t0ToN -> fork -> t1To1 -> tNTo1 -> capture;
 
-  duplicate [count="5"];
-  input [data = "foobar"];
-  compareSome [data="['foobarfoobarfoobarfoobarfoobar']"];
+  t0ToN [items="5"];
 
 }

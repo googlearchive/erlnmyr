@@ -18,7 +18,7 @@ var assert = require('chai').assert;
 function testPipeline(stageList, incb) {
   var cb = function(data) { incb(); };
   var err = function(e) { throw e; };
-  stageLoader.startPipeline(stageList, cb, err);
+  stageLoader.startPipeline(stageList).then(incb);
 }
 
 function experiment(name) {
@@ -49,17 +49,18 @@ describe('experiments', function() {
     process.chdir('../..');
   });
 
-  it('should be able to branch', function() {
+  it('should be able to branch', function(done) {
     testPipeline(experiment('simple-branch'), function() {
       var events = captureController.getInvocations();
       assert(events.length == 2);
       assert(events[0].name == events[1].name, "data was duplicated in branch");
       assert(wentThrough(events[0], 't1To1') !== wentThrough(events[1], 't1To1'),
           "only one copy of data went through each branch");
+      done();
     });
   });
 
-  it('should deal with a harder branch scenario (1)', function() {
+  it('should deal with a harder branch scenario (1)', function(done) {
     testPipeline(experiment('harder-branch-1'), function() {
       var events = captureController.getInvocations();
       assert(events.length == 2);
@@ -71,10 +72,11 @@ describe('experiments', function() {
         assertPath(events[1], ['t0ToN', 't1To1', 't1To1']);
         assert(!wentThrough(events[0], 't1To1'))
       }
+      done();
     });
   });
 
-  it('should deal with a harder branch scenario (2)', function() {
+  it('should deal with a harder branch scenario (2)', function(done) {
     testPipeline(experiment('harder-branch-2'), function() {
       var events = captureController.getInvocations();
       assert(events.length == 2);
@@ -86,32 +88,46 @@ describe('experiments', function() {
         assertPath(events[1], ['t0ToN', 't1To1', 't1To1']);
         assert(!wentThrough(events[0], 't1To1'))
       }
+      done();
     });
   });
 
-  it('should collect multiple inputs in an N-to-1 phase', function() {
+  it('should collect multiple inputs in an N-to-1 phase', function(done) {
     testPipeline(experiment('n-to-1'), function() {
       var events = captureController.getInvocations();
-      console.log(events[0].tags.traceHistory);
+      assert(events.length == 1);
+      assert(events[0].tags.traceHistory.length == 5);
+      done();
     });
   });
 
-  it('should deal with inputs from multiple sources', function() {
+  it('should collect multiple inputs in an N-to-1 phase with a fork', function(done) {
+    testPipeline(experiment('n-to-1-fork'), function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 1);
+      assert(events[0].tags.traceHistory.length == 5);
+      done();
+    });
+  });
+
+  it('should deal with inputs from multiple sources', function(done) {
     testPipeline(experiment('multiple-inputs'), function() {
       var events = captureController.getInvocations();
       assert(events.length == 2);
       assert(events[0].input !== events[1].input, "data items are different");
-      assert(events[0].tags.trace[0].name !== events[1].tags.trace[1].name,
+      assert(events[0].tags.trace[0].name !== events[1].tags.trace[0].name,
           "data items did not originate from same input");
+      done();
     });
   });
 
-  it('should be able to recursively launch experiments', function() {
+  it('should be able to recursively launch experiments', function(done) {
     testPipeline(experiment('load-experiment'), function() {
       var events = captureController.getInvocations();
       assert(events[1].input !== events[2].input, "data items are different");
-      assert(events[1].tags.trace[0].name !== events[2].tags.trace[1].name,
+      assert(events[1].tags.trace[0].name !== events[2].tags.trace[0].name,
           "data items did not originate from same input");
+      done();
     });
   });
 });
