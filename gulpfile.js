@@ -160,7 +160,7 @@ gulp.task('mhtml', function(incb) {
 
 gulp.task('processLogs', function(incb) {
   var phase = require('./core/phase');
-  require('./core/phase-register').load(require('./lib/trace-phases'));
+  require('./core/register').load(require('./lib/trace-phases'));
   var cb = function(data) { incb(); };
   stageLoader.processStages(
       [

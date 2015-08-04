@@ -1,0 +1,9 @@
+digraph test {
+
+  input -> compareSome;
+  input -> passthrough -> passthrough_1 -> compareSome;
+
+  input [data="foobar"];
+  compareSome [data="['foobar','foobar']"];
+
+}

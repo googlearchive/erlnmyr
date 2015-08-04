@@ -1,0 +1,14 @@
+input -NukeIFrameFilter-> -HTMLWriter-> case-1
+input-nostyle -NukeIFrameFilter-> -HTMLWriter-> case-2
+input-nostyle -StyleTokenizerFilter-> -StyleFilter-> -StyleDetokenizerFilter-> reduced* -NukeIFrameFilter-> -HTMLWriter-> case-3
+reduced* -StyleMinimizationFilter-> -NukeIFrameFilter-> -HTMLWriter-> case-4
+
+input: mobile-([^-]*).json
+input-nostyle: mobile-([^-]*)-nostyle.json
+case-1: mobile-$1-[nuked].html
+case-2: mobile-$1-[nuked, nostyle].html
+case-3: mobile-$1-[nuked, compressed, nostyle].html
+case-4: mobile-$1-[nuked, extracted].html
+
+saveBrowser: system
+perfBrowser: android-jb-system-chrome

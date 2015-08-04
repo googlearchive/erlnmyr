@@ -1,0 +1,38 @@
+{
+  "name": "erlenmeyer",
+  "version": "0.0.0",
+  "description": "Science!",
+  "homepage": "https://github.com/dglazkov/tree-builder-builder",
+  "author": "",
+  "license": "",
+  "main": "exports.js",
+  "bin": {
+    "erlnmyr": "erlnmyr"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dglazkov/tree-builder-builder.git"
+  },
+  "dependencies": {
+    "gulp": "^3.8.11",
+    "ejs": "^2.3.1",
+    "graphlib-dot": "^0.6.1",
+    "bluebird": "~2.9.32",
+    "chai": "^2.2.0",
+    "minimist": "^1.1.0",
+    "expand-home-dir": "^0.0.2",
+    "split": "*"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.11",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-istanbul": "^0.10.0",
+    "gulp-mocha": "^2.0.0",
+    "istanbul": "^0.3.17",
+    "mocha": "^2.2.1",
+    "proxyquire": "^1.6.0"
+  },
+  "scripts": {
+    "test": "gulp travis-test"
+  }
+}
