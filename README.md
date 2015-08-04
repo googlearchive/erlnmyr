@@ -1,8 +1,6 @@
-# tree-builder-builder
-Builder of Tree Builders
+# Erlnmyr
 
-[![Build Status](https://travis-ci.org/dglazkov/tree-builder-builder.svg?branch=master)](https://travis-ci.org/dglazkov/tree-builder-builder)
-[![Coverage Status](https://coveralls.io/repos/github/dglazkov/tree-builder-builder/badge.svg?branch=master)](https://coveralls.io/github/dglazkov/tree-builder-builder?branch=master)
+The Builder of Tree Builders
 
 ## Quick Start Guide
 
@@ -10,9 +8,9 @@ Builder of Tree Builders
 
 1.  Install git
 2.  Grab the source code:
-    `git clone https://github.com/dglazkov/tree-builder-builder.git`
+    `git clone https://github.com/GoogleChrome/erlnmyr.git`
 3.  Install node.js from https://nodejs.org/download/
-4.  `cd tree-builder-builder`
+4.  `cd erlnmyr`
 5.  `npm install`
 6.  (optional) Install gulp globally so it'll be on your path:
     `sudo npm install -g gulp`
@@ -165,3 +163,13 @@ digraph experiment {
 ```
 
 <img src='example.png'>
+
+## License
+
+Copyright 2015 Google, Inc.
+
+Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the “License”); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
