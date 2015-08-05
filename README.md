@@ -1,6 +1,6 @@
 # Erlnmyr
 
-The Builder of Tree Builders
+A tool for performance experimentation
 
 ## Quick Start Guide
 
