@@ -190,7 +190,7 @@ PhaseBase.prototype.implNTo1 = function(stream) {
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
   for (var i = 0; i < this.pendingItems.length; i++) {
-    if (this.pendingItems[i].tags.start == true) {
+    if (this.pendingItems[i].tags.start) {
       this.runtime.onStart();
       this.started = true;
     }
