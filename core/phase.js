@@ -214,6 +214,7 @@ PhaseBase.prototype.implNTo1 = function(stream) {
 
 PhaseBase.prototype.groupCompleted = function() {
   this.runtime.stream = this.baseStream;
+  this.runtime.setTags({});
   this.baseStream = undefined;
   var result = this.runtime.onCompletion();
   this.runtime.tags.tag(this.outputKey, this.outputValue);

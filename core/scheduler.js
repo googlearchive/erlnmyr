@@ -126,11 +126,19 @@ function runPhases(phases) {
 
   return Promise.all(initPhases.map(function(phase) {
     return phase.phase.init(function(stream) {
+
+      if (firstTask == undefined) {
+        // TODO: Is there a cleaner way to do this??
+        assert(stream.data.length > 0);
+        stream.data[0].tags.start = true;
+      }
+
       var task = schedule(phases, phase.idx + 1, stream, resolver, firstTask);
       traceScheduler && traceScheduler("Phase", phase.idx, "is task", task.id, firstTask == undefined ? "" : "(awaited by task " + firstTask.id + ")");
+
       if (firstTask == undefined) {
-       firstTask = task;
-       resolver = undefined;
+        firstTask = task;
+        resolver = undefined;
       }
     });
   })).then(function() {
