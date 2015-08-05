@@ -190,8 +190,24 @@ PhaseBase.prototype.implNTo1 = function(stream) {
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
   for (var i = 0; i < this.pendingItems.length; i++) {
-    this.runtime.setTags(this.pendingItems[i].tags);
-    this.runtime.impl(this.pendingItems[i].data, this.runtime.tags);
+    if (this.pendingItems[i].tags.start) {
+      this.runtime.onStart();
+      this.started = true;
+    }
+    if (this.started) {
+      this.runtime.setTags(this.pendingItems[i].tags);
+      this.runtime.impl(this.pendingItems[i].data, this.runtime.tags);
+      if (this.pendingStart) {
+        for (var j = 0; j < this.pendingStart.length; j++) {
+          this.runtime.setTags(this.pendingStart[j].tags);
+          this.runtime.impl(this.pendingStart[j].data, this.runtime.tags);
+        }
+        this.pendingStart = undefined;
+      }
+    } else {
+      this.pendingStart = this.pendingStart || [];
+      this.pendingStart.push(this.pendingItems[i]);
+    }
   }
   return Promise.resolve(done());
 }
@@ -289,7 +305,9 @@ PhaseBase.prototype.impl1ToN = function(stream) {
   stream.get(this.inputKey, this.inputValue).forEach(function(item) {
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
+    this.runtime.hasStarted = false;
     this.runtime.impl(item.data, this.runtime.tags);
+    this.runtime.hasStarted = undefined;
     t.end();
   }.bind(this));
   return Promise.resolve(done(stream));
@@ -305,7 +323,9 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
       runtime.stream = stream;
       runtime.setTags(item.tags);
       var t = trace.start(runtime); flowItemGet(runtime, item.tags);
+      runtime.hasStarted = false;
       var result = runtime.impl(item.data, runtime.tags);
+      runtime.hasStarted = undefined;
       var flow = trace.flow({cat: 'phase', name: phase.name}).start();
       t.end();
       return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
@@ -351,6 +371,10 @@ function putFunction(type) {
     // TODO: This misses tags when they are set after calling put().
     flowItemPut(this, this.tags.tags);
     this.tags.tag(type.key, type.value);
+    if (this.hasStarted === false) {
+      this.tags.tag('start', true);
+      this.hasStarted = true;
+    }
     this.stream.put(data, this.tags.tags);
     return this.tags;
   }
@@ -380,7 +404,8 @@ function PhaseBaseRuntime(base, impl, options) {
   }
   if (impl.impl) {
     this.impl = impl.impl;
-    this.onCompletion = impl.onCompletion;
+    this.onCompletion = impl.onCompletion || function() {};
+    this.onStart = impl.onStart || function() {};
   } else {
     this.impl = impl;
   }
