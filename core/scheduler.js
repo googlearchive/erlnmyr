@@ -161,8 +161,8 @@ function schedule(phases, index, stream, resolve, waitFor) {
 function startTasks() {
   traceScheduler && traceScheduler('----');
   traceScheduler && traceScheduler('task queue has', waitCount, 'in flight and sees');
-  taskQueue.forEach(function(task) {
-    traceScheduler && traceScheduler(' ',
+  traceScheduler && taskQueue.forEach(function(task) {
+    traceScheduler(' ',
                 task.id, '@' + task.index,
                 '(' + (task.index >= task.phases.length ? '-' : task.phases[task.index].name) + ')' +
                 (task.waitingFor.length > 0 ? ': waiting for ' + task.waitingFor.map(function(t) { return t.id; }) : ':'),
