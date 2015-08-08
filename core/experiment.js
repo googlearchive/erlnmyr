@@ -131,7 +131,8 @@ var bundled = {
   'trace-phases': path.join(__dirname, '../lib/trace-phases'),
   'chromium-phases': path.join(__dirname, '../lib/chromium-phases/chromium-phases'),
   'device-phases': path.join(__dirname, '../lib/device-phases'),
-  'browser-phases': path.join(__dirname, '../lib/browser-phases')
+  'browser-phases': path.join(__dirname, '../lib/browser-phases'),
+  'test-phases': path.join(__dirname, '../lib/test-phases')
 };
 
 function buildstageList(graphData, tags, require) {
@@ -266,9 +267,7 @@ module.exports.doExperiment = definePhase({
   async: true,
 }, function(data, tags) {
   var require = this.options.require;
-  return new Promise(function(resolve, reject) {
-    stageLoader.processStages(buildstageList(data, tags, require), resolve, reject);
-  });
+  return stageLoader.processStages(buildstageList(data, tags, require));
 }, {
   require: require,
 });

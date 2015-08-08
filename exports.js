@@ -26,10 +26,14 @@ module.exports.run = function(file, loader) {
     'bufferToString',
     {name: 'doExperiment', options: {require: loader}},
   ].map(stageLoader.stageSpecificationToStage);
-
-  process.on('exit', function() { require('./core/trace').dump() });
-  stageLoader.processStages(phases, function() {
-  }, function(e) {
-    throw e;
-  }, loader);
+  var finishedNormally = false;
+  process.on('exit', function() {
+    if (!finishedNormally)
+      console.log("ERROR: Completion handler not called");
+    require('./core/trace').dump();
+    require('./lib/test-phases').controller.dumpInvocations();
+  });
+  stageLoader.processStages(phases).then(function() {
+    finishedNormally = true;
+  });
 };

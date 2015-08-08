@@ -20,6 +20,8 @@ var waitCount = 0;
 
 var tid = 0;
 
+var traceScheduler = undefined;
+
 function Task(phases, index, stream, resolve) {
   this.id = tid++;
   this.phases = phases;
@@ -42,9 +44,10 @@ Task.prototype = {
    * list.
    */
   waitFor: function(task) {
-    this.waitingFor = task.waitingFor;
+    this.waitingFor = this.waitingFor.concat(task.waitingFor);
     task.waitingFor = [];
     task.waitee = true;
+    task.resolve = undefined;
     this.waitingFor.push(task);
   },
   /**
@@ -61,7 +64,9 @@ Task.prototype = {
   resolveTask: function() {
     this.finished = true;
     this.waitingFor = this.waitingFor.filter(function(task) { return !task.finished; });
+    traceScheduler && traceScheduler('+ resolve', this.id + ':', (this.waitingFor.length > 0 ? 'still waiting for ' + this.waitingFor.map(function(t) { return t.id; } ): ''));
     if (this.waitingFor.length == 0) {
+      traceScheduler && traceScheduler('  --> ', this.resolve);
       this.resolve && this.resolve();
       return;
     }
@@ -71,8 +76,9 @@ Task.prototype = {
     var newWaitingTask = this.waitingFor.pop();
     newWaitingTask.waitingFor = this.waitingFor;
     newWaitingTask.resolve = this.resolve;
+    newWaitingTask.waitee = false;
     this.resolve = undefined;
-    this.waitingFor = undefined;
+    this.waitingFor = [];
   },
   /**
    * Make a new task that duplicates a phase that this task has just executed.
@@ -84,7 +90,6 @@ Task.prototype = {
    */
   clone: function(clonedIndex, newData) {
     var newTask = new Task(this.phases, clonedIndex, this.stream, this.resolve);
-    this.resolve = undefined;
     this.stream = newData;
     newTask.waitFor(this);
     taskQueue.push(newTask);
@@ -112,23 +117,58 @@ function runPhases(phases) {
 
   var finishedPromiseList = [];
 
+  var firstTask = undefined;
+
+  traceScheduler && traceScheduler("Initial phases at", initPhases.map(function(phase) { return phase.idx; }));
+
+  var resolver = undefined;
+  var firstTaskPromise = new Promise(function(resolve, reject) { resolver = resolve; });
+
   return Promise.all(initPhases.map(function(phase) {
     return phase.phase.init(function(stream) {
-      var promise = new Promise(function(resolve, reject) {
-        schedule(phases, phase.idx + 1, stream, resolve);
-      });
-      finishedPromiseList.push(promise);
-    });
-  })).then(function() { return Promise.all(finishedPromiseList).then(function() { })});
 
+      if (firstTask == undefined) {
+        // TODO: Is there a cleaner way to do this??
+        assert(stream.data.length > 0);
+        stream.data[0].tags.start = true;
+      }
+
+      var task = schedule(phases, phase.idx + 1, stream, resolver, firstTask);
+      traceScheduler && traceScheduler("Phase", phase.idx, "is task", task.id, firstTask == undefined ? "" : "(awaited by task " + firstTask.id + ")");
+
+      if (firstTask == undefined) {
+        firstTask = task;
+        resolver = undefined;
+      }
+    });
+  })).then(function() {
+    traceScheduler && traceScheduler('All initial phases started');
+    return firstTaskPromise.then(function() {
+      traceScheduler && traceScheduler('All tasks completed');
+    })
+  });
 }
 
-function schedule(phases, index, stream, resolve) {
-  taskQueue.push(new Task(phases, index, stream, resolve));
+function schedule(phases, index, stream, resolve, waitFor) {
+  var task = new Task(phases, index, stream, resolve);
+  if (waitFor !== undefined)
+    waitFor.waitFor(task);
+  taskQueue.push(task);
   startTasks();
+  return task;
 }
 
 function startTasks() {
+  traceScheduler && traceScheduler('----');
+  traceScheduler && traceScheduler('task queue has', waitCount, 'in flight and sees');
+  traceScheduler && taskQueue.forEach(function(task) {
+    traceScheduler(' ',
+                task.id, '@' + task.index,
+                '(' + (task.index >= task.phases.length ? '-' : task.phases[task.index].name) + ')' +
+                (task.waitingFor.length > 0 ? ': waiting for ' + task.waitingFor.map(function(t) { return t.id; }) : ':'),
+                (task.dependenciesRemain() ? 'dependencies: ' + task.dependencies.length + '/' + task.executingDependencies : '')
+                 );
+  });
   var deferred = [];
   while (taskQueue.length && waitCount < maxWaiting) {
     var task = taskQueue.pop();
@@ -136,10 +176,13 @@ function startTasks() {
       task.resolveTask();
       continue;
     }
-    if (runDependency(task) || runPhase(task))
+    if (runDependency(task) || runPhase(task)) {
+      traceScheduler && traceScheduler('+ waiting on', task.id);
       waitCount++;
-    else
+    } else {
+      traceScheduler && traceScheduler('+ task', task.id, 'deferred');
       deferred.push(task);
+    }
   }
   deferred.forEach(function(task) { taskQueue.push(task); });
 }
@@ -153,12 +196,16 @@ function runDependency(task) {
   if (task.dependencies.length > 0) {
     var dependency = task.dependencies.pop();
     task.executingDependencies++;
+    traceScheduler && traceScheduler('+ task', task.id, 'starting dependency');
     dependency().then(function() {
       task.executingDependencies--;
+      traceScheduler && traceScheduler('+ task', task.id, 'dependency finished');
       done();
     });
-    if (task.dependenciesRemain())
+    if (task.dependenciesRemain()) {
+      traceScheduler && traceScheduler('+ task', task.id, 'returned to queue');
       taskQueue.push(task);
+    }
     return true;
   }
   return false;
@@ -172,6 +219,7 @@ function runPhase(task) {
   if (task.dependenciesRemain())
     return false;
   var oldIndex = task.index;
+  traceScheduler && traceScheduler('+ task', task.id, 'starting');
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
       task.dependencies = op.dependencies;
@@ -185,6 +233,7 @@ function runPhase(task) {
     // we aren't waiting for any other tasks.
     if (task.isSchedulable())
       taskQueue.push(task);
+    traceScheduler && traceScheduler('+ task', task.id, 'returned', op.command);
     done();
   });
   return true;

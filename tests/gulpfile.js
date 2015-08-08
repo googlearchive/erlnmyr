@@ -20,7 +20,7 @@ var stream = require('../core/stream');
 describe('basicTargetCoverage', function() {
   it('should be possible to at least type check the targets listed in gulpfile', function() {
     for (var name in tasks) {
-      var stageList = tasks[name].map(stageLoader.stageSpecificationToStage);
+      var stageList = stageLoader.loadPipeline(tasks[name]);
       stageLoader.typeCheck(stageList);
     }
   });
@@ -32,31 +32,6 @@ describe('basicTargetCoverage', function() {
       'bufferToString',
       'typeCheckExperiment',
     ];
-    stageLoader.processStages(stageList.map(stageLoader.stageSpecificationToStage), done, function(error) { throw error; });
-  });
-
-  // TODO: Once stage-loader has string names for all the fancy stages, roll the special gulpfile targets
-  // into the standard ones and remove these two tests.
-  it('should be possible to type check the ejs stage list', function() {
-    stageLoader.typeCheck([
-      stageLoader.stageSpecificationToStage({name: 'input', options: {data: 'dummy'}}),
-      stageLoader.stageSpecificationToStage('fileToBuffer'),
-      stageLoader.stageSpecificationToStage('bufferToString'),
-      stageLoader.stageSpecificationToStage('ejsFabricator'),
-      stageLoader.stageSpecificationToStage('writeStringFile')
-    ]);
-  });
-  it('should be possible to type check the mhtml stage list', function() {
-    stageLoader.typeCheck([
-      stageLoader.stageSpecificationToStage('input'),
-      stageLoader.stageSpecificationToStage('readDir'),
-      stageLoader.stageSpecificationToStage('filter'),
-      stageLoader.stageSpecificationToStage('fileToBuffer'),
-      stageLoader.stageSpecificationToStage('bufferToString'),
-      stageLoader.stageSpecificationToStage('jsonParse'),
-      stageLoader.stageSpecificationToStage('HTMLWriter'),
-      stageLoader.stageSpecificationToStage('regexReplace'),
-      stageLoader.stageSpecificationToStage({name: 'writeStringFile', options: {tag: 'filename'}})
-    ]);
+    stageLoader.startPipeline(stageList).then(done);
   });
 });

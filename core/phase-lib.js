@@ -142,35 +142,11 @@ module.exports.retag = phase({input: typeVar('a'), output: typeVar('a'), arity: 
 module.exports.dummy = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data) { return data; });
 
-// TODO: This is for testing. Does it belong here?
-module.exports.compare = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
-  function(data, tags) {
-    var input = tags.read(this.options.tag);
-    var inFile = fs.readFileSync(input, 'utf8');
-    if (typeof data != 'string') {
-      inFile = JSON.parse(inFile);
-    }
-    var assert = require('chai').assert;
-    assert.deepEqual(inFile, data);
-    return data;
-  },
-  { tag: ''});
-
-// TODO: This is for testing. Does it belong here?
-module.exports.compareSome = phase({input: types.string, output: types.string, arity: '1:1'},
-  function(data) {
-    if (this.position == undefined)
-      this.position = 0;
-    var assert = require('chai').assert;
-    assert.deepEqual(this.options.data[this.position], data);
-    return data;
-  },
-  {data: []});
-
 module.exports.passthrough = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data) { return data; }
 );
 
+// TODO: You're next.
 module.exports.compareString = phase({input: types.string, output: types.string, arity: '1:1'},
   function(input) {
     var assert = require('chai').assert;
@@ -206,6 +182,7 @@ module.exports.gunzipAndDecode = phase({
 module.exports.bufferToString = phase({input: types.buffer, output: types.string, arity: '1:1'}, String);
 
 module.exports.fileToString = alias(['fileToBuffer', 'bufferToString']);
+module.exports.fileToJSON = alias(['fileToBuffer', 'bufferToString', 'jsonParse']);
 
 module.exports.regexReplace = phase({
   name: 'regexReplace',
