@@ -111,6 +111,8 @@ Task.prototype = {
 }
 
 function runPhases(phases) {
+  traceScheduler && traceScheduler("Phases are", phases.map(function(phase) { return phase.name; }));
+
   var initPhases = phases
       .map(function(phase, idx) { return {phase: phase, idx: idx} })
       .filter(function(phase) { return phase.phase.init !== undefined; });

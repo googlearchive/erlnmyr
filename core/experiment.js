@@ -88,8 +88,11 @@ function mkPhase(nodeName, inGraph) {
   return result;
 }
 
+var traceExperiment = undefined;
+
 function linearConnectEdges(inGraph) {
   var nodes = inGraph.nodes();
+  traceExperiment && traceExperiment("experiment nodes are", nodes, "\nAttempting graph construction");
   var handledNodes = {};
   var handledNodeCount = 0;
 
@@ -97,10 +100,17 @@ function linearConnectEdges(inGraph) {
     for (var i = 0; i < nodes.length; i++) {
       if (handledNodes[nodes[i]] !== undefined)
         continue;
+      
+      traceExperiment && traceExperiment("+ assessing", nodes[i]);
+
       var outEdges = inGraph.outEdges(nodes[i]);
+      
+      traceExperiment && traceExperiment("  - outEdges: ", outEdges);
+
       var validNode = true;
       for (var j = 0; j < outEdges.length; j++) {
         if (handledNodes[outEdges[j].w] == undefined) {
+          traceExperiment && traceExperiment("  - target", outEdges[j].w, "not yet placed");
           validNode = false;
           break;
         }
@@ -124,7 +134,17 @@ function linearConnectEdges(inGraph) {
     }
   }
 
-  return linearize(handledNodes[nodes[0]].graph);
+  var graphs = [];
+  for (var i = 0; i < nodes.length; i++) {
+    var g = handledNodes[nodes[i]].graph;
+    if (graphs.indexOf(g) == -1)
+      graphs.push(g);
+  }
+
+  var result = graphs.map(linearize).reduce(function(a, b) { return a.concat(b); });
+  traceExperiment && traceExperiment("linearized result:",
+      result.map(function(list) { return list.map(function(phase) { return phase.nodeName; })}));
+  return result;
 }
 
 var bundled = {
@@ -228,7 +248,7 @@ function buildstageList(graphData, tags, require) {
 
     // Unique output connections.
     var outgoing = linear[i].map(function(pipe) { return pipe.out; }).filter(
-        function(v, i, s) { return s.indexOf(v) == i; });
+        function(v, i, s) { if (v == undefined) return false; return s.indexOf(v) == i; });
 
     // output connections that feed directly to the next phase. These are
     // the connections that are currently routable.

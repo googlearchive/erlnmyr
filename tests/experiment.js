@@ -130,5 +130,15 @@ describe('experiments', function() {
       done();
     });
   });
+
+  it('should be able to process disconnected graphs', function(done) {
+    testPipeline(experiment('disconnected'), function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 2);
+      assert(events[0].input !== events[1].input, "different data in each output");
+      assert(events[0].phase.id !== events[1].phase.id, "each output from different phase");
+      done();
+    });
+  })
 });
 
