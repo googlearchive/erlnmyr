@@ -79,9 +79,9 @@ function addCommandLineOptions(phaseName, nodeID, optionAliases, resultOptions) 
 
 function mkPhase(nodeName, inGraph) {
   var options = inGraph.node(nodeName) || {};
-  options.id = nodeName;
   var phaseName = getPhaseName(nodeName, options);
   var nodeID = getNodeID(nodeName);
+  options.id = nodeID;
   addCommandLineOptions(phaseName, nodeID, inGraph.graph().optionAliases, options);
   var result = new graph.Pipe(phaseName, options);
   result.nodeName = nodeName;

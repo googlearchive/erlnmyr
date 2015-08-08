@@ -38,6 +38,7 @@ PhaseDefinition.prototype.build = function() {
         result[key] = defaults[key];
       }
     }
+    result.id = options.id;
     return result;
   }
 

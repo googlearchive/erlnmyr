@@ -29,7 +29,7 @@ function phaseSpec(phase) {
 
 function PhaseBase(info, impl, options) {
   this.name = info.name;
-  this.id = info.id || newInstanceID();
+  this.id = (options && options.id) || newInstanceID();
   if (info.inputs !== undefined) {
     this.inputTypes = info.inputs || [];
   } else {

@@ -12,6 +12,9 @@
 */
 
 var stageLoader = require('../core/stage-loader');
+var captureController = require('../lib/test-phases').controller;
+var assert = require('chai').assert;
+
 // TODO: Make command line options a parameter to running an experiment so we can test them in isolation.
 var options = require('../core/options');
 
@@ -25,24 +28,36 @@ describe('Experiment command line options', function() {
     options.targetNodeID = {data: 'test input'};
     var experiment =
         'digraph experiment {' +
-        '  compareString_withData [data="test input"];' +
-        '  compareString_withoutData [data=""];' +
-        '  input_targetNodeID -> compareString_withData;' +
-        '  input_untargeted -> compareString_withoutData;' +
+        '  capture_withData;' +
+        '  capture_withoutData;' +
+        '  input_targetNodeID -> capture_withData;' +
+        '  input_untargeted -> capture_withoutData;' +
         '}';
-    runExperiment(experiment, done);
+    runExperiment(experiment, function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 2);
+      assert(events[0].phase.id == 'withData');
+      assert(events[0].input == 'test input');
+      assert(events[1].phase.id == 'withoutData');
+      assert(events[1].input == '');
+      done();
+    });
   });
   it('should be able to target phases', function(done) {
     var oldInput = options.input;
     options.input = {data: 'test input'};
     var experiment =
         'digraph experiment {' +
-        '  compareString [data="test input"];' +
-        '  input_a -> compareString;' +
-        '  input_b -> compareString;' +
+        '  input_a -> capture;' +
+        '  input_b -> capture;' +
         '}';
     runExperiment(experiment, function() {
       options.input = oldInput;
+      var events = captureController.getInvocations();
+      assert(events.length == 2);
+      assert(events[0].input == 'test input');
+      assert(events[1].input == 'test input');
+      assert(events[0].tags.eto !== events[1].tags.eto);
       done();
     });
   });
@@ -51,20 +66,28 @@ describe('Experiment command line options', function() {
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testNodeIDAlias=nodeID.data";' +
-        '  compareString [data="test input"];' +
-        '  input_nodeID -> compareString;' +
+        '  input_nodeID -> capture;' +
         '}';
-    runExperiment(experiment, done);
+    runExperiment(experiment, function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 1);
+      assert(events[0].input == 'test input');
+      done();
+    });
   });
   it('should support phase aliasing', function(done) {
     options.testPhaseAlias = 'test input';
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testPhaseAlias=input.data";' +
-        '  compareString [data="test input"];' +
-        '  input -> compareString;' +
+        '  input -> capture;' +
         '}';
-    runExperiment(experiment, done);
+    runExperiment(experiment, function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 1);
+      assert(events[0].input == 'test input');
+      done();
+    });
   });
   it('should support multiple aliases', function(done) {
     options.testAliasA = 'test input A';
@@ -72,12 +95,18 @@ describe('Experiment command line options', function() {
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testAliasA=nodeA.data, testAliasB=nodeB.data";' +
-        '  compareString_a [data="test input A"];' +
-        '  compareString_b [data="test input B"];' +
-        '  input_nodeA -> compareString_a;' +
-        '  input_nodeB -> compareString_b;' +
+        '  input_nodeA -> capture_a;' +
+        '  input_nodeB -> capture_b;' +
         '}';
-    runExperiment(experiment, done);
+    runExperiment(experiment, function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 2);
+      assert(events[0].input == 'test input A');
+      assert(events[0].phase.id == 'a');
+      assert(events[1].input == 'test input B');
+      assert(events[1].phase.id == 'b');
+      done();
+    });
   });
 });
 
