@@ -20,7 +20,7 @@ function PhaseDefinition(info, impl, defaults) {
 }
 
 function evalOptionValue($value) {
-  return eval($value);
+  return $value == '' ? '' : eval($value);
 }
 
 PhaseDefinition.prototype.build = function() {

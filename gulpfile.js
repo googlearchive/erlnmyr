@@ -77,6 +77,7 @@ function buildTestTask(name, mochaReporter, istanbulReporters) {
 
 buildTestTask('test', 'nyan', ['html', 'text-summary']);
 buildTestTask('travis-test', 'spec', ['lcov', 'text', 'text-summary']);
+buildTestTask('quiet-test', 'dot', []);
 
 function buildTask(name, stageList) {
   tasks[name] = stageList;
