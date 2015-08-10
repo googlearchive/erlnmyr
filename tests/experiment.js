@@ -140,5 +140,16 @@ describe('experiments', function() {
       done();
     });
   })
+
+  it('should preserve order between phases', function(done) {
+    testPipeline(experiment('order-test'), function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 5);
+      var start = Number(events[0].input.substring(1));
+      for (var i = 1; i < events.length; i++)
+        assert(events[i].input == 'd' + (start + i));
+      done();
+    });
+  });
 });
 

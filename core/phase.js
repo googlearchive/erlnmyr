@@ -184,13 +184,14 @@ PhaseBase.prototype.init0ToN = function(handle) {
 
 
 PhaseBase.prototype.implNTo1 = function(stream) {
-  if (this.baseStream == undefined) {
-    this.baseStream = stream;
-  }
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
   for (var i = 0; i < this.pendingItems.length; i++) {
-    if (this.pendingItems[i].tags.start) {
+    var startVal = this.pendingItems[i].tags.start;
+    if (startVal && startVal.length && startVal[startVal.length - 1] == true) {
+      if (this.started)
+        this.groupCompleted();
+      this.baseStream = stream;
       this.runtime.onStart();
       this.started = true;
     }
@@ -258,10 +259,11 @@ PhaseBase.prototype.impl1To1 = function(stream) {
   if (!this.pendingItems || !this.pendingItems.length) {
     this.runtime.stream = stream;
     this.pendingItems = stream.get(this.inputKey, this.inputValue);
+    this.index = 0;
   }
 
-  while (this.pendingItems.length) {
-    var item = this.pendingItems.pop();
+  for (; this.index < this.pendingItems.length; this.index++) {
+    var item = this.pendingItems[this.index];
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     var result = this.runtime.impl(item.data, this.runtime.tags);
@@ -269,12 +271,14 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     this.runtime.put(result);
     t.end();
 
-    if (this.runtime.yielding && this.pendingItems.length > 0) {
+    if (this.runtime.yielding && this.index < this.pendingItems.length - 1) {
       var result = yieldData(this.runtime.stream);
       this.runtime.newStream();
       return Promise.resolve(result);
     }
   }
+  this.pendingItems = [];
+
   if (!this.runtime.yielding) {
     return Promise.resolve(done(stream));
   } else {
@@ -372,8 +376,10 @@ function putFunction(type) {
     // TODO: This misses tags when they are set after calling put().
     flowItemPut(this, this.tags.tags);
     this.tags.tag(type.key, type.value);
-    if (this.hasStarted === false) {
-      this.tags.tag('start', true);
+    if (this.hasStarted !== undefined) {
+      var oldValue = (this.tags.read('start') || []).slice();
+      oldValue.push(!this.hasStarted);
+      this.tags.tag('start', oldValue);
       this.hasStarted = true;
     }
     this.stream.put(data, this.tags.tags);
