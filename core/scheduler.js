@@ -129,11 +129,15 @@ function runPhases(phases) {
   return Promise.all(initPhases.map(function(phase) {
     return phase.phase.init(function(stream) {
 
+      var i = 0;
       if (firstTask == undefined) {
         // TODO: Is there a cleaner way to do this??
         assert(stream.data.length > 0);
-        stream.data[0].tags.start = true;
+        stream.data[0].tags.start = [true];
+        i++;
       }
+      for (; i < stream.data.length; i++)
+        stream.data[i].tags.start = [false];
 
       var task = schedule(phases, phase.idx + 1, stream, resolver, firstTask);
       traceScheduler && traceScheduler("Phase", phase.idx, "is task", task.id, firstTask == undefined ? "" : "(awaited by task " + firstTask.id + ")");
@@ -224,7 +228,7 @@ function runPhase(task) {
   traceScheduler && traceScheduler('+ task', task.id, 'starting');
   task.phases[task.index].impl(task.stream).then(function(op) {
     if (op.command == parCmd) {
-      task.dependencies = op.dependencies;
+      task.dependencies = op.dependencies.reverse();
     } else if (op.command == yieldCmd) {
       task.clone(oldIndex, op.stream);
     } else {

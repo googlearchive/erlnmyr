@@ -103,9 +103,10 @@ for (var fab in fabricators) {
 module.exports.ejsFabricator = phase({input: types.string, output: types.string, arity: '1:N'},
     function(data) {
       var result = new EjsFabricator(data, '').fabricate();
-      for (key in result) {
-        this.put(result[key]);
-        this.tags.tag('ejsFabricator', key);
+      var keys = Object.keys(result).sort();
+      for (var i = 0; i < keys.length; i++) {
+        this.put(result[keys[i]]);
+        this.tags.tag('ejsFabricator', keys[i]);
       }
     });
 
