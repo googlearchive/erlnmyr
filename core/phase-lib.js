@@ -51,10 +51,11 @@ module.exports.log = phase({input: typeVar('a'), output: typeVar('a'), arity: '1
     this.options.tags.forEach(function(tag) {
       console.log(tag, tags.read(tag));
     });
-    console.log(data);
+    if (!this.options.justTags)
+      console.log(data);
     return data;
   },
-  { tags: [] });
+  { tags: [], justTags: false });
 
 module.exports.jsonParse = phase({input: types.string, output: types.JSON, arity: '1:1'}, JSON.parse);
 
