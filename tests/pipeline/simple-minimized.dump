@@ -5,7 +5,7 @@ HTMLDocumentParser::processParsedChunkFromBackgroundParser: 18579 (728) [42831/1
   FrameView::layout: 17776 (3246) [42831/1299]
     FrameView::layout: 143 (48982) [42831/1299]
 
-HTMLDocumentParser::processParsedChunkFromBackgroundParser: 0.723ms
-Document::updateRenderTree: 0.013ms
-Document::updateStyle: 0.371ms
-FrameView::layout: 17.776ms
+HTMLDocumentParser::processParsedChunkFromBackgroundParser (blink): 0.723ms
+Document::updateRenderTree (blink): 0.013ms
+Document::updateStyle (blink): 0.371ms
+FrameView::layout (blink,benchmark): 17.776ms
