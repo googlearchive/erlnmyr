@@ -7,5 +7,7 @@ digraph experiment {
   input_minimized [label="input", data="simple-minimized.trace"];
   traceFilter [traceCategories="['blink.console']"];
 
-  {input_normal; input_nostyle; input_reduced; input_minimized} -> fork -> fileToJSON -> traceFilter -> traceTree -> tracePrettyPrint -> capture;
+  {input_normal; input_nostyle; input_reduced; input_minimized} -> fork -> fileToJSON -> traceFilter -> traceTree -> tracePrettyPrint -> t1To1;
+
+  t1To1 [capture="true"];
 }

@@ -1,5 +1,6 @@
 digraph test {
-  input -> capture -> fileToString -> doExperiment;
+  input -> t1To1 -> fileToString -> doExperiment;
 
   input [data="multiple-inputs.erlnmyr"];
+  t1To1 [capture="true"];
 }

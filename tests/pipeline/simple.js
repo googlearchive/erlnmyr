@@ -33,6 +33,10 @@ function outputMatchesFile(filename, done) {
   };
 }
 
+function capture() {
+  return {name: 't1To1', options: {capture: true}};
+}
+
 describe('Pipeline', function() {
   before(function() {
     process.chdir('tests/pipeline');
@@ -45,9 +49,9 @@ describe('Pipeline', function() {
   });
 
   it('should generate html from json', function(done) {
-    testPipeline([{name: 'input', options: {data: 'simple.json'}}, 'fileToJSON', 'HTMLWriter', 'capture'],
+    testPipeline([{name: 'input', options: {data: 'simple.json'}}, 'fileToJSON', 'HTMLWriter', capture()],
         outputMatchesFile('simple.html', function() {
-      testPipeline([{name: 'input', options: {data: 'inline-style.json'}}, 'fileToJSON', 'HTMLWriter', 'capture'],
+      testPipeline([{name: 'input', options: {data: 'inline-style.json'}}, 'fileToJSON', 'HTMLWriter', capture()],
           outputMatchesFile('inline-style.html', done));
     }));
   });
@@ -55,18 +59,19 @@ describe('Pipeline', function() {
   it('should load an experiment that generates html from json', function(done) {
     var experiment = 'digraph experiment {' +
       'imports="[\'test-phases\']";' +
-      'input -> fileToJSON -> HTMLWriter -> capture;' +
+      'input -> fileToJSON -> HTMLWriter -> t1To1;' +
       'input [data="simple.json"]' +
+      't1To1 [capture="true"]' +
     '}';
     testPipeline([{name: 'input', options: {data: experiment}}, 'doExperiment'], outputMatchesFile('simple.html', done));
   });
 
   it('should be idempotent in when style is tokenized and detokenized', function(done) {
     testPipeline([{name: 'input', options: {data: 'simple.json'}}, 'fileToJSON',
-        'StyleTokenizerFilter', 'StyleDetokenizerFilter', 'HTMLWriter', 'capture'],
+        'StyleTokenizerFilter', 'StyleDetokenizerFilter', 'HTMLWriter', capture()],
         outputMatchesFile('simple.html', function() {
       testPipeline([{name: 'input', options: {data: 'inline-style.json'}}, 'fileToJSON',
-          'StyleTokenizerFilter', 'StyleDetokenizerFilter', 'HTMLWriter', 'capture'],
+          'StyleTokenizerFilter', 'StyleDetokenizerFilter', 'HTMLWriter', capture()],
           outputMatchesFile('inline-style.html', done));
     }));
   });

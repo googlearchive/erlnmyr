@@ -1,0 +1,9 @@
+digraph test {
+
+  t0ToN -> t1ToN -> tNTo1_1 -> tNTo1;
+
+  t0ToN [items="5"];
+  t1ToN [items="5"];
+  tNTo1 [capture="true"];
+  tNTo1_1 [capture="true"];
+}
