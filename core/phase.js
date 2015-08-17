@@ -187,7 +187,7 @@ PhaseBase.prototype.implNTo1 = function(stream) {
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
   for (var i = 0; i < this.pendingItems.length; i++) {
-    var startVal = this.pendingItems[i].tags.start;
+    var startVal = this.pendingItems[i].tags.frame;
     if (startVal && startVal.length && startVal[startVal.length - 1] == true) {
       if (this.started)
         this.groupCompleted();
@@ -215,13 +215,13 @@ PhaseBase.prototype.implNTo1 = function(stream) {
 
 PhaseBase.prototype.groupCompleted = function() {
   this.runtime.stream = this.baseStream;
-  var start = this.runtime.tags.read('start');
-  start = start.slice(0, start.length - 1);
+  var frame = this.runtime.tags.read('frame');
+  frame = frame.slice(0, frame.length - 1);
   this.runtime.setTags({});
   this.baseStream = undefined;
   var result = this.runtime.onCompletion();
   this.runtime.tags.tag(this.outputKey, this.outputValue);
-  this.runtime.tags.tag('start', start);
+  this.runtime.tags.tag('frame', frame);
   this.runtime.put(result);
   return this.runtime.stream;
 }
@@ -380,9 +380,9 @@ function putFunction(type) {
     flowItemPut(this, this.tags.tags);
     this.tags.tag(type.key, type.value);
     if (this.hasStarted !== undefined) {
-      var oldValue = (this.tags.read('start') || []).slice();
+      var oldValue = (this.tags.read('frame') || []).slice();
       oldValue.push(!this.hasStarted);
-      this.tags.tag('start', oldValue);
+      this.tags.tag('frame', oldValue);
       this.hasStarted = true;
     }
     this.stream.put(data, this.tags.tags);

@@ -134,11 +134,11 @@ function runPhases(phases) {
       if (firstTask == undefined) {
         // TODO: Is there a cleaner way to do this??
         assert(stream.data.length > 0);
-        stream.data[0].tags.start = [true];
+        stream.data[0].tags.frame = [true];
         i++;
       }
       for (; i < stream.data.length; i++)
-        stream.data[i].tags.start = [false];
+        stream.data[i].tags.frame = [false];
 
       var task = schedule(phases, phase.idx + 1, stream, resolver, firstTask);
       traceScheduler && traceScheduler("Phase", phase.idx, "is task", task.id, firstTask == undefined ? "" : "(awaited by task " + firstTask.id + ")");
