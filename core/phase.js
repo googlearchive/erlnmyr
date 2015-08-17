@@ -308,6 +308,15 @@ PhaseBase.prototype.impl1To1Async = function(stream) {
   })));
 }
 
+function closeFrame(runtime) {
+  var frames = runtime.lastFrame;
+  if (frames == undefined)
+    return;
+  var frame = frames[frames.length - 1];
+  frame.count = runtime.frameCount;
+  frame.end = true;
+}
+
 PhaseBase.prototype.impl1ToN = function(stream) {
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue).forEach(function(item) {
@@ -316,6 +325,7 @@ PhaseBase.prototype.impl1ToN = function(stream) {
     this.runtime.hasStarted = false;
     this.runtime.impl(item.data, this.runtime.tags);
     this.runtime.hasStarted = undefined;
+    closeFrame(this.runtime);
     t.end();
   }.bind(this));
   return Promise.resolve(done(stream));
@@ -337,6 +347,7 @@ PhaseBase.prototype.impl1ToNAsync = function(stream) {
       var flow = trace.flow({cat: 'phase', name: phase.name}).start();
       t.end();
       return result.then(trace.wrap(trace.enabled && {cat: 'phase', name: 'finish:' + phase.name}, function(result) {
+        closeFrame(runtime);
         flow.end();
       }));
     };
@@ -384,11 +395,15 @@ function putFunction(type) {
     if (this.hasStarted !== undefined) {
       var oldValue = (this.tags.read('frame') || []).slice();
       var frame = {};
-      if (!this.hasStarted)
+      if (!this.hasStarted) {
         frame.start = true;
+        this.frameCount = 1;
+      }
       oldValue.push(frame);
       this.tags.tag('frame', oldValue);
       this.hasStarted = true;
+      this.lastFrame = oldValue;
+      this.frameCount++;
     }
     this.stream.put(data, this.tags.tags);
     return this.tags;
