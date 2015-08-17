@@ -187,8 +187,8 @@ PhaseBase.prototype.implNTo1 = function(stream) {
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
   for (var i = 0; i < this.pendingItems.length; i++) {
-    var startVal = this.pendingItems[i].tags.frame;
-    if (startVal && startVal.length && startVal[startVal.length - 1] == true) {
+    var frame = this.pendingItems[i].tags.frame;
+    if (frame && frame.length && frame[frame.length - 1].start == true) {
       if (this.started)
         this.groupCompleted();
       this.baseStream = stream;
@@ -379,9 +379,14 @@ function putFunction(type) {
     // TODO: This misses tags when they are set after calling put().
     flowItemPut(this, this.tags.tags);
     this.tags.tag(type.key, type.value);
+    // FIXME: this.hasStarted only defined for 1:N phases, but this
+    // is a hacky way to signal that we need framing. Make more better.
     if (this.hasStarted !== undefined) {
       var oldValue = (this.tags.read('frame') || []).slice();
-      oldValue.push(!this.hasStarted);
+      var frame = {};
+      if (!this.hasStarted)
+        frame.start = true;
+      oldValue.push(frame);
       this.tags.tag('frame', oldValue);
       this.hasStarted = true;
     }
