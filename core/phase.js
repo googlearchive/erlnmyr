@@ -175,7 +175,6 @@ PhaseBase.prototype.init0ToN = function(handle) {
   this.runtime.stream = new streamLib.Stream();
   this.runtime.sendData = function(data) {
     t.end();
-    //this.stream = new streamLib.Stream();
     this.put(data);
     this.setTags({});
   }.bind(this.runtime);
