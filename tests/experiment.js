@@ -151,5 +151,24 @@ describe('experiments', function() {
       done();
     });
   });
+
+  it('should nest 1:N phase start/stop signals correctly', function(done) {
+    testPipeline(experiment('nested-start-stop'), function() {
+      var events = captureController.getInvocations();
+      assert(events.length == 42);
+      for (var i = 0; i < events.length; i+= 7)
+        assert(events[i] instanceof captureController.StartEvent);
+      for (var i = 6; i < events.length; i+= 7)
+        assert(events[i] instanceof captureController.EndEvent);
+      var id = events[0].phase.id;
+      for (var i = 1; i < 35; i++)
+        assert(events[i].phase.id == id);
+      var id2 = events[35].phase.id;
+      assert(id2 !== id);
+      for (var i = 36; i < 42; i++)
+        assert(events[i].phase.id == id2);
+      done();
+    });
+  });
 });
 

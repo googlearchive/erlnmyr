@@ -28,10 +28,10 @@ describe('Experiment command line options', function() {
     options.targetNodeID = {data: 'test input'};
     var experiment =
         'digraph experiment {' +
-        '  capture_withData;' +
-        '  capture_withoutData;' +
-        '  input_targetNodeID -> capture_withData;' +
-        '  input_untargeted -> capture_withoutData;' +
+        '  input_targetNodeID -> t1To1_withData;' +
+        '  input_untargeted -> t1To1_withoutData;' +
+        '  t1To1_withData [capture="true"];' +
+        '  t1To1_withoutData [capture="true"];' +
         '}';
     runExperiment(experiment, function() {
       var events = captureController.getInvocations();
@@ -48,8 +48,9 @@ describe('Experiment command line options', function() {
     options.input = {data: 'test input'};
     var experiment =
         'digraph experiment {' +
-        '  input_a -> capture;' +
-        '  input_b -> capture;' +
+        '  input_a -> t1To1;' +
+        '  input_b -> t1To1;' +
+        '  t1To1 [capture="true"];' +
         '}';
     runExperiment(experiment, function() {
       options.input = oldInput;
@@ -66,7 +67,8 @@ describe('Experiment command line options', function() {
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testNodeIDAlias=nodeID.data";' +
-        '  input_nodeID -> capture;' +
+        '  input_nodeID -> t1To1;' +
+        '  t1To1 [capture="true"];' +
         '}';
     runExperiment(experiment, function() {
       var events = captureController.getInvocations();
@@ -80,7 +82,8 @@ describe('Experiment command line options', function() {
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testPhaseAlias=input.data";' +
-        '  input -> capture;' +
+        '  input -> t1To1;' +
+	'  t1To1 [capture="true"];' +
         '}';
     runExperiment(experiment, function() {
       var events = captureController.getInvocations();
@@ -95,8 +98,10 @@ describe('Experiment command line options', function() {
     var experiment =
         'digraph experiment {' +
         '  optionAliases="testAliasA=nodeA.data, testAliasB=nodeB.data";' +
-        '  input_nodeA -> capture_a;' +
-        '  input_nodeB -> capture_b;' +
+        '  input_nodeA -> t1To1_a;' +
+        '  input_nodeB -> t1To1_b;' +
+	'  t1To1_a [capture="true"];' +
+	'  t1To1_b [capture="true"];' +
         '}';
     runExperiment(experiment, function() {
       var events = captureController.getInvocations();

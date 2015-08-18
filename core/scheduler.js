@@ -74,6 +74,7 @@ Task.prototype = {
   },
   transferWaitingList: function() {
     var newWaitingTask = this.waitingFor.pop();
+    traceScheduler && traceScheduler('~ transfer WL', this.id, '->', newWaitingTask.id, this.waitingFor.map(function(t) { return t.id; }));
     newWaitingTask.waitingFor = this.waitingFor;
     newWaitingTask.resolve = this.resolve;
     newWaitingTask.waitee = false;

@@ -1,7 +1,8 @@
 digraph test {
 
-  t0ToN -> fork -> t1To1 -> tNTo1 -> capture;
+  t0ToN -> fork -> t1To1 -> tNTo1 -> t1To1_1;
 
   t0ToN [items="5"];
+  t1To1_1 [capture="true"];
 
 }

@@ -172,14 +172,14 @@ PhaseBase.prototype.implNToN = function(stream) {
 PhaseBase.prototype.init0ToN = function(handle) {
   this.runtime.setTags({});
   var t = trace.start(this.runtime);
+  this.runtime.stream = new streamLib.Stream();
   this.runtime.sendData = function(data) {
     t.end();
-    this.stream = new streamLib.Stream();
     this.put(data);
-    handle(this.stream);
     this.setTags({});
   }.bind(this.runtime);
-  return this.runtime.impl(this.runtime.tags);
+  this.runtime.impl(this.runtime.tags);
+  handle(this.runtime.stream);
 };
 
 
@@ -215,10 +215,13 @@ PhaseBase.prototype.implNTo1 = function(stream) {
 
 PhaseBase.prototype.groupCompleted = function() {
   this.runtime.stream = this.baseStream;
+  var start = this.runtime.tags.read('start');
+  start = start.slice(0, start.length - 1);
   this.runtime.setTags({});
   this.baseStream = undefined;
   var result = this.runtime.onCompletion();
   this.runtime.tags.tag(this.outputKey, this.outputValue);
+  this.runtime.tags.tag('start', start);
   this.runtime.put(result);
   return this.runtime.stream;
 }
@@ -262,8 +265,8 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     this.index = 0;
   }
 
-  for (; this.index < this.pendingItems.length; this.index++) {
-    var item = this.pendingItems[this.index];
+  for (; this.index < this.pendingItems.length;) {
+    var item = this.pendingItems[this.index++];
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
     this.runtime.setTags(item.tags);
     var result = this.runtime.impl(item.data, this.runtime.tags);

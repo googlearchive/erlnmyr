@@ -1,6 +1,8 @@
 digraph test {
 
-  t0ToN -> capture;
-  t0ToN_1 -> capture_1;
+  t0ToN -> t1To1;
+  t0ToN_1 -> t1To1_1;
 
+  t1To1 [capture="true"];
+  t1To1_1 [capture="true"];
 }
