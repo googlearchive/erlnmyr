@@ -107,6 +107,10 @@ function done(stream) {
   return {command: 'done', stream: stream};
 }
 
+function none() {
+  return {command: 'none'};
+}
+
 function yieldData(stream) {
   return {command: 'yield', stream: stream};
 }
@@ -182,35 +186,82 @@ PhaseBase.prototype.init0ToN = function(handle) {
   handle(this.runtime.stream);
 };
 
+function checkFrameClose(tags) {
+  var frames = tags.frame;
+  var frame = frames[frames.length - 1];
+  if (frame.end) {
+    return frame.count;
+  }
+  return -1;
+}
+
+function getFrame(item) {
+  var frame = item.tags.frame;
+  assert(frame && frame.length);
+  return frame[frame.length - 1];
+}
 
 PhaseBase.prototype.implNTo1 = function(stream) {
   this.runtime.stream = stream;
   this.pendingItems = stream.get(this.inputKey, this.inputValue);
-  for (var i = 0; i < this.pendingItems.length; i++) {
-    var frame = this.pendingItems[i].tags.frame;
-    if (frame && frame.length && frame[frame.length - 1].start == true) {
-      if (this.started)
-        this.groupCompleted();
+  this.backlog = this.backlog || [];
+  this.upto = this.upto || 0;
+
+  var pushToBacklog = function(item) {
+    var frame = getFrame(item);
+    for (var i = 0; i < this.backlog.length; i++) {
+      if (getFrame(this.backlog[i]).seq > frame.seq) {
+        this.backlog.splice(i, 0, item);
+        return;
+      }
+    }
+    this.backlog.push(item);
+  }.bind(this);
+
+  var processFromBacklog = function() {
+    while (this.backlog.length > 0 && getFrame(this.backlog[0]).seq == this.upto) {
+      processItem(this.backlog[0]);
+      this.backlog.splice(0, 1);
+    }
+  }.bind(this)
+
+  var processItem = function(item) {
+    if (getFrame(item).start) {
       this.baseStream = stream;
       this.runtime.onStart();
       this.started = true;
     }
-    if (this.started) {
-      this.runtime.setTags(this.pendingItems[i].tags);
-      this.runtime.impl(this.pendingItems[i].data, this.runtime.tags);
-      if (this.pendingStart) {
-        for (var j = 0; j < this.pendingStart.length; j++) {
-          this.runtime.setTags(this.pendingStart[j].tags);
-          this.runtime.impl(this.pendingStart[j].data, this.runtime.tags);
-        }
-        this.pendingStart = undefined;
-      }
-    } else {
-      this.pendingStart = this.pendingStart || [];
-      this.pendingStart.push(this.pendingItems[i]);
+    this.runtime.setTags(item.tags);
+    this.runtime.impl(item.data, this.runtime.tags);
+    if (getFrame(item).end) {
+      this.groupCompleted();
+      this.started = false;
+      this.data = true;
     }
+    assert(this.upto == getFrame(item).seq);
+    this.upto++;
+  }.bind(this)
+        
+  this.data = false;
+
+  for (var i = 0; i < this.pendingItems.length; i++) {
+    var frame = getFrame(this.pendingItems[i]);
+    if (frame.seq !== this.upto) {
+      processFromBacklog();
+      if (frame.seq !== this.upto) {
+        pushToBacklog(this.pendingItems[i]);
+        continue;
+      }
+    }
+    processItem(this.pendingItems[i]);
   }
-  return Promise.resolve(done());
+  processFromBacklog();
+  if (this.data) {
+    return Promise.resolve(done(this.baseStream));
+  }
+  else {
+    return Promise.resolve(none());
+  }
 }
 
 PhaseBase.prototype.groupCompleted = function() {
@@ -218,7 +269,6 @@ PhaseBase.prototype.groupCompleted = function() {
   var frame = this.runtime.tags.read('frame');
   frame = frame.slice(0, frame.length - 1);
   this.runtime.setTags({});
-  this.baseStream = undefined;
   var result = this.runtime.onCompletion();
   this.runtime.tags.tag(this.outputKey, this.outputValue);
   this.runtime.tags.tag('frame', frame);
@@ -274,7 +324,7 @@ PhaseBase.prototype.impl1To1 = function(stream) {
     this.runtime.put(result);
     t.end();
 
-    if (this.runtime.yielding && this.index < this.pendingItems.length - 1) {
+    if (this.runtime.yielding && this.index < this.pendingItems.length) {
       var result = yieldData(this.runtime.stream);
       this.runtime.newStream();
       return Promise.resolve(result);
@@ -313,11 +363,11 @@ function closeFrame(runtime) {
   if (frames == undefined)
     return;
   var frame = frames[frames.length - 1];
-  frame.count = runtime.frameCount;
   frame.end = true;
 }
 
 PhaseBase.prototype.impl1ToN = function(stream) {
+  this.sequenceNumber = this.sequenceNumber || 0;
   this.runtime.stream = stream;
   stream.get(this.inputKey, this.inputValue).forEach(function(item) {
     var t = trace.start(this.runtime); flowItemGet(this.runtime, item.tags);
@@ -332,6 +382,7 @@ PhaseBase.prototype.impl1ToN = function(stream) {
 }
 
 PhaseBase.prototype.impl1ToNAsync = function(stream) {
+  this.sequenceNumber = this.sequenceNumber || 0;
   this.runtime.stream = stream;
   var items = stream.get(this.inputKey, this.inputValue);
   var phase = this;
@@ -397,13 +448,12 @@ function putFunction(type) {
       var frame = {};
       if (!this.hasStarted) {
         frame.start = true;
-        this.frameCount = 1;
       }
+      frame.seq = this.phaseBase.sequenceNumber++;
       oldValue.push(frame);
       this.tags.tag('frame', oldValue);
       this.hasStarted = true;
       this.lastFrame = oldValue;
-      this.frameCount++;
     }
     this.stream.put(data, this.tags.tags);
     return this.tags;
