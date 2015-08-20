@@ -186,15 +186,6 @@ PhaseBase.prototype.init0ToN = function(handle) {
   handle(this.runtime.stream);
 };
 
-function checkFrameClose(tags) {
-  var frames = tags.frame;
-  var frame = frames[frames.length - 1];
-  if (frame.end) {
-    return frame.count;
-  }
-  return -1;
-}
-
 function getFrame(item) {
   var frame = item.tags.frame;
   assert(frame && frame.length);
