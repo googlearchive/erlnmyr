@@ -95,19 +95,6 @@ Task.prototype = {
     newTask.waitFor(this);
     taskQueue.push(newTask);
     return newTask;
-  },
-  isSchedulable: function() {
-    if (this.phases[this.index - 1].arity !== 'N:1')
-      return true;
-    this.waitingFor = this.waitingFor.filter(function(task) { return task.index !== this.index; }.bind(this));
-    if (this.waitee)
-      return false;
-    if (this.waitingFor.length == 0) {
-      this.stream = this.phases[this.index - 1].groupCompleted();
-      return true;
-    }
-    this.transferWaitingList();
-    return false;
   }
 }
 
@@ -126,19 +113,24 @@ function runPhases(phases) {
 
   var resolver = undefined;
   var firstTaskPromise = new Promise(function(resolve, reject) { resolver = resolve; });
+  var sequenceNumber = 0;
+  var lastFrame = undefined;
 
   return Promise.all(initPhases.map(function(phase) {
     return phase.phase.init(function(stream) {
 
+      if (stream.data.length == 0)
+        return;
+
       var i = 0;
       if (firstTask == undefined) {
-        // TODO: Is there a cleaner way to do this??
-        assert(stream.data.length > 0);
-        stream.data[0].tags.start = [true];
+        stream.data[0].tags.frame = [{start: true, seq: sequenceNumber++}];
         i++;
       }
       for (; i < stream.data.length; i++)
-        stream.data[i].tags.start = [false];
+        stream.data[i].tags.frame = [{seq: sequenceNumber++}];
+  
+      lastFrame = stream.data[stream.data.length - 1].tags.frame;
 
       var task = schedule(phases, phase.idx + 1, stream, resolver, firstTask);
       traceScheduler && traceScheduler("Phase", phase.idx, "is task", task.id, firstTask == undefined ? "" : "(awaited by task " + firstTask.id + ")");
@@ -149,6 +141,7 @@ function runPhases(phases) {
       }
     });
   })).then(function() {
+    lastFrame[0].end = true;
     traceScheduler && traceScheduler('All initial phases started');
     return firstTaskPromise.then(function() {
       traceScheduler && traceScheduler('All tasks completed');
@@ -221,6 +214,7 @@ function runDependency(task) {
 var doneCmd = 'done';
 var parCmd = 'par';
 var yieldCmd = 'yield';
+var noneCmd = 'none';
 
 function runPhase(task) {
   if (task.dependenciesRemain())
@@ -232,14 +226,15 @@ function runPhase(task) {
       task.dependencies = op.dependencies.reverse();
     } else if (op.command == yieldCmd) {
       task.clone(oldIndex, op.stream);
+    } else if (op.command == noneCmd) {
+      task.finished = true;
+      done();
+      return;
     } else {
       task.stream = op.stream;
     }
     task.index++;
-    // if the next phase is N:1 then we don't push here unless
-    // we aren't waiting for any other tasks.
-    if (task.isSchedulable())
-      taskQueue.push(task);
+    taskQueue.push(task);
     traceScheduler && traceScheduler('+ task', task.id, 'returned', op.command);
     done();
   });
