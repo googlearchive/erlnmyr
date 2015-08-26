@@ -170,5 +170,21 @@ describe('experiments', function() {
       done();
     });
   });
+
+  it('should have sorted inputs to an NTo1 phase, even if unsorted before this', function(done) {
+    testPipeline(experiment('reorder-simple'));
+    captureController.expect(5).then(function(events) {
+      var order = events.map(function(e) { return e.input; });
+      for (var i = 4; i >= 0; i--)
+        events[i].resolve();
+      captureController.expect(5).then(function(events) {
+        assert.notDeepEqual(order, events.map(function(e) { return e.input; }));
+        captureController.expect(7).then(function(events) {
+          assert.deepEqual(order, events.slice(1, 6).map(function(e) { return e.input; }));
+          done();
+        });
+      });
+    });
+  });
 });
 

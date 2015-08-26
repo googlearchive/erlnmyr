@@ -1,0 +1,10 @@
+digraph experiment {
+
+  t0ToN -> t1To1Async -> t1To1 -> tNTo1;
+
+  t0ToN [items="5"];
+  t1To1Async [capture="true"];
+  tNTo1 [capture="true"];
+  t1To1 [capture="true"];
+
+}
