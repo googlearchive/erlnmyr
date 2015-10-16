@@ -41,7 +41,6 @@ with browserFactory.Create(options) as browser:
   options.enable_chrome_trace = True
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
-  tab.EvaluateJavaScript("(function() { document.documentElement.style.display = 'none'; return document.body.offsetTop; })()");
   browser.platform.tracing_controller.Start(options, category_filter);
-  tab.EvaluateJavaScript("(function() { document.documentElement.style.display = 'block'; return document.body.offsetTop; })()");
+  tab.EvaluateJavaScript("(function() { document.documentElement.lang += 'z'; return getComputedStyle(document.body).color; })()");
   browser.platform.tracing_controller.Stop().Serialize(sys.stdout);
