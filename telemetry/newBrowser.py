@@ -88,7 +88,11 @@ with browserFactory.Create(options) as browser:
       sys.stdout.write('OK');
       sys.stdout.flush();
     elif command.startswith('startTracing'):
-      category_filter = tracing_category_filter.TracingCategoryFilter()
+      commandBits = command.split(' ')
+      filter_string = None
+      if len(commandBits) > 1 and commandBits[1].startswith('filter:'):
+        filter_string = commandBits[1][7:]
+      category_filter = tracing_category_filter.TracingCategoryFilter(filter_string=filter_string)
       tracing_options = tracing_options.TracingOptions()
       tracing_options.enable_chrome_trace = True
       browser.platform.tracing_controller.Start(tracing_options, category_filter);
@@ -97,11 +101,12 @@ with browserFactory.Create(options) as browser:
       sys.stdout.write('OK');
       sys.stdout.flush();
     elif command.startswith('endTracing'):
-      sys.stderr.write('EndTrace\n');
+      sys.stderr.write('EndTrace');
       data = browser.platform.tracing_controller.Stop();
       f = tempfile.NamedTemporaryFile();
       data.Serialize(f);
       f.flush();
+      sys.stderr.write('flushed');
 
       if options.perf:
         sys.stderr.write('Downloading perf data and symbols from device...')
@@ -118,6 +123,8 @@ with browserFactory.Create(options) as browser:
         combined = trace_packager.PackageTraces(json_perf_data, output=output, compress=False, write_json=False)
         sys.stderr.write("Trace written to file://%s" % os.path.abspath(combined))
 
+      sys.stdout.write(f.name + '\n');
+      sys.stdout.flush();
       command = sys.stdin.readline()[:-1];
       assert command == 'done';
       f.close();
