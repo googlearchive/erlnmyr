@@ -2,7 +2,7 @@
   "name": "erlenmeyer",
   "version": "0.0.0",
   "description": "Science!",
-  "homepage": "https://github.com/dglazkov/tree-builder-builder",
+  "homepage": "https://github.com/GoogleChrome/erlnmyr",
   "author": "",
   "license": "",
   "main": "exports.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/dglazkov/tree-builder-builder.git"
+    "url": "git://github.com/GoogleChrome/erlnmyr.git"
   },
   "dependencies": {
     "bluebird": "~2.9.32",

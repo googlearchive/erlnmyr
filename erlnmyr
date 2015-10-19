@@ -27,8 +27,8 @@ function run(exports, target) {
   process.argv = [process.argv[0], 'ignore'].concat(JSON.parse(process.argv[1]));
   var run;
   try {
-    // If there's a local tree-builder-builder, use that.
-    run = require('tree-builder-builder').run;
+    // If there's a local erlnmyr, use that.
+    run = require('erlnmyr').run;
   } catch (e) {
     // Otherwise fall back on the one alongside this binary.
     run = require(exports).run;
