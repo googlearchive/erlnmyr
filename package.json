@@ -14,13 +14,14 @@
     "url": "git://github.com/dglazkov/tree-builder-builder.git"
   },
   "dependencies": {
-    "gulp": "^3.8.11",
-    "ejs": "^2.3.1",
-    "graphlib-dot": "^0.6.1",
     "bluebird": "~2.9.32",
     "chai": "^2.2.0",
-    "minimist": "^1.1.0",
+    "ejs": "^2.3.1",
     "expand-home-dir": "^0.0.2",
+    "gl-matrix": "^2.3.1",
+    "graphlib-dot": "^0.6.1",
+    "gulp": "^3.8.11",
+    "minimist": "^1.1.0",
     "split": "*"
   },
   "devDependencies": {
