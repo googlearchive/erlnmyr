@@ -33,6 +33,15 @@ function outputMatchesFile(filename, done) {
   };
 }
 
+function outputsMatchFile(filename, done) {
+  return function() {
+    var data = JSON.parse(fs.readFileSync(filename));
+    var events = captureController.getInvocations();
+    assert.deepEqual(data, events.map(function(e) { return e.input; }));
+    done();
+  }
+}
+
 function capture() {
   return {name: 't1To1', options: {capture: true}};
 }
@@ -46,6 +55,11 @@ describe('Pipeline', function() {
   });
   after(function() {
     process.chdir('../..');
+  });
+
+  it('should run memory extraction code', function(done) {
+    testPipeline([{name: 'input', options: {data: 'extract-mem-trace.erlnmyr'}}, 'fileToString', 'doExperiment'],
+      outputsMatchFile('extract-mem-trace.data', done));
   });
 
   it('should generate html from json', function(done) {
@@ -94,4 +108,3 @@ describe('Pipeline', function() {
       });
   });
 });
-

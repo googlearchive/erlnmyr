@@ -1,0 +1,13 @@
+digraph device {
+  imports="['trace-model-phases']";
+
+  input -> fileToString -> traceModel -> modelProcesses -> processMemoryDumps;
+  processMemoryDumps -> memoryAllocatorDumps -> allocatorInfo -> objectJoin;
+  objectJoin -> tagsToData -> t1To1;
+
+  input [data="blank.trace"];
+  modelProcesses [filter="['Renderer']"];
+  t1To1 [capture="true"];
+  objectJoin [tags="['startTime']"];
+  tagsToData [tags="['startTime']"];
+}
