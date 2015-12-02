@@ -1,8 +1,8 @@
 digraph experiment {
   imports="['trace-phases']";
 
-  input_w -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> regexReplace -> simplePerfer;
-  simplePerfer -> traceFilter -> traceTree -> tracePrettyPrint -> log;
+  input_w -> fileToBuffer -> gunzipAndDecode -> ejsFabricator -> regexReplace -> trace;
+  trace -> traceFilter -> traceTree -> tracePrettyPrint -> log;
   input_steps -> fileToBuffer;
 
   input_w [label="input", data="whitespace/example.ejs"];
