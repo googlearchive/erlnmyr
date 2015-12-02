@@ -11,9 +11,9 @@
   limitations under the License.
 */
 
-var fs = require('fs');
 var zlib = require('zlib');
 var options = require('./options');
+var writeFileSync = require('./write-file').writeFileSync;
 
 var events = [];
 var now = function() {
@@ -201,7 +201,7 @@ function init() {
         event.cat = '';
       }
     });
-    fs.writeFileSync(options.traceFile, JSON.stringify({
+    writeFileSync(options.traceFile, JSON.stringify({
         traceEvents: events,
     }));
   };

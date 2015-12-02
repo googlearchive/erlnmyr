@@ -19,6 +19,7 @@ var types = require('./types');
 var stream = require('./stream');
 var phase = require('./register.js').phase;
 var alias = require('./register.js').alias;
+var writeFileSync = require('./write-file').writeFileSync;
 
 var StringDecoder = require('string_decoder').StringDecoder;
 var TreeBuilder = require('../lib/tree-builder');
@@ -118,7 +119,7 @@ module.exports.writeStringFile = phase({input: types.string, output: types.strin
       } else {
         var filename = tags.read(this.options.tag);
       }
-      fs.writeFileSync(filename, data);
+      writeFileSync(filename, data);
       return data;
     },
     { tag: '', filename: 'result' });
