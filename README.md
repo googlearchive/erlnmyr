@@ -162,7 +162,18 @@ digraph experiment {
 }
 ```
 
-<img src='example.png'>
+![Graph diagram](example.png)
+
+## Troubleshooting
+
+### No module named telemetry.core
+
+This error means that the `--chromium` option is invalid or missing. To fix this
+issue, append the path to a chromium checkout:
+
+```
+gulp runExperiment --file=examples/regexReplace.dot --chromium=~/chromium/src
+```
 
 ## License
 
