@@ -11,9 +11,11 @@
   limitations under the License.
 */
 
+var fs = require('fs');
+var mkdirp = require('mkdirp');
+var path = require('path');
 var zlib = require('zlib');
 var options = require('./options');
-var writeFileSync = require('./write-file').writeFileSync;
 
 var events = [];
 var now = function() {
@@ -201,7 +203,8 @@ function init() {
         event.cat = '';
       }
     });
-    writeFileSync(options.traceFile, JSON.stringify({
+    mkdirp.sync(path.dirname(options.traceFile));
+    fs.writeFileSync(options.traceFile, JSON.stringify({
         traceEvents: events,
     }));
   };
