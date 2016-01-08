@@ -16,6 +16,11 @@ import telemetry.core
 from telemetry.internal.browser import browser_options
 from telemetry.internal.browser import browser_finder
 
+# Initialize the dependency manager
+from telemetry.internal.util import binary_manager
+from chrome_telemetry_build import chromium_config
+binary_manager.InitDependencyManager(chromium_config.ChromiumConfig().client_config)
+
 from json import dumps
 
 options = browser_options.BrowserFinderOptions();
