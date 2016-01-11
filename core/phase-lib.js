@@ -14,6 +14,7 @@
 var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
 var zlib = Promise.promisifyAll(require('zlib'));
+var mkdirp = require('mkdirp');
 var path = require('path');
 var types = require('./types');
 var stream = require('./stream');
@@ -118,6 +119,7 @@ module.exports.writeStringFile = phase({input: types.string, output: types.strin
       } else {
         var filename = tags.read(this.options.tag);
       }
+      mkdirp.sync(path.dirname(filename));
       fs.writeFileSync(filename, data);
       return data;
     },

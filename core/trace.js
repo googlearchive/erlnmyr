@@ -12,6 +12,8 @@
 */
 
 var fs = require('fs');
+var mkdirp = require('mkdirp');
+var path = require('path');
 var zlib = require('zlib');
 var options = require('./options');
 
@@ -201,6 +203,7 @@ function init() {
         event.cat = '';
       }
     });
+    mkdirp.sync(path.dirname(options.traceFile));
     fs.writeFileSync(options.traceFile, JSON.stringify({
         traceEvents: events,
     }));
