@@ -23,7 +23,7 @@ from chrome_telemetry_build import chromium_config
 binary_manager.InitDependencyManager(chromium_config.ChromiumConfig().client_config)
 
 from telemetry.timeline import tracing_category_filter
-from telemetry.timeline import tracing_options
+from telemetry.timeline import tracing_config
 
 from json import dumps
 
@@ -42,10 +42,10 @@ with browserFactory.Create(options) as browser:
     i.Close()
 
   category_filter = tracing_category_filter.TracingCategoryFilter()
-  options = tracing_options.TracingOptions()
-  options.enable_chrome_trace = True
+  config = tracing_config.TracingConfig()
+  config.enable_chrome_trace = True
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
-  browser.platform.tracing_controller.Start(options, category_filter);
+  browser.platform.tracing_controller.Start(config, category_filter)
   tab.EvaluateJavaScript("(function() { document.documentElement.lang += 'z'; return getComputedStyle(document.body).color; })()");
   browser.platform.tracing_controller.Stop().Serialize(sys.stdout);

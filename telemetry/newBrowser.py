@@ -28,7 +28,7 @@ from chrome_telemetry_build import chromium_config
 binary_manager.InitDependencyManager(chromium_config.ChromiumConfig().client_config)
 
 from telemetry.timeline import tracing_category_filter
-from telemetry.timeline import tracing_options
+from telemetry.timeline import tracing_config
 
 from profile_chrome import trace_packager
 from telemetry.internal.platform import device_finder
@@ -98,9 +98,9 @@ with browserFactory.Create(options) as browser:
       if len(commandBits) > 1 and commandBits[1].startswith('filter:'):
         filter_string = commandBits[1][7:]
       category_filter = tracing_category_filter.TracingCategoryFilter(filter_string=filter_string)
-      tracing_options = tracing_options.TracingOptions()
-      tracing_options.enable_chrome_trace = True
-      browser.platform.tracing_controller.Start(tracing_options, category_filter);
+      config = tracing_config.TracingConfig()
+      config.enable_chrome_trace = True
+      browser.platform.tracing_controller.Start(config, category_filter)
       if options.perf:
         browser.profiling_controller.Start('perf', '/tmp/erlnmyr-perf/profiling-results');
       sys.stdout.write('OK');
