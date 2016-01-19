@@ -44,6 +44,6 @@ with browserFactory.Create(options) as browser:
   config.enable_chrome_trace = True
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
-  browser.platform.tracing_controller.Start(config)
+  browser.platform.tracing_controller.StartTracing(config)
   tab.EvaluateJavaScript("(function() { document.documentElement.lang += 'z'; return getComputedStyle(document.body).color; })()");
-  browser.platform.tracing_controller.Stop().Serialize(sys.stdout);
+  browser.platform.tracing_controller.StopTracing().Serialize(sys.stdout);

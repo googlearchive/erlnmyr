@@ -42,7 +42,7 @@ with browserFactory.Create(options) as browser:
 
   config = tracing_config.TracingConfig()
   config.enable_chrome_trace = True
-  browser.platform.tracing_controller.Start(config)
+  browser.platform.tracing_controller.StartTracing(config)
   tab.Navigate(args[0]);
   tab.WaitForDocumentReadyStateToBeComplete();
-  browser.platform.tracing_controller.Stop().Serialize(sys.stdout);
+  browser.platform.tracing_controller.StopTracing().Serialize(sys.stdout);

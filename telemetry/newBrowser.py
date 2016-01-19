@@ -100,14 +100,14 @@ with browserFactory.Create(options) as browser:
       category_filter = tracing_category_filter.TracingCategoryFilter(filter_string=filter_string)
       config = tracing_config.TracingConfig()
       config.enable_chrome_trace = True
-      browser.platform.tracing_controller.Start(config, category_filter)
+      browser.platform.tracing_controller.StartTracing(config, category_filter)
       if options.perf:
         browser.profiling_controller.Start('perf', '/tmp/erlnmyr-perf/profiling-results');
       sys.stdout.write('OK');
       sys.stdout.flush();
     elif command.startswith('endTracing'):
       sys.stderr.write('EndTrace');
-      data = browser.platform.tracing_controller.Stop();
+      data = browser.platform.tracing_controller.StopTracing();
       f = tempfile.NamedTemporaryFile();
       data.Serialize(f);
       f.flush();
