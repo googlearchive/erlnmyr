@@ -19,6 +19,8 @@ var stream = require('../../core/stream');
 var Promise = require('bluebird');
 var captureController = require('../../lib/test-phases').controller;
 var fs = require('fs');
+// Load here to avoid timing out in the first test to require it.
+var tv = require('traceviewer');
 
 function testPipeline(stageList, incb) {
   stageLoader.startPipeline(stageList).then(incb);
