@@ -23,7 +23,8 @@
     "gulp": "^3.8.11",
     "minimist": "^1.1.0",
     "mkdirp": "^0.5.1",
-    "split": "*"
+    "split": "*",
+    "traceviewer": "^1.0.8"
   },
   "devDependencies": {
     "gulp": "^3.8.11",
