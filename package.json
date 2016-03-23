@@ -17,7 +17,7 @@
     "bluebird": "~2.9.32",
     "chai": "^2.2.0",
     "ejs": "^2.3.1",
-    "expand-home-dir": "^0.0.2",
+    "expand-home-dir": "azer/expand-home-dir",
     "gl-matrix": "^2.3.1",
     "graphlib-dot": "^0.6.1",
     "gulp": "^3.8.11",
