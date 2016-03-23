@@ -9,3 +9,4 @@ HTMLDocumentParser::processParsedChunkFromBackgroundParser (blink): 0.577ms
 Document::updateRenderTree (blink): 0.008ms
 Document::updateStyle (blink): 0.291ms
 FrameView::layout (blink,benchmark): 16.595ms
+last timestamp: 27.059ms
