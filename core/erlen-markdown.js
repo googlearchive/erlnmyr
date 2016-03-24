@@ -38,7 +38,11 @@ Processor.process = function(file) {
         processor.processJs(code) :
         processor.processDot(code, file));
   }); 
-  fs.writeFileSync(file + '.md', result);
+  var outFile = file + '.out.md';
+  if (/\.erln.md$/.test(file)) {
+    outFile = file.replace(/\.erln\.md$/, '.md');
+  }
+  fs.writeFileSync(outFile, result);
   console.log(md(result));
 };
 

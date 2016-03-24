@@ -21,7 +21,7 @@ module.exports.run = function(file, loader) {
 
   file = path.resolve(file);
 
-  if (/\.emd$/.test(file)) {
+  if (/\.erln.md$/.test(file)) {
     require('./core/erlen-markdown')(file);
     return;
   }
