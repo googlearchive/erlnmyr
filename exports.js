@@ -20,6 +20,12 @@ module.exports.run = function(file, loader) {
   var stageLoader = require('./core/stage-loader');
 
   file = path.resolve(file);
+
+  if (/\.emd$/.test(file)) {
+    require('./core/erlen-markdown')(file);
+    return;
+  }
+
   var phases = [
     {name: 'input', options: {data: file}},
     'fileToBuffer',

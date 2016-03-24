@@ -1,0 +1,9 @@
+```{js !!}
+scope.x = ' from JS!';
+```
+```{dot !!}
+input -> log
+```
+```{js !}
+stdout + scope.x
+```
