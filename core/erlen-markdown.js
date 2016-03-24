@@ -16,6 +16,7 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const md = require('cli-md');
 
 function Processor() {
   this.scope = {};
@@ -33,12 +34,13 @@ Processor.process = function(file) {
   var processor = new Processor();
   // Would be nice if there was a markdown parser that had sufficient
   // schema to round trip. But I couldn't find one. So...
-  var result = input.replace(/```\{(js|dot)\s+(!!?)}\n(.*?)\n```(\n?)/g, (_, lang, exec, code, tail) => {
+  var result = input.replace(/```\{(js|dot)\s+(!!?)}\n([\w\W]*?)\n```(\n?)/g, (_, lang, exec, code, tail) => {
     return processor.format(exec, tail, lang == 'js' ?
         processor.processJs(code) :
         processor.processDot(code, file));
   }); 
   fs.writeFileSync(file + '.md', result);
+  console.log(md(result));
 };
 
 Processor.prototype.processJs = function(code) {
@@ -46,12 +48,28 @@ Processor.prototype.processJs = function(code) {
   var exp = this.exp;
   var stdout = this.stdout;
   var stderr = this.stderr;
-  return eval(code);
+  var result = eval(code);
+  this.scope = scope;
+  this.exp = exp;
+  return result;
 };
 
 Processor.prototype.processDot = function(code, file) {
-  // TODO: Pass options imports and aliases.
-  var graph = `digraph G { ${code} }`;
+  // TODO: Pass aliases.
+  var options = '';
+  if (this.exp.options && Object.keys(this.exp.options).length > 0) {
+    options = Object.keys(this.exp.options).map(key => 
+        key + ' [' + Object.keys(this.exp.options[key]).map(option =>
+            option + '=' + JSON.stringify(this.exp.options[key][option])).join(', ') + '];').
+            join('\n') + '\n';
+  }
+
+  var imports = '';
+  if (this.exp.imports && this.exp.imports.length > 0) {
+    imports = JSON.stringify(this.exp.imports) + '\n';
+  }
+  var indented = (imports + options + code).replace(/(?:^|\n)(?!$)/g, '$&  ');
+  var graph = `digraph G {\n${indented}\n}\n`;
   var outFile = file + `.${this.experiments++}.erlnmyr`;
   fs.writeFileSync(outFile, graph);
   this.resetExperiment();
