@@ -20,13 +20,12 @@ const md = require('cli-md');
 
 function Processor() {
   this.scope = {};
-  this.resetExperiment();
-  this.experiments = 0;
   this.exp = {
     options: {},
     imports: [],
     aliases: {},
   };
+  this.experiments = 0;
 }
 
 Processor.process = function(file) {
@@ -72,7 +71,6 @@ Processor.prototype.processDot = function(code, file) {
   var graph = `digraph G {\n${indented}\n}\n`;
   var outFile = file + `.${this.experiments++}.erlnmyr`;
   fs.writeFileSync(outFile, graph);
-  this.resetExperiment();
 
   var erlnmyr = path.join(__dirname, '../erlnmyr');
   var cmd = `${erlnmyr} ${file} `;
@@ -82,14 +80,6 @@ Processor.prototype.processDot = function(code, file) {
   this.stderr = result.stderr;
   var output = result.stdout;
   return result.stdout + result.stderr;
-};
-
-Processor.prototype.resetExperiment = function() {
-  this.exp = {
-    options: {},
-    imports: [],
-    aliases: {},
-  };
 };
 
 Processor.prototype.format = function(exec, tail, result) {
