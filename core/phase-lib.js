@@ -134,6 +134,15 @@ module.exports.input = phase({output: types.string, arity: '0:N'},
     },
     { data: '', tag: true});
 
+module.exports.fileInput = phase({output: types.string, arity: '0:N'},
+    function(tags) {
+      if (this.options.tag)
+        tags.tag('file', this.options.file);
+      this.sendData(fs.readFileSync(this.options.file, {encoding: 'utf8'}));
+      return Promise.resolve();
+    },
+    { file: '', tag: true});
+
 module.exports.retag = phase({input: typeVar('a'), output: typeVar('a'), arity: '1:1'},
   function(data, tags) {
     var input = tags.read(this.options.tag);
