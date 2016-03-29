@@ -17,6 +17,7 @@ const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const md = require('cli-md');
+const tempfile = require('tempfile');
 
 function Processor() {
   this.scope = {};
@@ -26,6 +27,8 @@ function Processor() {
     aliases: {},
   };
   this.experiments = 0;
+  this.resources = {};
+  this.resourceFiles = {};
 }
 
 Processor.process = function(file) {
@@ -33,10 +36,30 @@ Processor.process = function(file) {
   var processor = new Processor();
   // Would be nice if there was a markdown parser that had sufficient
   // schema to round trip. But I couldn't find one. So...
-  var result = input.replace(/```\{(js|dot)\s+(!!?)}\n([\w\W]*?)\n```(\n?)/g, (_, lang, exec, code, tail) => {
-    return processor.format(exec, tail, lang == 'js' ?
-        processor.processJs(code) :
-        processor.processDot(code, file));
+  var re = /```\{(\w+)\s+(!!?|>>?)([-\w]*)}\n([\w\W]*?)\n```(\n?)/g;
+  var result = input.replace(re, (_, lang, exec, name, code, tail) => {
+    var result = code;
+    if (exec[0] == '!') {
+      if (lang == 'js') {
+        result = processor.processJs(code);
+      } else if (lang == 'dot') {
+        processor.processDot(code, file);
+        result = processor.stdout;
+        if (processor.stderr != '') {
+          if (exec == '!' && processor.stdout != '') {
+            result = processor.stdout + '\n' + processor.stderr;
+          } else {
+            result = processor.stderr;
+          }
+          // If there's an error, display it regardless of exec mode.
+          exec = '!';
+        }
+      }
+    } else if (exec == '>' && name.length > 0) {
+      processor.setResource(name, code);
+      result = '';
+    }
+    return processor.format(exec, tail, result);
   }); 
   var outFile = file + '.out.md';
   if (/\.erln.md$/.test(file)) {
@@ -44,6 +67,13 @@ Processor.process = function(file) {
   }
   fs.writeFileSync(outFile, result);
   console.log(md(result));
+};
+
+Processor.prototype.setResource = function(name, code) {
+  var file = this.resourceFiles[name] || tempfile();
+  fs.writeFileSync(file, code);
+  this.resources[name] = code;
+  this.resourceFiles[name] = file;
 };
 
 Processor.prototype.processJs = function(code) {
@@ -64,14 +94,16 @@ Processor.prototype.processDot = function(code, file) {
     options = Object.keys(this.exp.options).map(key => 
         key + ' [' + Object.keys(this.exp.options[key]).map(option =>
             option + '=' + JSON.stringify(this.exp.options[key][option])).join(', ') + '];').
-            join('\n') + '\n';
+            join('\n');
   }
 
   var imports = '';
   if (this.exp.imports && this.exp.imports.length > 0) {
     imports = JSON.stringify(this.exp.imports) + '\n';
   }
-  var indented = (imports + options + code).replace(/(?:^|\n)(?!$)/g, '$&  ');
+  var resources = Object.keys(this.resourceFiles).map(name =>
+      `${name} [file="${this.resourceFiles[name]}", stage="fileInput"];`).join('\n');
+  var indented = (imports + options + resources + code).replace(/(?:^|\n)(?!$)/g, '$&  ');
   var graph = `digraph G {\n${indented}\n}\n`;
   var outFile = file + `.${this.experiments++}.erlnmyr`;
   fs.writeFileSync(outFile, graph);
@@ -82,12 +114,11 @@ Processor.prototype.processDot = function(code, file) {
   var result = child_process.spawnSync(erlnmyr, args, {encoding: 'utf8'});
   this.stdout = result.stdout;
   this.stderr = result.stderr;
-  var output = result.stdout;
   return result.stdout + result.stderr;
 };
 
 Processor.prototype.format = function(exec, tail, result) {
-  if (exec == '!!') {
+  if (exec == '!!' || result == '') {
     return '';
   }
   if (typeof result != 'string') {

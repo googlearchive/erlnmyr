@@ -1,11 +1,16 @@
 # example!
+```{txt >hellofile}
+hello
+```
+
 ```{js !!}
-exp.options.input = {data: 'hello'};
 scope.x = ' from JS!';
 ```
+
 ```{dot !!}
-input -> log
+hellofile -> log
 ```
+
 ```{js !}
 stdout + scope.x
 ```

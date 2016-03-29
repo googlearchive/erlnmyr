@@ -25,6 +25,7 @@
     "minimist": "^1.1.0",
     "mkdirp": "^0.5.1",
     "split": "*",
+    "tempfile": "^1.1.1",
     "traceviewer": "^1.0.8"
   },
   "devDependencies": {
