@@ -137,7 +137,7 @@ function linearConnectEdges(inGraph) {
   var graphs = [];
   for (var i = 0; i < nodes.length; i++) {
     var g = handledNodes[nodes[i]].graph;
-    if (graphs.indexOf(g) == -1)
+    if (g && graphs.indexOf(g) == -1)
       graphs.push(g);
   }
 
